@@ -1,0 +1,118 @@
+{% extends 'jobs/_base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-teal-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md mx-auto">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
+      <div class="bg-gradient-to-r from-teal-600 to-teal-500 p-6">
+        <h2 class="text-2xl font-bold text-white text-center">Request Appointment</h2>
+        <p class="mt-1 text-teal-100 text-center">with {{ worker.name }}</p>
+      </div>
+      
+      <div class="p-6">
+        <form method="post">
+          {% csrf_token %}
+          
+          <div class="space-y-6">
+            <div>
+              <label for="appointment_date" class="block text-sm font-medium text-gray-700 mb-1">
+                Appointment Date
+              </label>
+              <input 
+                type="date" 
+                id="appointment_date" 
+                name="appointment_date" 
+                min="{{ min_date }}"
+                required
+                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 hover:border-teal-400"
+              >
+              <p class="mt-1 text-sm text-gray-500">Available from {{ min_date }}</p>
+            </div>
+            
+            <div>
+              <label for="appointment_time" class="block text-sm font-medium text-gray-700 mb-1">
+                Appointment Time
+              </label>
+              <input 
+                type="time" 
+                id="appointment_time" 
+                name="appointment_time" 
+                min="09:00" 
+                max="18:00" 
+                required
+                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 hover:border-teal-400"
+              >
+              <p class="mt-1 text-sm text-gray-500">Between 9:00 AM and 6:00 PM</p>
+            </div>
+            
+            <div class="space-y-3">
+              <button 
+                type="submit" 
+                class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-coral-500 hover:bg-coral-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral-400 transition-all duration-200 transform hover:-translate-y-0.5"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                </svg>
+                Send Request
+              </button>
+              
+              <a 
+                href="{% url 'worker-detail' worker.id %}" 
+                class="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 transition-all duration-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Back to Profile
+              </a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Custom coral color */
+  .bg-coral-500 {
+    background-color: #FF6B6B;
+  }
+  .hover\:bg-coral-600:hover {
+    background-color: #E05555;
+  }
+  .focus\:ring-coral-400:focus {
+    --tw-ring-color: #FF8E8E;
+  }
+  
+  /* Custom scrollbar for date/time inputs */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.5) sepia(1) saturate(5) hue-rotate(160deg);
+    transition: filter 0.2s ease;
+  }
+  
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    filter: invert(0.3) sepia(1) saturate(10) hue-rotate(160deg);
+  }
+  
+  /* Smooth transitions */
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Subtle pulse animation */
+  @keyframes subtlePulse {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-1px) scale(1.01); }
+  }
+  
+  button[type="submit"]:hover {
+    animation: subtlePulse 1.5s infinite;
+    box-shadow: 0 4px 6px -1px rgba(255, 107, 107, 0.3), 0 2px 4px -1px rgba(255, 107, 107, 0.2);
+  }
+</style>
+{% endblock %}

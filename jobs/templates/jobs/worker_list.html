@@ -1,0 +1,352 @@
+{% extends 'jobs/_base.html' %}
+{% load distance %}
+{% load static %}
+{% load custom_tags %}
+
+{% block content %}
+<!-- ✅ Owl Carousel from CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- ✅ jQuery (Required by Owl Carousel) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+
+<script>
+  $(document).ready(function() {
+    $('#slider1').owlCarousel({
+      items: 3,
+      loop: true,
+      margin: 10,
+      nav: true,
+      dots: true,
+      autoplay: true,
+      autoplayTimeout: 3000,
+      responsive: {
+        0: { items: 1 },
+        768: { items: 2 },
+        1000: { items: 3 }
+      }
+    });
+  });
+</script>
+
+<!-- Promotional Banner Section -->
+<div class="max-w-7xl mx-auto mb-12 px-4">
+  <div class="relative bg-gradient-to-r from-blue-600 to-indigo-800 rounded-2xl shadow-2xl overflow-hidden transform hover:scale-[1.01] transition duration-500">
+    <div class="absolute inset-0 bg-[url('{% static 'landing/img/pattern.svg' %}')] opacity-10"></div>
+    <div class="relative z-10 px-8 py-12 sm:p-16 flex flex-col md:flex-row items-center">
+      <!-- Text Content -->
+      <div class="md:w-1/2 mb-8 md:mb-0">
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Quality Services at Your Doorstep</h2>
+        <p class="text-blue-100 text-lg mb-6">
+          Book verified professionals for all your home service needs. Fast, reliable, and guaranteed satisfaction!
+        </p>
+        <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+          <a href="#feature" class="px-6 py-3 bg-white text-blue-600 font-bold rounded-lg shadow-lg hover:bg-blue-50 transition duration-300 text-center">
+            How It Works
+          </a>
+          <a href="{% url 'worker-list' %}" class="px-6 py-3 bg-yellow-400 text-blue-900 font-bold rounded-lg shadow-lg hover:bg-yellow-300 transition duration-300 text-center">
+            Find Professionals
+          </a>
+        </div>
+      </div>
+      <!-- Illustration -->
+      <div class="md:w-1/2 flex justify-center">
+        <img 
+          src="{% static 'landing/img/logo/logo1.png' %}"
+          alt="BlueCaller Logo"
+          class="w-full max-w-md h-auto transform hover:scale-105 transition duration-500"
+          loading="lazy"
+        >
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Overall background and padding -->
+<div class="min-h-screen bg-gradient-to-tr from-indigo-50 via-purple-50 to-pink-50 py-12 px-6">
+
+  <!-- Title Section -->
+  <div class="flex flex-col md:flex-row items-center justify-between mb-12 max-w-7xl mx-auto w-full">
+    {% if user.is_authenticated %}
+    <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6 w-full">
+
+      {% if user.customer.name %}
+      <form method="get" class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
+        <!-- Search Bar -->
+        <input
+          type="text"
+          name="q"
+          value="{{ query|default:'' }}"
+          placeholder="Search workers by tagline..."
+          class="w-full sm:w-80 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition"
+        >
+
+        <!-- Filter Dropdown Trigger -->
+        <div class="relative">
+          <button
+            type="button"
+            onclick="this.nextElementSibling.classList.toggle('hidden')"
+            class="px-4 py-3 bg-indigo-200 rounded-lg hover:bg-indigo-300 focus:outline-none transition flex items-center space-x-2"
+            aria-label="Filter options"
+          >
+            <img src="{{ '/media/filter.png' }}" alt="Filter Icon" class="h-6 w-6">
+            <span class="text-indigo-700 font-medium">Filter</span>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50">
+            <button
+              type="submit"
+              name="filter"
+              value="rating"
+              class="block w-full px-4 py-2 text-left text-gray-700 hover:bg-indigo-100 transition"
+            >
+              Filter by Rating
+            </button>
+            <button
+              type="submit"
+              name="filter"
+              value="distance"
+              class="block w-full px-4 py-2 text-left text-gray-700 hover:bg-indigo-100 transition"
+            >
+              Filter by Distance
+            </button>
+
+             <button
+              type="submit"
+              name="filter"
+              value="distance"
+              class="block w-full px-4 py-2 text-left text-gray-700 hover:bg-indigo-100 transition"
+            >
+              Filter by Price
+            </button>
+          </div>
+        </div>
+
+        <!-- Search Button -->
+        <button
+          type="submit"
+          class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-2xl hover:scale-105 transition transform duration-300"
+        >
+          Search
+        </button>
+      </form>
+
+      <!-- Manage Appointments Button -->
+      <form action="{% url 'customer_appointments' %}" method="get" class="ml-auto">
+        <button
+          type="submit"
+          class="px-8 py-3 bg-gradient-to-r from-pink-500 to-red-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-2xl transform hover:scale-105 transition duration-300"
+        >
+          Manage Appointments
+        </button>
+      </form>
+      {% endif %}
+
+      {% if user.worker.name %}
+      <div class="max-w-7xl mx-auto my-10 p-8 bg-white bg-opacity-90 rounded-xl shadow-lg w-full">
+        <h2 class="text-3xl font-extrabold text-indigo-700 mb-8 border-b-2 border-indigo-300 pb-2">My Appointments</h2>
+        {% if appointments %}
+        <ul class="space-y-6">
+          {% for appointment in appointments %}
+          <li
+            class="p-6 rounded-xl bg-indigo-50 shadow hover:bg-indigo-100 transition duration-300 flex flex-col md:flex-row justify-between items-start md:items-center"
+          >
+            <!-- Appointment Details -->
+            <div class="text-indigo-900 space-y-2 text-lg font-medium">
+              <p><span class="font-semibold">Date:</span> {{ appointment.appointment_date|date:"F j, Y, g:i a" }}</p>
+              <p><span class="font-semibold">Customer:</span> {{ appointment.customer.name }}</p>
+              <p><span class="font-semibold">Contact No:</span> {{ appointment.customer.phone_number }}</p>
+              <p><span class="font-semibold">Status:</span> <span class="capitalize">{{ appointment.status }}</span></p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-4 md:mt-0 flex space-x-4">
+              {% if appointment.status == 'pending' %}
+              <form action="{% url 'accept_appointment' appointment.id %}" method="post">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="px-5 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+                >
+                  Accept
+                </button>
+              </form>
+              <form action="{% url 'reject_appointment' appointment.id %}" method="post">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition"
+                >
+                  Reject
+                </button>
+              </form>
+              {% elif appointment.status == 'accepted' %}
+              <form action="{% url 'complete_appointment' appointment.id %}" method="post">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+                >
+                  Completed
+                </button>
+              </form>
+              {% elif appointment.status == 'completed' %}
+              <form action="{% url 'delete_appointment' appointment.id %}" method="post">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="px-5 py-2 bg-red-700 text-white font-semibold rounded-lg hover:bg-red-800 transition"
+                >
+                  Delete Appointment
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-indigo-500 text-center text-xl mt-12">You currently have no appointments.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if q %}
+  <h1 class="mb-8 text-4xl font-extrabold text-indigo-800 font-serif text-center">Search results for "{{ q }}"</h1>
+  {% endif %}
+
+  <!-- Worker Cards Section -->
+  {% if user.customer.name %}
+  <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+    {% for worker in object_list %}
+    <a href="{% url 'worker-detail' worker.pk %}" class="group">
+      <div
+        class="bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden"
+      >
+        <div class="p-6 flex items-center space-x-6">
+          <!-- Profile Image -->
+          <div class="flex-shrink-0">
+            {% if worker.profile_pic %}
+            <img
+              class="w-28 h-28 object-cover rounded-full border-4 border-indigo-400 group-hover:border-pink-400 transition"
+              src="{{ worker.profile_pic.url }}"
+              alt="Profile pic"
+              loading="lazy"
+            >
+            {% else %}
+            <div class="w-28 h-28 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600 font-bold text-2xl">
+              {{ worker.name|slice:":1" }}
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Worker Info -->
+          <div class="flex flex-col space-y-2">
+            <p class="text-2xl font-extrabold text-indigo-900 group-hover:text-pink-600 transition">{{ worker.name }}</p>
+
+            <!-- Verified Badge -->
+            <div class="flex items-center space-x-3 text-sm mt-1">
+              {% if worker.verified %}
+              <span
+                class="px-2 py-1 rounded-full bg-green-100 text-green-700 font-semibold flex items-center space-x-1"
+                title="Verified Worker"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Verified</span>
+              </span>
+              {% else %}
+              <span
+                class="px-2 py-1 rounded-full bg-red-100 text-red-700 font-semibold flex items-center space-x-1"
+                title="Not Verified"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span>Not Verified</span>
+              </span>
+              {% endif %}
+            </div>
+
+            <p class="text-gray-700 italic text-lg mt-1 max-w-xs">{{ worker.tagline }}</p>
+
+            <p class="text-indigo-700 font-semibold pt-3">
+              {% distance_if_customer worker %}
+            </p>
+            
+<!-- Rating Section -->
+<div class="mt-4 flex items-center space-x-4">
+  <div class="flex items-center space-x-1">
+    {# Full Stars #}
+    {% for _ in worker.full_stars %}
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gold" class="drop-shadow-md">
+        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+      </svg>
+    {% endfor %}
+
+    {# Half Star #}
+    {% if worker.half_star %}
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" class="drop-shadow-md">
+        <defs>
+          <clipPath id="half-mask-{{ worker.id }}">
+            <rect x="0" y="0" width="50%" height="100%" />
+          </clipPath>
+        </defs>
+        <path fill="gold" clip-path="url(#half-mask-{{ worker.id }})"
+              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        <path fill="gray"
+              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+      </svg>
+    {% endif %}
+
+    {# Empty Stars #}
+    {% for _ in worker.empty_stars %}
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gray" class="drop-shadow-sm">
+        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+      </svg>
+    {% endfor %}
+  </div>
+
+  <div class="flex flex-col">
+    <span class="text-indigo-900 font-bold text-xl">{{ worker.average_rating }} / 5</span>
+    <span class="text-indigo-600 font-medium text-sm">({{ worker.total_ratings }} reviews)</span>
+  </div>
+</div>
+
+          
+          </div>
+
+
+
+        </div>
+
+        <div class="px-6 py-4 bg-indigo-100 rounded-b-xl text-center">
+          <button
+            class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-110 transform transition duration-300 ease-in-out"
+          >
+            View Details
+          </button>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div> 
+</div>
+{% endblock content %}

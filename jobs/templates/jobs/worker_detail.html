@@ -1,0 +1,203 @@
+{% extends 'jobs/_base.html' %}
+{% load rating_filters %}
+
+<style>
+    .rating {
+        display: flex;
+        justify-content: center; /* Center the stars horizontally */
+        align-items: center;     /* Center the stars vertically, optional */
+    }
+
+    .stars {
+        display: flex;           /* Align the stars horizontally */
+        gap: 5px;                /* Space between stars */
+    }
+
+    .stars svg {
+        width: 24px;             /* Set the size of the stars */
+        height: 24px;
+    }
+
+    .rating-stats {
+        transition: all 0.3s ease;
+    }
+
+    .rating-stats:hover {
+        transform: scale(1.02);
+    }
+</style>
+
+{% block content %}
+    <!-- Worker Info Section -->
+    <div class="bg-white p-6 rounded-lg shadow-xl">
+        <div class="flex items-center space-x-6">
+            <!-- Worker Profile Pic -->
+            <div>
+                {% if worker.profile_pic %}
+                    <img class="w-32 h-32 object-cover rounded-full border-4 border-blue-500" src="{{ worker.profile_pic.url }}" alt="Profile pic">
+                {% endif %}
+            </div>
+
+            <!-- Worker Info -->
+            <div>
+                <h1 class="text-3xl font-semibold text-gray-800">{{ object.name }}</h1>
+
+                <!-- Verified Badge -->
+                <div class="flex items-center space-x-2 text-sm text-gray-600 mt-2">
+                    {% if worker.verified %}
+                        <span class="text-green-500">&#10004; Verified</span>
+                    {% else %}
+                        <span class="text-red-500">&#10008; Not Verified</span>
+                    {% endif %}
+                </div>
+
+                <p class="text-lg text-gray-800 mt-2">{{ object.tagline }}</p>
+                <p class="text-lg text-gray-800 mt-2">{{ object.phone_number }}</p>
+
+<!-- In your worker_detail.html -->
+<!-- Rating Overview Card -->
+<div class="mt-4 bg-white rounded-lg shadow-md p-4 rating-stats">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <div class="flex">
+                <!-- Full Stars -->
+                {% for i in full_stars %}
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gold" class="drop-shadow-md">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                </svg>
+                {% endfor %}
+                
+                <!-- Half Star -->
+                {% if half_star %}
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gold" class="drop-shadow-md">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" clip-path="url(#half-mask)" />
+                    <defs>
+                        <clipPath id="half-mask">
+                            <rect x="0" y="0" width="50%" height="100%" />
+                        </clipPath>
+                    </defs>
+                </svg>
+                {% endif %}
+                
+                <!-- Empty Stars -->
+                {% for i in empty_stars %}
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gray" class="drop-shadow-sm">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                </svg>
+                {% endfor %}
+            </div>
+            <div class="flex flex-col">
+                <span class="text-indigo-900 font-bold text-xl">
+                    {{ average_rating }} / 5
+                </span>
+                <span class="text-indigo-600 font-medium text-sm">
+                    ({{ total_ratings }} reviews)
+                </span>
+            </div>
+        </div>
+        {% if user == object.owner %}
+            <button onclick="toggleRatingDetails()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                View Details
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Details Section (Collapsible) -->
+    <div id="ratingDetails" class="mt-6 bg-white rounded-lg shadow-md p-6 hidden">
+        <!-- Rating Breakdown -->
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-3">Rating Breakdown</h3>
+            {% for i in "54321"|make_list %}
+                <div class="flex items-center mb-2">
+                    <span class="text-sm text-gray-600 w-8">{{ i }} stars</span>
+                    <div class="flex-1 h-2 mx-2 bg-gray-200 rounded-full">
+                        <div class="h-2 bg-yellow-400 rounded-full" style="width: {{ object|get_rating_percentage:i }}%"></div>
+                    </div>
+                    <span class="text-sm text-gray-600 w-12">{{ object|get_rating_percentage:i|floatformat:0 }}%</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Recent Reviews -->
+        <div>
+            <h3 class="text-lg font-semibold mb-4">Recent Reviews</h3>
+            <div class="space-y-4">
+                {% for rating in object.ratings.all|slice:":5" %}
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center">
+                                <div class="flex">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= rating.rating %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold">
+                                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                                            </svg>
+                                        {% else %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray">
+                                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                                            </svg>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="text-sm text-gray-500 ml-2">{{ rating.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            <span class="text-sm text-gray-500">- {{ rating.customer.name }}</span>
+                        </div>
+                        {% if rating.comment %}
+                            <p class="text-gray-700 mt-2">{{ rating.comment }}</p>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="text-gray-500">No reviews yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Appoint Worker Button (for customers) -->
+    {% if user.customer %}
+        <form action="{% url 'appoint-worker' object.id %}" method="post" class="mt-6">
+            {% csrf_token %}
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-4">Book an Appointment</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="appointment_date" class="block text-gray-600 text-sm font-medium">Select Date:</label>
+                        <input 
+                            type="date" 
+                            id="appointment_date" 
+                            name="appointment_date" 
+                            class="mt-1 px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            required
+                        >
+                    </div>
+                    <button type="submit" class="w-full px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-lg hover:bg-green-700 transform hover:scale-105 transition duration-300 ease-in-out">
+                        Book Appointment
+                    </button>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+
+    <!-- Bio Section -->
+    <div class="mt-6 bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">About</h2>
+        <div class="prose text-lg text-gray-700">
+            {{ object.bio }}
+        </div>
+    </div>
+
+    <script>
+        function toggleRatingDetails() {
+            const details = document.getElementById('ratingDetails');
+            details.classList.toggle('hidden');
+        }
+    </script>
+{% endblock content %}

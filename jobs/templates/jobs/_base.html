@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+{% block banner_slider %}{% endblock banner_slider %}
+<body>
+    {% if messages %}
+    <div id="message-container">
+        {% for message in messages %}
+            <div class="alert alert-success" id="auto-hide-message">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Add CSS Styles Directly Inside the HTML -->
+    <style>
+        /* Styles for the message alert */
+        .alert {
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        /* Fade-out effect */
+        .fade-out {
+            transition: opacity 1s ease-out;
+            opacity: 0;
+        }
+    </style>
+
+    <!-- Add JavaScript for Auto-Hiding the Message -->
+    <script>
+        // Set a timeout to hide the message after 5 seconds (5000 milliseconds)
+        setTimeout(function() {
+            var messageElement = document.getElementById('auto-hide-message');
+            if (messageElement) {
+                messageElement.classList.add('fade-out');  // Add the fade-out class
+                setTimeout(function() {
+                    messageElement.style.display = 'none';  // Hide the message after fading out
+                }, 1000);  // Wait for the fade-out transition to complete (1 second)
+            }
+        }, 5000);  // Initial delay before starting the fade-out
+    </script>
+    <div class=" w-full max-w-7xl mx-auto">
+        <div class="flex flex-col max-w-screen-xl p-5 mx-auto md:items-center md:justify-between md:flex-row md:px-6 lg:px-8 border-b">
+            <div class="flex flex-row items-center justify-between lg:justify-start">
+                <a href="{% url 'worker-list' %}" class="flex items-center">
+                    <img src="{% static 'landing/img/logo/logo1.png' %}" alt="BlueCaller Logo" class="h-16 w-auto mr-4" />
+                </a>
+            </div>
+            <nav class="flex-col items-center flex-grow hidden pb-4 md:pb-0 md:flex md:justify-end md:flex-row lg:pl-2">      
+                <div class="inline-flex items-center gap-2 list-none lg:ml-auto">
+                    
+                    {% if user.is_authenticated %}
+                    <p>{{user.email}}</p>
+                    {% if user.worker.profile_pic %}
+                    <img class="w-10 border rounded-full mr-4" src="{{ user.worker.profile_pic.url }}" alt="Profile pic">
+                    {% endif %}
+                    {% if user.customer.profile_pic %}
+                    <img class="w-10 border rounded-full mr-4" src="{{ user.customer.profile_pic.url }}" alt="Profile pic">
+                    {% endif %}
+                    <form action="{% url 'account_logout' %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="items-center block px-10 py-2.5 text-base font-medium text-center text-blue-600 transition duration-500 ease-in-out transform border-2 border-white shadow-md rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Logout</button>
+                    </form>
+                    {% else %}
+                    <a href="{% url 'account_login' %}">
+                        <button class="items-center block px-10 py-2.5 text-base font-medium text-center text-blue-600 transition duration-500 ease-in-out transform border-2 border-white shadow-md rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Sign in</button>
+                    </a>
+                    <a href="{% url 'account_signup' %}">
+                        <button class="items-center block px-10 py-3 text-base font-medium text-center text-white transition duration-500 ease-in-out transform bg-blue-600 rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Sign up</button>
+                    </a>
+                    {% endif %}
+                </div>     
+            </nav>
+        </div>
+        <div class="container p-12">
+            <div class="w-full flex flex-col items-center mt-6 mb-2">
+                
+            </div>
+            {% block content %}
+            {% endblock content %}
+        </div>
+    </div>
+</body>
+</html>

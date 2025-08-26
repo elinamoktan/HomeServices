@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rate Worker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center py-8">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-xl">
+        <h1 class="text-3xl font-bold text-blue-600 mb-6 text-center">Rate Your Worker</h1>
+
+        <div class="mb-6 text-center">
+            <p class="text-lg text-gray-700"><span class="font-semibold">Worker:</span> {{ appointment.worker.name }}</p>
+            <p class="text-gray-600"><span class="font-semibold">Appointment Date:</span> {{ appointment.appointment_date|date:"F j, Y" }}</p>
+        </div>
+
+        {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                    <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form action="{% url 'rate_worker' appointment.id %}" method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Star Rating -->
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Rating</label>
+                <div class="flex justify-center space-x-4" id="star-rating">
+                    {% for star in "12345" %}
+                        <div class="star-container cursor-pointer" data-value="{{ star }}">
+                            <input type="radio" name="rating" value="{{ star }}" class="hidden" required>
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-12 w-12 text-gray-300 star-icon transition duration-300"
+                                 fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.548 4.764h5.011c.969 0 1.371 1.24.588 1.81l-4.052 2.949 1.548 4.764c.3.921-.755 1.688-1.54 1.154L10 13.09l-4.052 2.948c-.784.533-1.839-.233-1.54-1.154l1.548-4.764-4.052-2.949c-.783-.57-.381-1.81.588-1.81h5.011l1.548-4.764z"/>
+                            </svg>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Comment -->
+            <div class="space-y-2">
+                <label for="comment" class="block text-sm font-medium text-gray-700">Your Feedback (Optional)</label>
+                <textarea name="comment" id="comment" rows="4" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Share your experience with this worker..."></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-center space-x-4">
+                <button type="submit" 
+                    class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Submit Rating
+                </button>
+                <a href="{% url 'customer_appointments' %}" 
+                    class="px-6 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const starContainer = document.getElementById('star-rating');
+        const stars = starContainer.querySelectorAll('.star-icon');
+        const radioInputs = starContainer.querySelectorAll('input[type="radio"]');
+        
+        let currentRating = 0;
+        
+        // Function to update star appearance based on rating
+        function updateStars(rating) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('text-yellow-400');
+                    star.classList.remove('text-gray-300');
+                } else {
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-gray-300');
+                }
+            });
+            
+            // Check the appropriate radio input
+            if (rating > 0) {
+                radioInputs[rating - 1].checked = true;
+            }
+        }
+        
+        // Add click event to each star container
+        stars.forEach((star, index) => {
+            const starIndex = index + 1;
+            
+            // Handle star clicks
+            star.parentElement.addEventListener('click', () => {
+                currentRating = starIndex;
+                updateStars(currentRating);
+            });
+            
+            // Show hover effect
+            star.parentElement.addEventListener('mouseover', () => {
+                highlightStars(starIndex);
+            });
+            
+            star.parentElement.addEventListener('mouseout', () => {
+                updateStars(currentRating);
+            });
+        });
+        
+        // Function to highlight stars on hover
+        function highlightStars(rating) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('text-yellow-300');
+                    star.classList.remove('text-gray-300');
+                } else {
+                    star.classList.remove('text-yellow-300');
+                    star.classList.add('text-gray-300');
+                }
+            });
+        }
+        
+        // Initialize with any existing rating
+        radioInputs.forEach((input, index) => {
+            if (input.checked) {
+                currentRating = index + 1;
+                updateStars(currentRating);
+            }
+        });
+    });
+</script>
+    
+</body>
+</html>

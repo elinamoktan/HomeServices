@@ -1,0 +1,176 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Appointment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .star-icon {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .star-icon.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-4xl mx-auto my-10 p-6 bg-white shadow-md rounded-lg">
+    <h2 class="text-3xl font-bold tracking-tighter text-blue-600 mb-8 transition duration-500 ease-in-out transform tracking-relaxed lg:pr-8">My Appointments</h2>
+    {% if appointments %}
+        <ul class="space-y-6">
+            {% for appointment in appointments %}
+                <li class="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition duration-300">
+                    <p class="text-gray-700">
+                        <span class="font-semibold">Date:</span> {{ appointment.appointment_date|date:"F j, Y" }}
+                    </p>
+                    <p class="text-gray-700">
+                        <span class="font-semibold">Worker:</span> {{ appointment.worker.name }}
+                    </p>
+                    <p class="text-gray-700">
+                        <span class="font-semibold">Contact no:</span> {{ appointment.worker.phone_number }}
+                    </p>
+                    <p class="text-gray-700">
+                        <span class="font-semibold">Status:</span>     
+                        {% if appointment.status == 'pending' %}
+                            <span class="text-yellow-500 font-semibold">Pending</span>
+                        {% elif appointment.status == 'accepted' %}
+                            <span class="text-green-500 font-semibold">Accepted</span>
+                        {% elif appointment.status == 'rejected' %}
+                            <span class="text-red-500 font-semibold">Rejected</span>
+                        {% elif appointment.status == 'completed' %}
+                            <span class="text-blue-500 font-semibold">Completed</span>
+                        {% endif %} 
+                    </p>
+
+                    {% if user == appointment.customer.owner %}
+                        {% if appointment.status != 'completed' and appointment.status != 'rejected' %}
+                            <!-- Allow Delete -->
+                            <form action="{% url 'delete_appointment' appointment.id %}" method="post" class="mt-4">
+                                {% csrf_token %}
+                                <button type="submit" class="px-4 py-2 bg-red-600 text-white font-semibold rounded hover:bg-red-700 transition duration-300">
+                                    Delete Appointment
+                                </button>
+                            </form>
+                        {% elif appointment.status == 'completed' %}
+                            <!-- Star Rating Form -->
+                            <form action="{% url 'rate_worker' appointment.id %}" method="post" class="mt-6">
+                                {% csrf_token %}
+                                <div class="flex items-center space-x-4 mb-4">
+                                    <span class="font-semibold text-gray-700">Rate this worker:</span>
+                                </div>
+                                <div class="flex items-center space-x-2" id="star-rating-{{ appointment.id }}">
+                                    {% for star in "12345" %}
+                                        <div class="star-container" data-value="{{ star }}">
+                                            <input type="radio" name="rating" value="{{ star }}" class="hidden">
+                                            <svg xmlns="http://www.w3.org/2000/svg" 
+                                                 class="h-10 w-10 text-gray-300 star-icon" 
+                                                 fill="currentColor" viewBox="0 0 20 20"
+                                                 data-star="{{ star }}">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.548 4.764h5.011c.969 0 1.371 1.24.588 1.81l-4.052 2.949 1.548 4.764c.3.921-.755 1.688-1.54 1.154L10 13.09l-4.052 2.948c-.784.533-1.839-.233-1.54-1.154l1.548-4.764-4.052-2.949c-.783-.57-.381-1.81.588-1.81h5.011l1.548-4.764z"/>
+                                            </svg>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mt-4">
+                                    <textarea name="comment" placeholder="Add your feedback (optional)" class="w-full p-2 border rounded-md"></textarea>
+                                </div>
+                                <button type="submit" class="mt-4 px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-300">
+                                    Submit Rating
+                                </button>
+                            </form>
+                        {% elif appointment.status == 'rejected' %}
+                            <!-- Request New Worker -->
+                            <form action="{% url 'request_new_worker' appointment.id %}" method="post" class="mt-4">
+                                {% csrf_token %}
+                                <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600 transition duration-300">
+                                    Request New Worker
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-gray-600 mt-4">You have no appointments at the moment.</p>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize all star rating containers
+        const starContainers = document.querySelectorAll('[id^="star-rating-"]');
+        
+        starContainers.forEach(container => {
+            const stars = container.querySelectorAll('.star-icon');
+            const radioInputs = container.querySelectorAll('input[type="radio"]');
+            
+            // Function to update star states
+            function updateStarStates() {
+                let lastFilledIndex = -1;
+                
+                // Find the last filled star
+                for (let i = 0; i < stars.length; i++) {
+                    if (stars[i].classList.contains('text-yellow-400')) {
+                        lastFilledIndex = i;
+                    }
+                }
+                
+                // Enable/disable stars based on sequential filling
+                stars.forEach((star, index) => {
+                    if (index <= lastFilledIndex + 1) {
+                        // Enable this star and previous ones
+                        star.classList.remove('disabled');
+                    } else {
+                        // Disable stars that can't be filled yet
+                        star.classList.add('disabled');
+                    }
+                });
+            }
+            
+            // Add click event to each star
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    if (this.classList.contains('disabled')) {
+                        return; // Do nothing if star is disabled
+                    }
+                    
+                    const starValue = parseInt(this.getAttribute('data-star'));
+                    const isFilled = this.classList.contains('text-yellow-400');
+                    
+                    if (isFilled) {
+                        // If already filled, empty it and all subsequent stars
+                        for (let i = starValue - 1; i < stars.length; i++) {
+                            stars[i].classList.remove('text-yellow-400');
+                            stars[i].classList.add('text-gray-300');
+                            radioInputs[i].checked = false;
+                        }
+                    } else {
+                        // If empty, fill it and all previous stars
+                        for (let i = 0; i < starValue; i++) {
+                            stars[i].classList.remove('text-gray-300');
+                            stars[i].classList.add('text-yellow-400');
+                            // Only check the radio input for the clicked star
+                            if (i === starValue - 1) {
+                                radioInputs[i].checked = true;
+                            } else {
+                                radioInputs[i].checked = false;
+                            }
+                        }
+                    }
+                    
+                    // Update star states after click
+                    updateStarStates();
+                });
+            });
+            
+            // Initialize star states
+            updateStarStates();
+        });
+    });
+</script>
+</body>
+</html>

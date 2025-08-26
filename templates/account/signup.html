@@ -1,0 +1,36 @@
+{% extends 'jobs/_base.html' %}
+{% load tailwind_filters %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-blue-100 p-8 sm:p-10 transition-all duration-300 ease-in-out">
+        <div class="flex flex-col items-center mb-8">
+            <img src="{% static 'landing/img/logo/logo1.png' %}" alt="Blue Caller Logo" class="h-14 w-auto mb-4">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-1 text-center">Join Our Community</h2>
+            <p class="text-gray-600 text-sm sm:text-base">Start your journey with us today</p>
+        </div>
+        <form method="POST" class="space-y-6 animate-fade-in">
+            {% csrf_token %}
+            <div class="space-y-4">
+                {{ form|crispy }}
+            </div>
+            <div class="flex items-center">
+                <input id="terms" name="terms" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" required>
+                <label for="terms" class="ml-2 block text-sm text-gray-700">
+                    I agree to the <a href="#" class="text-blue-600 hover:text-blue-500">Terms</a> and <a href="#" class="text-blue-600 hover:text-blue-500">Privacy Policy</a>
+                </label>
+            </div>
+            <button type="submit" class="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition duration-300 ease-in-out">
+                Create Account
+            </button>
+        </form>
+        <div class="mt-6 text-center">
+            <span class="text-sm text-gray-500">Already have an account?</span>
+            <a href="{% url 'account_login' %}" class="ml-2 font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 underline">
+                Sign in instead
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock content %}

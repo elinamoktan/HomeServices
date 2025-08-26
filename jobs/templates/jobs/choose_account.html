@@ -1,0 +1,63 @@
+{% extends 'jobs/_base.html' %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <h1 class="text-center text-4xl font-extrabold text-gray-900 mb-2">Join BlueCaller</h1>
+        <p class="text-center text-lg text-gray-600 mb-12">Select your account type to get started</p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-4xl">
+        <div class="flex flex-col md:flex-row gap-8 justify-center items-center px-4 py-8">
+            <!-- Worker Card -->
+            <div class="w-full md:w-1/2 max-w-md bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 h-full">
+                <div class="p-2 bg-blue-100"></div>
+                <div class="p-8 text-center flex flex-col h-full">
+                    <div class="flex justify-center mb-6 h-48">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3048/3048127.png" alt="Worker Illustration" class="h-full object-contain">
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3">Worker</h3>
+                    <p class="text-gray-600 mb-6 flex-grow">Find jobs, build your portfolio, and grow your business with our platform</p>
+                    <a href="{% url 'worker-create' %}" class="inline-block px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-300">
+                        Register as Worker
+                    </a>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="flex items-center justify-center my-4 md:my-0">
+                <div class="h-16 w-px bg-gray-300 md:h-px md:w-16"></div>
+                <span class="mx-4 text-gray-500 font-medium">OR</span>
+                <div class="h-16 w-px bg-gray-300 md:h-px md:w-16"></div>
+            </div>
+
+            <!-- Customer Card -->
+            <div class="w-full md:w-1/2 max-w-md bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 h-full">
+                <div class="p-2 bg-green-100"></div>
+                <div class="p-8 text-center flex flex-col h-full">
+                    <div class="flex justify-center mb-6 h-48">
+                        <img src="https://cdn-icons-png.flaticon.com/512/236/236832.png" alt="Customer Illustration" class="h-full object-contain">
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3">Customer</h3>
+                    <p class="text-gray-600 mb-6 flex-grow">Find skilled professionals for your projects and tasks quickly</p>
+                    <a href="{% url 'customer-create' %}" class="inline-block px-8 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-300">
+                        Register as Customer
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center">
+            <p class="text-gray-600">Already have an account? <a href="{% url 'account_login' %}" class="text-blue-600 hover:text-blue-800 font-medium">Sign in</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 768px) {
+        .flex-col .h-48 {
+            height: 120px;
+        }
+    }
+</style>
+{% endblock content %}
