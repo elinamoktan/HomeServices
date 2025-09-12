@@ -8,884 +8,461 @@
     <meta name="description" content="Book verified skilled workers for your home and business needs" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="stylesheet" href="{% static 'landing/css/bootstrap-5.0.0-beta1.min.css' %}" />
-    <link rel="stylesheet" href="{% static 'landing/css/LineIcons.2.0.css' %}"/>
-    <link rel="stylesheet" href="{% static 'landing/css/tiny-slider.css' %}"/>
-    <link rel="stylesheet" href="{% static 'landing/css/animate.css' %}"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --secondary-color: #1e40af;
-            --accent-color: #3b82f6;
-            --text-color: #1f2937;
-            --light-bg: #f3f4f6;
-            --white: #ffffff;
-            --header-height: 80px;
-            --border-color: #e5e7eb;
-            --section-padding: 4rem;
-            --footer-padding: 5rem;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-
-        .navbar-area {
-            background: var(--white);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 0;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            transition: all 0.3s ease;
-            height: var(--header-height);
-        }
-
-        .navbar-area.scrolled {
-            background: var(--white);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar {
-            height: var(--header-height);
-            padding: 0 1rem;
-        }
-
-        .navbar-brand {
-            padding: 0;
-            margin-right: 2rem;
-        }
-
-        .navbar-brand img {
-            height: 40px;
-            width: auto;
-            transition: all 0.3s ease;
-        }
-
-        .navbar-nav {
-            align-items: center;
-        }
-
-        .nav-item {
-            margin: 0 0.5rem;
-        }
-
-        .nav-item a {
-            color: var(--text-color) !important;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-        }
-
-        .nav-item a:hover {
-            color: var(--primary-color) !important;
-            background-color: var(--light-bg);
-        }
-
-        .nav-item a.active {
-            color: var(--primary-color) !important;
-            background-color: var(--light-bg);
-        }
-
-        .header-action {
-            margin-left: 2rem;
-        }
-
-        .hero-section {
-            padding: 8rem 0 4rem;
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-        }
-
-        .hero-content-wrapper {
-            padding: 2rem 0;
-        }
-
-        .hero-content-wrapper h2 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            line-height: 1.2;
-            margin-bottom: 1.5rem;
-            color: var(--text-color);
-        }
-
-        .hero-content-wrapper p {
-            font-size: 1.25rem;
-            color: #4b5563;
-            margin-bottom: 2rem;
-        }
-
-        .button {
-            display: inline-flex;
-            align-items: center;
-            padding: 1rem 2rem;
-            background: var(--primary-color);
-            color: var(--white);
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-
-        .button:hover {
-            background: var(--secondary-color);
-            color: var(--white);
-            transform: translateY(-2px);
-        }
-
-        .service-categories {
-            padding: 5rem 0;
-            background: var(--white);
-        }
-
-        .category-card {
-            background: var(--white);
-            border-radius: 1rem;
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .category-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .category-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--light-bg);
-            border-radius: 50%;
-            font-size: 2rem;
-            color: var(--primary-color);
-        }
-
-        .feature-section {
-            padding: 5rem 0;
-            background: var(--light-bg);
-        }
-
-        .single-feature {
-            background: var(--white);
-            padding: 2rem;
-            border-radius: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .single-feature:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .testimonials-section {
-            padding: 5rem 0;
-            background: var(--white);
-        }
-
-        .testimonial-card {
-            background: var(--white);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .testimonial-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-bottom: 1rem;
-        }
-
-        .section-title {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .section-title h3 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--text-color);
-            margin-bottom: 1rem;
-        }
-
-        .section-title p {
-            font-size: 1.25rem;
-            color: #4b5563;
-        }
-
-        .footer {
-            background: var(--white);
-            color: var(--text-color);
-            padding: 2.5rem 0 1.25rem;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .footer .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 0.75rem;
-        }
-
-        .footer h5 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--text-color);
-        }
-
-        .footer p {
-            color: #4b5563;
-            line-height: 1.4;
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-        }
-
-        .footer-links {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .footer-links li {
-            margin-bottom: 0.5rem;
-        }
-
-        .footer-links a {
-            color: #4b5563;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-block;
-            font-size: 0.875rem;
-        }
-
-        .footer-links a:hover {
-            color: var(--primary-color);
-            transform: translateX(5px);
-        }
-
-        .footer-contact li {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            color: #4b5563;
-            font-size: 0.875rem;
-        }
-
-        .footer-contact i {
-            margin-right: 0.5rem;
-            color: var(--primary-color);
-            font-size: 0.875rem;
-            width: 1rem;
-            text-align: center;
-        }
-
-        .footer-social {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .footer-social a {
-            color: var(--text-color);
-            background: var(--light-bg);
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            font-size: 0.75rem;
-        }
-
-        .footer-social a:hover {
-            background: var(--primary-color);
-            color: var(--white);
-            transform: translateY(-3px);
-        }
-
-        .footer-newsletter {
-            margin-top: 1rem;
-        }
-
-        .footer-newsletter .form-control {
-            background: var(--light-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            height: auto;
-        }
-
-        .footer-newsletter .form-control::placeholder {
-            color: #6b7280;
-            font-size: 0.875rem;
-        }
-
-        .footer-newsletter .btn-primary {
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-        }
-
-        .footer-bottom {
-            border-top: 1px solid var(--border-color);
-            padding-top: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .footer-bottom p {
-            margin: 0;
-            color: #4b5563;
-            font-size: 0.75rem;
-        }
-
-        .footer-bottom a {
-            color: #4b5563;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-size: 0.75rem;
-        }
-
-        .footer-bottom a:hover {
-            color: var(--primary-color);
-        }
-
-        .footer .row {
-            margin: 0 -0.5rem;
-        }
-
-        .footer .col-lg-4,
-        .footer .col-lg-2,
-        .footer .col-lg-3 {
-            padding: 0 0.5rem;
-        }
-
-        @media (max-width: 991.98px) {
-            .navbar-collapse {
-                background: var(--white);
-                padding: 1rem;
-                border-radius: 0.5rem;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                margin-top: 1rem;
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply font-sans text-slate-800 bg-slate-50;
             }
-
-            .nav-item {
-                margin: 0.5rem 0;
+            .container {
+                @apply mx-auto px-4;
             }
-
-            .header-action {
-                margin: 1rem 0 0;
+            .section-padding {
+                @apply py-20 lg:py-24;
             }
-
-            .footer {
-                padding: 2rem 0 1rem;
+            .section-heading {
+                @apply text-center max-w-2xl mx-auto mb-12 lg:mb-16;
             }
-
-            .footer .col-lg-4,
-            .footer .col-lg-2,
-            .footer .col-lg-3 {
-                margin-bottom: 1.25rem;
+            .section-heading h2 {
+                @apply text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight mb-4;
             }
-
-            .footer-bottom {
-                text-align: center;
-            }
-
-            .footer-bottom .text-md-end {
-                text-align: center !important;
-                margin-top: 0.5rem;
+            .section-heading p {
+                @apply text-lg text-slate-600;
             }
         }
-
-        /* Contact Section Styles */
-        .contact {
-            padding: 2.5rem 0;
-            background: var(--white);
-        }
-
-        .contact .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 0.75rem;
-        }
-
-        .contact h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--text-color);
-            text-align: center;
-        }
-
-        .contact p {
-            color: #4b5563;
-            line-height: 1.4;
-            font-size: 0.875rem;
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
-
-        .contact-form {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 1.5rem;
-            background: var(--light-bg);
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .form-floating {
-            margin-bottom: 1rem;
-        }
-
-        .form-floating label {
-            font-size: 0.875rem;
-            color: #4b5563;
-        }
-
-        .form-control {
-            height: auto;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            border: 1px solid var(--border-color);
-            background: var(--white);
-        }
-
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.1);
-        }
-
-        .form-floating>.form-control:focus~label,
-        .form-floating>.form-control:not(:placeholder-shown)~label {
-            color: var(--primary-color);
-            transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
-        }
-
-        .btn-primary {
-            padding: 0.75rem 1.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            width: 100%;
-            margin-top: 0.5rem;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-        }
-
-        @media (max-width: 991.98px) {
-            .contact {
-                padding: 2rem 0;
+        @layer components {
+            .btn-primary {
+                @apply inline-flex items-center justify-center px-8 py-3 rounded-full font-semibold text-white bg-sky-500 hover:bg-sky-600 transition-all duration-300 transform hover:-translate-y-1 shadow-lg;
             }
-
-            .contact-form {
-                padding: 1.25rem;
+            .btn-secondary {
+                @apply inline-flex items-center justify-center px-8 py-3 rounded-full font-semibold text-sky-600 bg-white hover:bg-slate-100 border border-sky-600 transition-all duration-300 transform hover:-translate-y-1 shadow-md;
             }
-
-            .form-floating {
-                margin-bottom: 0.75rem;
+            .card-hover-effect {
+                @apply transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl;
             }
         }
     </style>
+    <style>
+        /* Custom Cursor Styles */
+        body {
+            cursor: none;
+        }
+        .custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.2s ease-out;
+            will-change: transform;
+        }
+        .cursor-inner {
+            width: 100px;
+            height: 100px;
+            background-color: rgba(203, 213, 225, 0.7); /* Light gray */
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        a:hover ~ .custom-cursor .cursor-inner,
+        button:hover ~ .custom-cursor .cursor-inner,
+        .card-hover-effect:hover ~ .custom-cursor .cursor-inner,
+        .nav-link:hover ~ .custom-cursor .cursor-inner {
+            transform: scale(2.5);
+            background-color: #0ea5e9; /* Sky blue */
+        }
+        .active-link-indicator {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 3px;
+            background-color: #0ea5e9;
+            border-radius: 999px;
+            transition: all 0.3s ease;
+        }
+        .nav-item a.active {
+            @apply text-sky-600;
+            font-weight: 4000;
+        }
+        /* New Navbar Style */
+        #navbar {
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
 </head>
-<body>
-    <!-- Preloader -->
-    <div class="preloader">
-        <div class="loader">
-            <div class="spinner">
-                <div class="spinner-container">
-                    <div class="spinner-rotator">
-                        <div class="spinner-left">
-                            <div class="spinner-circle"></div>
-                        </div>
-                        <div class="spinner-right">
-                            <div class="spinner-circle"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<body class="bg-slate-50">
 
-    <!-- Header -->
-    <header class="header">
-        <div class="navbar-area">
-            <div class="container">
-                <nav class="navbar navbar-expand-lg">
-                    <a class="navbar-brand" href="#home">
-                        <img src="{% static 'landing/img/logo/logo1.png' %}" alt="Blue Caller Logo" />
-                    </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarNav">
-                        <ul class="navbar-nav ms-auto">
-                            <li class="nav-item">
-                                <a class="nav-link active" href="#home">Home</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#services">Services</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#features">Features</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#testimonials">Testimonials</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#contact">Contact</a>
-                            </li>
-                        </ul>
-                        <div class="header-action">
-                            <a href="{% url 'handle-login' %}" class="button">Get Started</a>
-                        </div>
-                    </div>
-                </nav>
+    <div class="custom-cursor hidden md:block">
+        <div class="cursor-inner absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+    </div>
+    
+    <header class="fixed top-0 left-0 w-full z-50 transition-all duration-300 shadow-sm" id="navbar">
+        <nav class="container flex items-center justify-between py-4">
+            <a href="#home" class="flex items-center">
+                <img src="{% static 'landing/img/logo/logo1.png' %}" alt="Blue Caller Logo" class="h-10 transition-all duration-300">
+            </a>
+            <div class="hidden lg:flex items-center space-x-8">
+                <ul class="flex items-center space-x-6 text-slate-600">
+                    <li class="relative nav-item"><a href="#home" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300 active">Home</a><span class="active-link-indicator"></span></li>
+                    <li class="relative nav-item"><a href="#services" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300">Services</a></li>
+                    <li class="relative nav-item"><a href="#features" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300">Why Us</a></li>
+                    <li class="relative nav-item"><a href="#testimonials" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300">Reviews</a></li>
+                    <li class="relative nav-item"><a href="#contact" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300">Contact</a></li>
+                </ul>
+                <a href="{% url 'handle-login' %}" class="btn-primary">Get Started</a>
             </div>
+            <button class="lg:hidden text-slate-600 text-2xl focus:outline-none" id="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="lg:hidden hidden bg-white/90 backdrop-blur-md p-4 shadow-md">
+            <ul class="flex flex-col space-y-4 text-slate-600">
+                <li><a href="#home" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300 active">Home</a></li>
+                <li><a href="#services" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300">Services</a></li>
+                <li><a href="#features" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300">Why Us</a></li>
+                <li><a href="#testimonials" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300">Reviews</a></li>
+                <li><a href="#contact" class="nav-link font-medium hover:text-sky-600 transition-colors duration-300">Contact</a></li>
+                <li><a href="{% url 'handle-login' %}" class="btn-primary w-full">Get Started</a></li>
+            </ul>
         </div>
     </header>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero-section">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6">
-                    <div class="hero-content-wrapper">
-                        <h2>Find Trusted Skilled Workers for Your Home</h2>
-                        <p>Connect with verified professionals for all your home service needs. From plumbing to electrical work, we've got you covered.</p>
-                        <a href="{% url 'handle-login' %}" class="button">
-                            Book Now <i class="fas fa-arrow-right ms-2"></i>
-                        </a>
+    <main class="pt-20">
+        <section id="home" class="relative section-padding overflow-hidden bg-gradient-to-br from-slate-100 via-white to-sky-50">
+            <div class="container relative z-10">
+                <div class="grid lg:grid-cols-2 items-center gap-12 lg:gap-20">
+                    <div class="text-center lg:text-left" data-aos="fade-right" data-aos-duration="1000">
+                        <h1 class="text-4xl lg:text-6xl font-extrabold text-slate-900 leading-tight mb-5">
+                            Find <span class="text-sky-600">Verified & Trusted</span> Skilled Workers
+                        </h1>
+                        <p class="text-lg lg:text-xl text-slate-600 mb-8">
+                            Connect with verified professionals for all your home service needs. From plumbing to electrical work, we've got you covered with a single click.
+                        </p>
+                        <div class="flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4">
+                            <a href="{% url 'handle-login' %}" class="btn-primary">
+                                Book Now <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                            </a>
+                            <a href="#contact" class="btn-secondary">
+                                Learn More
+                            </a>
+                        </div>
+                    </div>
+                    <div class="relative mt-8 lg:mt-0" data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200">
+                        <img src="{% static 'landing/img/Picture1.svg' %}" alt="Hero Image" class="w-full h-auto">
+                        <div class="absolute inset-0 bg-white/30 backdrop-blur-sm rounded-3xl -z-10 animate-pulse-slow"></div>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <img src="{% static 'landing/img/Picture1.svg' %}" alt="Hero Image" class="img-fluid">
-                </div>
             </div>
-        </div>
-    </section>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-sky-200/20 rounded-full blur-3xl -z-20 animate-spin-slow"></div>
+        </section>
 
-    <!-- Services Section -->
-    <section id="services" class="service-categories">
-        <div class="container">
-            <div class="section-title">
-                <h3>Our Services</h3>
-                <p>Find the right professional for your needs</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-3 col-md-6">
-                    <div class="category-card">
-                        <div class="category-icon">
-                            <i class="fas fa-wrench"></i>
-                        </div>
-                        <h4>Plumbing</h4>
-                        <p>Expert plumbing services for your home</p>
-                    </div>
+        <section id="services" class="section-padding bg-white">
+            <div class="container">
+                <div class="section-heading" data-aos="fade-up">
+                    <h2>Our Top-Rated Services</h2>
+                    <p>Find the right professional for your needs with ease. Our experts are ready to assist you.</p>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="category-card">
-                        <div class="category-icon">
-                            <i class="fas fa-bolt"></i>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="bg-slate-50 p-6 rounded-2xl text-center card-hover-effect group" data-aos="fade-up" data-aos-delay="100">
+                        <div class="w-20 h-20 mx-auto mb-4 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-slate-200 group-hover:border-sky-500 transition-all duration-300">
+                            <i class="fas fa-wrench text-3xl text-sky-500 group-hover:scale-110 transition-transform"></i>
                         </div>
-                        <h4>Electrical</h4>
-                        <p>Professional electrical work and repairs</p>
+                        <h4 class="text-xl font-bold text-slate-900 mb-2">Plumbing</h4>
+                        <p class="text-slate-500">Expert plumbing services for all leaks and installations.</p>
                     </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="category-card">
-                        <div class="category-icon">
-                            <i class="fas fa-hammer"></i>
+                    <div class="bg-slate-50 p-6 rounded-2xl text-center card-hover-effect group" data-aos="fade-up" data-aos-delay="200">
+                        <div class="w-20 h-20 mx-auto mb-4 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-slate-200 group-hover:border-sky-500 transition-all duration-300">
+                            <i class="fas fa-bolt text-3xl text-sky-500 group-hover:scale-110 transition-transform"></i>
                         </div>
-                        <h4>Carpentry</h4>
-                        <p>Quality woodwork and furniture repairs</p>
+                        <h4 class="text-xl font-bold text-slate-900 mb-2">Electrical</h4>
+                        <p class="text-slate-500">Professional electrical work, from wiring to repairs.</p>
                     </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="category-card">
-                        <div class="category-icon">
-                            <i class="fas fa-paint-roller"></i>
+                    <div class="bg-slate-50 p-6 rounded-2xl text-center card-hover-effect group" data-aos="fade-up" data-aos-delay="300">
+                        <div class="w-20 h-20 mx-auto mb-4 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-slate-200 group-hover:border-sky-500 transition-all duration-300">
+                            <i class="fas fa-hammer text-3xl text-sky-500 group-hover:scale-110 transition-transform"></i>
                         </div>
-                        <h4>Painting</h4>
-                        <p>Interior and exterior painting services</p>
+                        <h4 class="text-xl font-bold text-slate-900 mb-2">Carpentry</h4>
+                        <p class="text-slate-500">Quality woodwork and custom furniture services.</p>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-2xl text-center card-hover-effect group" data-aos="fade-up" data-aos-delay="400">
+                        <div class="w-20 h-20 mx-auto mb-4 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-slate-200 group-hover:border-sky-500 transition-all duration-300">
+                            <i class="fas fa-paint-roller text-3xl text-sky-500 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-slate-900 mb-2">Painting</h4>
+                        <p class="text-slate-500">Interior and exterior painting for a fresh new look.</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Features Section -->
-    <section id="features" class="feature-section">
-        <div class="container">
-            <div class="section-title">
-                <h3>Why Choose Us</h3>
-                <p>Experience the best service with our platform</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-4">
-                    <div class="single-feature">
-                        <div class="icon mb-4">
-                            <i class="fas fa-user-check fa-2x text-primary"></i>
-                        </div>
-                        <h4>Verified Professionals</h4>
-                        <p>Every worker is thoroughly vetted and verified for your peace of mind.</p>
-                    </div>
+        <section id="features" class="section-padding bg-slate-100">
+            <div class="container">
+                <div class="section-heading" data-aos="fade-up">
+                    <h2>Why Blue Caller is the Right Choice</h2>
+                    <p>Experience the best service with our platform built for your convenience and trust.</p>
                 </div>
-                <div class="col-lg-4">
-                    <div class="single-feature">
-                        <div class="icon mb-4">
-                            <i class="fas fa-clock fa-2x text-primary"></i>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 card-hover-effect" data-aos="zoom-in" data-aos-delay="100">
+                        <div class="flex items-center justify-center w-16 h-16 bg-sky-100 rounded-full mb-6">
+                            <i class="fas fa-user-check text-2xl text-sky-600"></i>
                         </div>
-                        <h4>Quick Response</h4>
-                        <p>Get matched with nearby professionals for faster service.</p>
+                        <h4 class="text-xl font-bold text-slate-900 mb-2">Verified Professionals</h4>
+                        <p class="text-slate-500">Every worker is thoroughly vetted, background-checked, and verified for your peace of mind and security.</p>
                     </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="single-feature">
-                        <div class="icon mb-4">
-                            <i class="fas fa-shield-alt fa-2x text-primary"></i>
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 card-hover-effect" data-aos="zoom-in" data-aos-delay="200">
+                        <div class="flex items-center justify-center w-16 h-16 bg-sky-100 rounded-full mb-6">
+                            <i class="fas fa-clock text-2xl text-sky-600"></i>
                         </div>
-                        <h4>Secure Payments</h4>
-                        <p>Safe and secure payment system for all transactions.</p>
+                        <h4 class="text-xl font-bold text-slate-900 mb-2">Quick & Easy Booking</h4>
+                        <p class="text-slate-500">Book a professional in minutes and get matched with nearby workers for faster, more convenient service.</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 card-hover-effect" data-aos="zoom-in" data-aos-delay="300">
+                        <div class="flex items-center justify-center w-16 h-16 bg-sky-100 rounded-full mb-6">
+                            <i class="fas fa-shield-alt text-2xl text-sky-600"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-slate-900 mb-2">Secure & Transparent Pricing</h4>
+                        <p class="text-slate-500">Our platform ensures safe and secure payments with transparent, upfront pricing. No hidden fees.</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Testimonials Section -->
-    <section id="testimonials" class="testimonials-section">
-        <div class="container">
-            <div class="section-title">
-                <h3>What Our Customers Say</h3>
-                <p>Real experiences from our satisfied customers</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-4">
-                    <div class="testimonial-card">
-                        <div class="testimonial-avatar">
-                            <i class="fas fa-user-circle fa-3x text-primary"></i>
-                        </div>
-                        <h5>John Doe</h5>
-                        <p class="text-muted">Homeowner</p>
-                        <p>"Excellent service! The plumber arrived on time and fixed the issue quickly. Highly recommended!"</p>
-                        <div class="rating">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                        </div>
-                    </div>
+        <section id="testimonials" class="section-padding bg-white">
+            <div class="container">
+                <div class="section-heading" data-aos="fade-up">
+                    <h2>What Our Customers Say</h2>
+                    <p>Real experiences from our satisfied customers who trust Blue Caller for their needs.</p>
                 </div>
-                <div class="col-lg-4">
-                    <div class="testimonial-card">
-                        <div class="testimonial-avatar">
-                            <i class="fas fa-user-circle fa-3x text-primary"></i>
-                        </div>
-                        <h5>Jane Smith</h5>
-                        <p class="text-muted">Business Owner</p>
-                        <p>"The electrician was professional and knowledgeable. Will definitely use the service again."</p>
-                        <div class="rating">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star-half-alt text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="testimonial-card">
-                        <div class="testimonial-avatar">
-                            <i class="fas fa-user-circle fa-3x text-primary"></i>
-                        </div>
-                        <h5>Mike Johnson</h5>
-                        <p class="text-muted">Property Manager</p>
-                        <p>"Great platform for finding reliable workers. The verification process gives me confidence."</p>
-                        <div class="rating">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="contact-section py-5 bg-light">
-        <div class="container">
-            <div class="section-title">
-                <h3>Get in Touch</h3>
-                <p>Have questions? We're here to help</p>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="contact-form bg-white p-4 rounded shadow-sm">
-                        <form id="contactForm">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" id="name" placeholder="Your Name" required>
-                                        <label for="name">Your Name</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="email" class="form-control" id="email" placeholder="Your Email" required>
-                                        <label for="email">Your Email</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" id="subject" placeholder="Subject" required>
-                                        <label for="subject">Subject</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-floating">
-                                        <textarea class="form-control" id="message" placeholder="Your Message" style="height: 150px" required></textarea>
-                                        <label for="message">Your Message</label>
-                                    </div>
-                                </div>
-                                <div class="col-12 text-center">
-                                    <button type="submit" class="button">
-                                        <i class="fas fa-paper-plane me-2"></i>Send Message
-                                    </button>
-                                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-slate-50 p-8 rounded-2xl card-hover-effect" data-aos="flip-up" data-aos-delay="100">
+                        <div class="flex items-center mb-4">
+                            <div class="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 text-3xl font-bold mr-4">J</div>
+                            <div>
+                                <h5 class="text-lg font-bold text-slate-900">John Doe</h5>
+                                <p class="text-sm text-slate-500">Homeowner</p>
                             </div>
-                        </form>
+                        </div>
+                        <p class="text-slate-700 mb-4">"Excellent service! The plumber arrived on time and fixed the issue quickly. Highly recommended for any home repair."</p>
+                        <div class="flex text-yellow-400 space-x-1">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-8 rounded-2xl card-hover-effect" data-aos="flip-up" data-aos-delay="200">
+                        <div class="flex items-center mb-4">
+                            <div class="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 text-3xl font-bold mr-4">M</div>
+                            <div>
+                                <h5 class="text-lg font-bold text-slate-900">Mike Johnson</h5>
+                                <p class="text-sm text-slate-500">Property Manager</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-700 mb-4">"Great platform for finding reliable workers. The verification process gives me confidence in every booking."</p>
+                        <div class="flex text-yellow-400 space-x-1">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-8 rounded-2xl card-hover-effect" data-aos="flip-up" data-aos-delay="300">
+                        <div class="flex items-center mb-4">
+                            <div class="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 text-3xl font-bold mr-4">J</div>
+                            <div>
+                                <h5 class="text-lg font-bold text-slate-900">Jane Smith</h5>
+                                <p class="text-sm text-slate-500">Business Owner</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-700 mb-4">"The electrician was professional and knowledgeable. Will definitely use Blue Caller again for our business."</p>
+                        <div class="flex text-yellow-400 space-x-1">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section id="contact" class="section-padding bg-slate-100">
+            <div class="container">
+                <div class="section-heading" data-aos="fade-up">
+                    <h2>Get in Touch with Us</h2>
+                    <p>Have questions? We're here to help. Send us a message and we'll get back to you shortly.</p>
+                </div>
+                <div class="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-slate-100" data-aos="zoom-in" data-aos-delay="100">
+                    <form id="contactForm" class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-slate-700">Name</label>
+                            <input type="text" id="name" name="name" class="mt-1 block w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:outline-none focus:border-sky-500 transition-colors" required>
+                        </div>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
+                            <input type="email" id="email" name="email" class="mt-1 block w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:outline-none focus:border-sky-500 transition-colors" required>
+                        </div>
+                        <div>
+                            <label for="subject" class="block text-sm font-medium text-slate-700">Subject</label>
+                            <input type="text" id="subject" name="subject" class="mt-1 block w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:outline-none focus:border-sky-500 transition-colors" required>
+                        </div>
+                        <div>
+                            <label for="message" class="block text-sm font-medium text-slate-700">Message</label>
+                            <textarea id="message" name="message" rows="4" class="mt-1 block w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:outline-none focus:border-sky-500 transition-colors" required></textarea>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn-primary w-full">
+                                <i class="fas fa-paper-plane mr-2 text-sm"></i>Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-300 py-16">
+        <div class="container grid md:grid-cols-4 gap-12">
+            <div>
+                <img src="{% static 'landing/img/logo/logo1.png' %}" alt="Blue Caller Logo" class="h-10 mb-6 filter grayscale invert">
+                <p class="text-sm leading-relaxed mb-4">Connecting skilled workers with those who need their services. Quality, reliability, and trust.</p>
+                <div class="flex space-x-4 text-slate-400">
+                    <a href="#" class="hover:text-white transition-colors"><i class="fab fa-facebook-f text-lg"></i></a>
+                    <a href="#" class="hover:text-white transition-colors"><i class="fab fa-twitter text-lg"></i></a>
+                    <a href="#" class="hover:text-white transition-colors"><i class="fab fa-instagram text-lg"></i></a>
+                    <a href="#" class="hover:text-white transition-colors"><i class="fab fa-linkedin-in text-lg"></i></a>
+                </div>
+            </div>
+            <div>
+                <h5 class="text-lg font-semibold text-white mb-6">Quick Links</h5>
+                <ul class="space-y-3">
+                    <li><a href="#home" class="hover:text-white transition-colors text-sm">Home</a></li>
+                    <li><a href="#services" class="hover:text-white transition-colors text-sm">Services</a></li>
+                    <li><a href="#features" class="hover:text-white transition-colors text-sm">Why Us</a></li>
+                    <li><a href="#testimonials" class="hover:text-white transition-colors text-sm">Reviews</a></li>
+                </ul>
+            </div>
+            <div>
+                <h5 class="text-lg font-semibold text-white mb-6">Contact Info</h5>
+                <ul class="space-y-3 text-sm">
+                    <li class="flex items-center"><i class="fas fa-phone mr-3 text-sky-400"></i><a href="tel:9818110430" class="hover:text-white transition-colors">9818110430</a></li>
+                    <li class="flex items-center"><i class="fas fa-envelope mr-3 text-sky-400"></i><a href="mailto:bluecaller@gmail.com" class="hover:text-white transition-colors">bluecaller@gmail.com</a></li>
+                    <li class="flex items-start"><i class="fas fa-map-marker-alt mt-1 mr-3 text-sky-400"></i><span>Suryabinayak, Bhaktapur, Nepal</span></li>
+                </ul>
+            </div>
+            <div>
+                <h5 class="text-lg font-semibold text-white mb-6">Newsletter</h5>
+                <p class="text-sm mb-4">Subscribe to our newsletter for the latest updates and special offers.</p>
+                <form>
+                    <div class="flex space-x-2">
+                        <input type="email" placeholder="Your email" class="flex-grow px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 focus:outline-none focus:border-sky-500 text-sm">
+                        <button type="submit" class="bg-sky-600 text-white rounded-lg px-4 py-2 hover:bg-sky-700 transition-colors text-sm">Subscribe</button>
+                    </div>
+                </form>
             </div>
         </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-4">
-                    <img src="{% static 'landing/img/logo/logo1.png' %}" alt="Logo" class="mb-4" style="height: 40px;">
-                    <p>Connecting skilled workers with those who need their services. Quality, reliability, and trust.</p>
-                    <div class="footer-social">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-                <div class="col-lg-2">
-                    <h5>Quick Links</h5>
-                    <ul class="footer-links">
-                        <li><a href="#home">Home</a></li>
-                        <li><a href="#services">Services</a></li>
-                        <li><a href="#features">Features</a></li>
-                        <li><a href="#testimonials">Testimonials</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-3">
-                    <h5>Contact Info</h5>
-                    <ul class="footer-contact">
-                        <li>
-                            <i class="fas fa-phone"></i>
-                            <a href="tel:+1234567890">9818110430</a>
-                        </li>
-                        <li>
-                            <i class="fas fa-envelope"></i>
-                            <a href="mailto:info@bluecaller.com">bluecaller@gmail.com</a>
-                        </li>
-                        <li>
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Suryabinayak, Bhaktapur, Nepal </span>
-                        </li>
-                    </ul>
-                </div>
-                <div class="col-lg-3">
-                    <h5>Newsletter</h5>
-                    <p>Subscribe to our newsletter for updates and offers.</p>
-                    <div class="footer-newsletter">
-                        <form>
-                            <div class="input-group">
-                                <input type="email" class="form-control" placeholder="Your email" required>
-                                <button class="btn btn-primary" type="submit">Subscribe</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <!-- <p>&copy; 2024 Blue Caller. All rights reserved.</p> -->
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <a href="#" class="me-3">Privacy Policy</a>
-                        <a href="#">Terms of Service</a>
-                    </div>
-                </div>
+        <div class="container text-center text-sm text-slate-500 border-t border-slate-800 mt-12 pt-8">
+            <p>&copy; 2024 Blue Caller. All rights reserved.</p>
+            <div class="mt-2 space-x-4">
+                <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
             </div>
         </div>
     </footer>
 
-    <!-- Back to Top Button -->
-    <button id="backToTop" class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-4 d-none">
+    <button id="back-to-top" class="fixed bottom-8 right-8 z-50 p-4 rounded-full bg-sky-600 text-white shadow-lg transition-all duration-300 opacity-0 scale-0 origin-bottom-right">
         <i class="fas fa-arrow-up"></i>
     </button>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-        // Navbar scroll effect
-        window.addEventListener('scroll', function() {
-            const navbar = document.querySelector('.navbar-area');
-            const backToTop = document.getElementById('backToTop');
-            
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-                backToTop.classList.remove('d-none');
-            } else {
-                navbar.classList.remove('scrolled');
-                backToTop.classList.add('d-none');
-            }
+        AOS.init({
+            offset: 120,
+            duration: 1000,
+            easing: 'ease-in-out',
+            once: true,
+        });
+        
+        const navbar = document.getElementById('navbar');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const backToTopBtn = document.getElementById('back-to-top');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const customCursor = document.querySelector('.custom-cursor');
+        const activeLinkIndicator = document.querySelector('.active-link-indicator');
+
+        // Custom Cursor Logic
+        document.body.addEventListener('mousemove', (e) => {
+            const inner = customCursor.querySelector('.cursor-inner');
+            inner.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%, -50%)`;
+        });
+        
+        // Toggle mobile menu
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
         });
 
-        // Smooth scroll for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
+        // Smooth scroll and active link
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                const targetId = this.getAttribute('href');
+                const targetSection = document.querySelector(targetId);
+                const offset = targetSection.offsetTop - navbar.offsetHeight;
+
+                window.scrollTo({
+                    top: offset,
                     behavior: 'smooth'
                 });
+
+                // Update active class and indicator
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                updateActiveLinkIndicator(this);
+                mobileMenu.classList.add('hidden');
             });
         });
 
-        // Back to top button
-        document.getElementById('backToTop').addEventListener('click', function() {
+        // Function to update the active link indicator
+        function updateActiveLinkIndicator(targetLink) {
+            const parentLi = targetLink.parentElement;
+            if (parentLi) {
+                const indicator = activeLinkIndicator;
+                const parentRect = parentLi.getBoundingClientRect();
+                const navRect = navbar.getBoundingClientRect();
+                indicator.style.width = `${parentRect.width}px`;
+                indicator.style.left = `${parentRect.left - navRect.left}px`;
+                indicator.style.opacity = 1;
+            }
+        }
+        
+        // Initial setup for the active link indicator
+        window.addEventListener('load', () => {
+            const activeLink = document.querySelector('.nav-item a.active');
+            if (activeLink) {
+                updateActiveLinkIndicator(activeLink);
+            }
+        });
+
+        // Sticky Navbar and Back to Top
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('lg:shadow-md');
+                backToTopBtn.classList.remove('opacity-0', 'scale-0');
+                backToTopBtn.classList.add('opacity-100', 'scale-100');
+            } else {
+                navbar.classList.remove('lg:shadow-md');
+                backToTopBtn.classList.add('opacity-0', 'scale-0');
+                backToTopBtn.classList.remove('opacity-100', 'scale-100');
+            }
+        });
+
+        backToTopBtn.addEventListener('click', () => {
             window.scrollTo({
                 top: 0,
                 behavior: 'smooth'
             });
         });
 
-        // Form validation
+        // Form Submission
         document.getElementById('contactForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            // Add your form submission logic here
             alert('Thank you for your message! We will get back to you soon.');
             this.reset();
         });

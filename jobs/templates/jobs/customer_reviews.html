@@ -1,0 +1,104 @@
+{% extends "jobs/customer_base.html" %}
+{% load static %}
+
+{% block title %}My Reviews - AppointMate{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-gray-800">My Reviews</h1>
+  <p class="text-gray-600">View all the reviews you've given to workers</p>
+</div>
+
+{% if ratings %}
+  <div class="space-y-6">
+    {% for rating in ratings %}
+      <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500">
+        <div class="flex items-start space-x-4">
+          <!-- Worker Avatar -->
+          <div class="flex-shrink-0">
+            {% if rating.worker.profile_pic %}
+              <img src="{{ rating.worker.profile_pic.url }}" alt="{{ rating.worker.name }}" class="w-16 h-16 rounded-full object-cover">
+            {% else %}
+              <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
+                <span class="text-indigo-600 font-semibold text-xl">{{ rating.worker.name|first }}</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="flex-1">
+            <!-- Worker Info -->
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-800">{{ rating.worker.name }}</h3>
+                <p class="text-gray-600">{{ rating.worker.tagline }}</p>
+              </div>
+              <div class="text-sm text-gray-500">
+                {{ rating.created_at|date:"M j, Y" }}
+              </div>
+            </div>
+
+            <!-- Rating Stars -->
+            <div class="flex items-center mb-3">
+              {% for star in "12345" %}
+                {% if forloop.counter <= rating.rating %}
+                  <i class="fas fa-star text-yellow-400 text-lg"></i>
+                {% else %}
+                  <i class="far fa-star text-gray-300 text-lg"></i>
+                {% endif %}
+              {% endfor %}
+              <span class="ml-2 text-gray-600 font-medium">{{ rating.rating }}/5</span>
+            </div>
+
+            <!-- Review Comment -->
+            {% if rating.comment %}
+              <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                <p class="text-gray-700 italic">"{{ rating.comment }}"</p>
+              </div>
+            {% endif %}
+
+            <!-- Appointment Details -->
+            {% if rating.appointment %}
+              <div class="bg-blue-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-800 mb-2">Appointment Details</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                  <div>
+                    <i class="far fa-calendar text-blue-500 mr-2"></i>
+                    <span>{{ rating.appointment.appointment_date|date:"F j, Y g:i A" }}</span>
+                  </div>
+                  {% if rating.appointment.service_subtask %}
+                    <div>
+                      <i class="fas fa-tools text-blue-500 mr-2"></i>
+                      <span>{{ rating.appointment.service_subtask.subtask.name }}</span>
+                    </div>
+                  {% endif %}
+                  {% if rating.appointment.location %}
+                    <div class="md:col-span-2">
+                      <i class="fas fa-map-marker-alt text-blue-500 mr-2"></i>
+                      <span>{{ rating.appointment.location }}</span>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination if needed -->
+  <!-- You can add pagination logic here if you have many ratings -->
+
+{% else %}
+  <!-- Empty State -->
+  <div class="bg-white rounded-lg shadow-md p-12 text-center">
+    <i class="fas fa-star text-6xl text-gray-300 mb-6"></i>
+    <h3 class="text-xl font-semibold text-gray-800 mb-3">No Reviews Yet</h3>
+    <p class="text-gray-600 mb-6">You haven't reviewed any workers yet. Complete some appointments and share your experience!</p>
+    <a href="{% url 'worker-list' %}" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+      <i class="fas fa-search mr-2"></i>
+      Find Workers
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

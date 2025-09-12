@@ -1,203 +1,1619 @@
 {% extends 'jobs/_base.html' %}
 {% load rating_filters %}
 
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <style>
-    .rating {
-        display: flex;
-        justify-content: center; /* Center the stars horizontally */
-        align-items: center;     /* Center the stars vertically, optional */
-    }
+/* ================== GLOBAL STYLES ================== */
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --secondary: #10b981;
+    --accent: #f59e0b;
+    --light: #f9fafb;
+    --dark: #1f2937;
+    --gray: #6b7280;
+    --light-gray: #f3f4f6;
+}
 
-    .stars {
-        display: flex;           /* Align the stars horizontally */
-        gap: 5px;                /* Space between stars */
-    }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-    .stars svg {
-        width: 24px;             /* Set the size of the stars */
-        height: 24px;
-    }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #f8fafc;
+    color: var(--dark);
+    line-height: 1.6;
+}
 
-    .rating-stats {
-        transition: all 0.3s ease;
-    }
+/* ================== PROFILE CARD ================== */
+.profile-section {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
 
-    .rating-stats:hover {
-        transform: scale(1.02);
+.profile-card {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    gap: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.03) 0%, rgba(79, 70, 229, 0.1) 100%);
+    clip-path: polygon(100% 0, 100% 100%, 0 0);
+    z-index: 0;
+}
+
+.profile-pic-container {
+    position: relative;
+    z-index: 1;
+}
+
+.profile-pic {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffffff;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+
+.profile-pic:hover {
+    transform: scale(1.05);
+    box-shadow: 0 20px 40px rgba(79, 70, 229, 0.2);
+}
+
+.profile-pic-placeholder {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    font-weight: bold;
+    border: 4px solid #ffffff;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.profile-info {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.profile-info h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--dark) 0%, var(--primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.profile-tagline {
+    color: var(--gray);
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+    font-weight: 500;
+}
+
+.profile-contact {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--gray);
+}
+
+.rating-overview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    background: rgba(79, 70, 229, 0.05);
+    padding: 0.8rem 1.2rem;
+    border-radius: 1rem;
+    width: fit-content;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 0.2rem;
+}
+
+.star-animate {
+    width: 24px;
+    height: 24px;
+    transition: all 0.3s ease;
+}
+
+.star-animate:hover {
+    transform: scale(1.3) rotate(10deg);
+    filter: drop-shadow(0 0 6px gold);
+}
+
+.rating-text {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--secondary);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 1rem;
+}
+
+/* ================== SECTIONS ================== */
+.section-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.section-card {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.section-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+}
+
+.section-card h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 2px solid var(--light-gray);
+}
+
+/* Service Navigation */
+.service-nav {
+    display: flex;
+    gap: 0.8rem;
+    overflow-x: auto;
+    padding: 0.5rem 0.2rem;
+    margin-bottom: 2rem;
+    scrollbar-width: thin;
+}
+
+.service-nav::-webkit-scrollbar {
+    height: 6px;
+}
+
+.service-nav::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.service-nav-item {
+    padding: 0.8rem 1.5rem;
+    background: white;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    color: var(--gray);
+}
+
+.service-nav-item.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+}
+
+.service-nav-item:hover:not(.active) {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Service Content */
+.service-content {
+    display: none;
+}
+
+.service-content.active {
+    display: block;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.service-item {
+    background: var(--light);
+    border-radius: 1.2rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.service-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border-color: var(--primary);
+}
+
+.service-item h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.service-features {
+    list-style-type: none;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.service-features li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    align-items: flex-start;
+    font-size: 0.95rem;
+}
+
+.service-features li:last-child {
+    border-bottom: none;
+}
+
+.service-features li:before {
+    content: "✓";
+    color: var(--secondary);
+    font-weight: bold;
+    display: inline-block;
+    width: 1.2em;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.service-price {
+    background: linear-gradient(135deg, var(--secondary) 0%, #0da271 100%);
+    color: white;
+    padding: 0.8rem 1.2rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 1rem;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.service-price.inspection {
+    background: linear-gradient(135deg, var(--accent) 0%, #e57c03 100%);
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+}
+
+/* Service Badge */
+.service-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-new {
+    background: var(--secondary);
+    color: white;
+}
+
+.badge-offer {
+    background: var(--accent);
+    color: white;
+}
+
+.badge-special {
+    background: #ef4444;
+    color: white;
+}
+
+/* Reviews */
+.reviews-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.review-card {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 1.2rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: 1px solid var(--light-gray);
+    position: relative;
+}
+
+.review-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.review-card .review-stars {
+    display: flex;
+    gap: 0.1rem;
+    margin: 0.8rem 0;
+}
+
+.review-user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.review-user img, .review-user .avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--light-gray);
+}
+
+.review-user .avatar {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.review-comment {
+    color: var(--gray);
+    font-style: italic;
+    margin-top: 0.8rem;
+    padding: 0.8rem;
+    background: var(--light);
+    border-radius: 0.8rem;
+    border-left: 3px solid var(--primary);
+}
+
+/* Booking Form */
+.booking-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 0.9rem 1.2rem;
+    border: 1px solid var(--light-gray);
+    border-radius: 0.8rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.booking-actions {
+    grid-column: span 2;
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    padding: 1rem 2rem;
+    border-radius: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(79, 70, 229, 0.4);
+}
+
+.btn-secondary {
+    background: var(--light);
+    color: var(--dark);
+    border: 1px solid var(--light-gray);
+}
+
+.btn-secondary:hover {
+    background: var(--light-gray);
+    transform: translateY(-2px);
+}
+
+.booking-details {
+    background: var(--light);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    margin-top: 1.5rem;
+    display: none;
+    grid-column: span 2;
+    border-left: 4px solid var(--secondary);
+}
+
+.booking-details.active {
+    display: block;
+    animation: fadeIn 0.5s ease;
+}
+
+/* HomeServices Assistance */
+.assistance-card {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin: 2rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.assistance-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(25deg);
+}
+
+.assistance-content {
+    position: relative;
+    z-index: 1;
+}
+
+.assistance-card h4 {
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.assistance-card p {
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
+.assistance-btn {
+    background: white;
+    color: var(--primary);
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2);
+}
+
+.assistance-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(255, 255, 255, 0.3);
+}
+
+/* About Section */
+.about-section p {
+    margin-bottom: 1rem;
+    line-height: 1.7;
+}
+
+.about-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.detail-item {
+    background: var(--light);
+    padding: 1.2rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.detail-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(79, 70, 229, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 1.5rem;
     }
+    
+    .rating-overview {
+        margin: 1rem auto;
+    }
+    
+    .booking-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .booking-actions {
+        grid-column: span 1;
+        flex-direction: column;
+    }
+    
+    .service-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .reviews-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Animation enhancements */
+.fade-in {
+    animation: fadeIn 0.6s ease forwards;
+}
+
+.slide-up {
+    animation: slideUp 0.6s ease forwards;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Loading animation for price calculation */
+.loading-dots {
+    display: inline-flex;
+    gap: 0.3rem;
+}
+
+.loading-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary);
+    animation: bounce 1.5s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
 </style>
 
-{% block content %}
-    <!-- Worker Info Section -->
-    <div class="bg-white p-6 rounded-lg shadow-xl">
-        <div class="flex items-center space-x-6">
-            <!-- Worker Profile Pic -->
-            <div>
-                {% if worker.profile_pic %}
-                    <img class="w-32 h-32 object-cover rounded-full border-4 border-blue-500" src="{{ worker.profile_pic.url }}" alt="Profile pic">
-                {% endif %}
+<!-- ================== PROFILE CARD ================== -->
+<div class="profile-section">
+    <div class="profile-card slide-up">
+        <div class="profile-pic-container">
+            {% if worker.profile_pic %}
+            <img src="{{ worker.profile_pic.url }}" alt="Profile" class="profile-pic">
+            {% else %}
+            <div class="profile-pic-placeholder">
+                {{ object.name|slice:":1" }}
             </div>
-
-            <!-- Worker Info -->
-            <div>
-                <h1 class="text-3xl font-semibold text-gray-800">{{ object.name }}</h1>
-
-                <!-- Verified Badge -->
-                <div class="flex items-center space-x-2 text-sm text-gray-600 mt-2">
-                    {% if worker.verified %}
-                        <span class="text-green-500">&#10004; Verified</span>
-                    {% else %}
-                        <span class="text-red-500">&#10008; Not Verified</span>
+            {% endif %}
+        </div>
+        
+        <div class="profile-info">
+            <h2>{{ object.name }} {% if worker.verified %}<span class="verified-badge">Verified ✔</span>{% endif %}</h2>
+            <p class="profile-tagline">{{ object.tagline }}</p>
+            
+            <div class="profile-contact">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                {{ object.phone_number }}
+            </div>
+            
+            <div class="rating-overview">
+                <div class="rating-stars">
+                    {% for i in full_stars %}
+                        <svg class="star-animate" fill="gold" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    {% endfor %}
+                    {% if half_star %}
+                        <svg class="star-animate" fill="gold" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><linearGradient id="half-star"><stop offset="50%" stop-color="gold"/><stop offset="50%" stop-color="lightgray"/></linearGradient></defs><path fill="url(#half-star)" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                     {% endif %}
+                    {% for i in empty_stars %}
+                        <svg class="star-animate" fill="lightgray" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    {% endfor %}
                 </div>
-
-                <p class="text-lg text-gray-800 mt-2">{{ object.tagline }}</p>
-                <p class="text-lg text-gray-800 mt-2">{{ object.phone_number }}</p>
-
-<!-- In your worker_detail.html -->
-<!-- Rating Overview Card -->
-<div class="mt-4 bg-white rounded-lg shadow-md p-4 rating-stats">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-            <div class="flex">
-                <!-- Full Stars -->
-                {% for i in full_stars %}
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gold" class="drop-shadow-md">
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                </svg>
-                {% endfor %}
-                
-                <!-- Half Star -->
-                {% if half_star %}
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gold" class="drop-shadow-md">
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" clip-path="url(#half-mask)" />
-                    <defs>
-                        <clipPath id="half-mask">
-                            <rect x="0" y="0" width="50%" height="100%" />
-                        </clipPath>
-                    </defs>
-                </svg>
-                {% endif %}
-                
-                <!-- Empty Stars -->
-                {% for i in empty_stars %}
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gray" class="drop-shadow-sm">
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                </svg>
-                {% endfor %}
-            </div>
-            <div class="flex flex-col">
-                <span class="text-indigo-900 font-bold text-xl">
-                    {{ average_rating }} / 5
-                </span>
-                <span class="text-indigo-600 font-medium text-sm">
-                    ({{ total_ratings }} reviews)
-                </span>
+                <span class="rating-text">{{ average_rating }} / 5 ({{ total_ratings }} reviews)</span>
             </div>
         </div>
-        {% if user == object.owner %}
-            <button onclick="toggleRatingDetails()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View Details
-            </button>
-        {% endif %}
     </div>
 </div>
 
+<!-- ================== SERVICE NAVIGATION ================== -->
+<div class="section-container">
+    <div class="section-card fade-in">
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+            </svg>
+            Services Offered
+        </h3>
+        <div class="service-nav" id="service-nav">
+            <!-- Navigation items will be populated based on worker type -->
+        </div>
 
+        <!-- Service content will be populated based on worker type -->
+        <div id="service-content-container"></div>
+    </div>
+</div>
 
-            </div>
+<!-- ================== HOMESERVICES ASSISTANCE ================== -->
+<div class="section-container">
+    <div class="assistance-card fade-in">
+        <div class="assistance-content">
+            <h4>HomeServices Assistance</h4>
+            <p>Didn't find what you were looking for? Our experts can help you find the right service.</p>
+            <button class="assistance-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Chat with our representative
+            </button>
         </div>
     </div>
+</div>
 
-    <!-- Rating Details Section (Collapsible) -->
-    <div id="ratingDetails" class="mt-6 bg-white rounded-lg shadow-md p-6 hidden">
-        <!-- Rating Breakdown -->
-        <div class="mb-6">
-            <h3 class="text-lg font-semibold mb-3">Rating Breakdown</h3>
-            {% for i in "54321"|make_list %}
-                <div class="flex items-center mb-2">
-                    <span class="text-sm text-gray-600 w-8">{{ i }} stars</span>
-                    <div class="flex-1 h-2 mx-2 bg-gray-200 rounded-full">
-                        <div class="h-2 bg-yellow-400 rounded-full" style="width: {{ object|get_rating_percentage:i }}%"></div>
+<!-- ================== RECENTLY RATED USERS ================== -->
+<div class="section-container">
+    <div class="section-card fade-in">
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            Recent Reviews
+        </h3>
+        <div class="reviews-container">
+            {% for rating in object.ratings.all|slice:":6" %}
+            <div class="review-card">
+                <div class="review-user">
+                    {% if rating.customer.profile_pic %}
+                    <img src="{{ rating.customer.profile_pic.url }}" alt="User">
+                    {% else %}
+                    <div class="avatar">{{ rating.customer.name|slice:":1" }}</div>
+                    {% endif %}
+                    <div>
+                        <strong>{{ rating.customer.name }}</strong>
+                        <div class="text-sm">{{ rating.created_at|date:"M d, Y" }}</div>
                     </div>
-                    <span class="text-sm text-gray-600 w-12">{{ object|get_rating_percentage:i|floatformat:0 }}%</span>
                 </div>
+                <div class="review-stars">
+                    {% for i in "12345" %}
+                        <svg width="18" height="18" fill="{% if forloop.counter <= rating.rating %}gold{% else %}lightgray{% endif %}" xmlns="http://www.w3.org/2000/svg"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    {% endfor %}
+                </div>
+                {% if rating.comment %}
+                <div class="review-comment">"{{ rating.comment }}"</div>
+                {% endif %}
+            </div>
             {% endfor %}
         </div>
-
-        <!-- Recent Reviews -->
-        <div>
-            <h3 class="text-lg font-semibold mb-4">Recent Reviews</h3>
-            <div class="space-y-4">
-                {% for rating in object.ratings.all|slice:":5" %}
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center">
-                                <div class="flex">
-                                    {% for i in "12345" %}
-                                        {% if forloop.counter <= rating.rating %}
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold">
-                                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                            </svg>
-                                        {% else %}
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray">
-                                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                            </svg>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                                <span class="text-sm text-gray-500 ml-2">{{ rating.created_at|date:"M d, Y" }}</span>
-                            </div>
-                            <span class="text-sm text-gray-500">- {{ rating.customer.name }}</span>
-                        </div>
-                        {% if rating.comment %}
-                            <p class="text-gray-700 mt-2">{{ rating.comment }}</p>
-                        {% endif %}
-                    </div>
-                {% empty %}
-                    <p class="text-gray-500">No reviews yet.</p>
-                {% endfor %}
-            </div>
-        </div>
     </div>
+</div>
 
-    <!-- Appoint Worker Button (for customers) -->
-    {% if user.customer %}
-        <form action="{% url 'appoint-worker' object.id %}" method="post" class="mt-6">
+<!-- ================== BOOK APPOINTMENT ================== -->
+{% if user.customer %}
+<div class="section-container">
+    <div class="section-card fade-in">
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Book an Appointment
+        </h3>
+        <form id="booking-form" action="{% url 'appoint-worker' object.id %}" method="post">
             {% csrf_token %}
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold mb-4">Book an Appointment</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label for="appointment_date" class="block text-gray-600 text-sm font-medium">Select Date:</label>
-                        <input 
-                            type="date" 
-                            id="appointment_date" 
-                            name="appointment_date" 
-                            class="mt-1 px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            required
-                        >
-                    </div>
-                    <button type="submit" class="w-full px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-lg hover:bg-green-700 transform hover:scale-105 transition duration-300 ease-in-out">
-                        Book Appointment
+            <div class="booking-form">
+                <div class="form-group">
+                    <label for="service-type">Service Type</label>
+                    <select name="service_type" id="service-type" required>
+                        <option value="">Select Service Type</option>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="specific-service">Specific Service</label>
+                    <select name="specific_service" id="specific-service" required>
+                        <option value="">Select Specific Service</option>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="appointment-date">Date</label>
+                    <input type="date" name="appointment_date" id="appointment-date" required min="{{ min_date }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="appointment-time">Time</label>
+                    <input type="time" name="appointment_time" id="appointment-time" required>
+                </div>
+                
+                <div class="form-group" id="pricing-basis-container" style="display: none;">
+                    <label for="pricing-basis">Pricing Basis</label>
+                    <select name="pricing_basis" id="pricing-basis" required>
+                        <option value="">Select Pricing Basis</option>
+                        <option value="hourly">Hourly Rate</option>
+                        <option value="sqft">Per Square Foot</option>
+                        <option value="unit">Per Unit/Item</option>
+                        <option value="inspection">Inspection Based</option>
+                        <option value="shift">Shift Based</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="quantity-input" style="display: none;">
+                    <label for="quantity">Quantity</label>
+                    <input type="number" name="quantity" id="quantity" placeholder="Enter quantity" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="special-requests">Special Requests (Optional)</label>
+                    <textarea name="special_requests" id="special-requests" rows="3" placeholder="Any special instructions or requests..."></textarea>
+                </div>
+                
+                <div class="booking-actions">
+                    <button type="button" id="calculate-price" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        Calculate Estimated Price
                     </button>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        Confirm Booking
+                    </button>
+                </div>
+                
+                <div class="booking-details" id="price-details">
+                    <h4>Estimated Price: <span id="estimated-price">Rs 0</span></h4>
+                    <p>This is an estimate. Final price may vary after inspection. A confirmation call will be made before the service.</p>
                 </div>
             </div>
         </form>
-    {% endif %}
+    </div>
+</div>
+{% endif %}
 
-    <!-- Bio Section -->
-    <div class="mt-6 bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-4">About</h2>
-        <div class="prose text-lg text-gray-700">
-            {{ object.bio }}
+<!-- ================== ABOUT ================== -->
+<div class="section-container">
+    <div class="section-card fade-in about-section">
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            About
+        </h3>
+        <p>{{ object.bio }}</p>
+        
+        <div class="about-details">
+            {% if worker.shift %}
+            <div class="detail-item">
+                <div class="detail-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <strong>Shift Availability</strong>
+                    <p>{{ worker.get_shift_display }}</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if worker.experience %}
+            <div class="detail-item">
+                <div class="detail-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                </div>
+                <div>
+                    <strong>Experience</strong>
+                    <p>{{ worker.experience }} years</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="detail-item">
+                <div class="detail-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div>
+                    <strong>Total Clients</strong>
+                    <p>{{ total_clients }}+ happy customers</p>
+                </div>
+            </div>
+            
+            <div class="detail-item">
+                <div class="detail-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <strong>Response Time</strong>
+                    <p>Within 1 hour</p>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
-    <script>
-        function toggleRatingDetails() {
-            const details = document.getElementById('ratingDetails');
-            details.classList.toggle('hidden');
+<script>
+// Service data based on worker type and service categories
+const serviceData = {
+    // Plumber services
+    plumber: {
+        categories: ["Installation", "Repair & Maintenance", "Setup"],
+        services: {
+            "Installation": [
+                {
+                    title: "Single Line Installation",
+                    features: [
+                        "Installation of cold water pipe",
+                        "Duration: 1 day, 2 plumbers required",
+                        "Materials required are cost extra",
+                        "Price may vary on the inspection"
+                    ],
+                    price: "Rs 0 - Based Upon Inspection",
+                    badge: null
+                },
+                {
+                    title: "Double Line Installation",
+                    features: [
+                        "Hot & Cold water pipe installation",
+                        "Duration: 2 days 2 plumbers required",
+                        "Materials required cost extra",
+                        "Price may vary on the inspection"
+                    ],
+                    price: "Rs 0 - Based Upon Inspection",
+                    badge: null
+                },
+                {
+                    title: "Rain water Pipe Installation",
+                    features: [
+                        "Direct rainwater away from building",
+                        "From roof guttering to drainage system",
+                        "Duration: 1 hr and more",
+                        "Materials required are cost extra"
+                    ],
+                    price: "Rs 0 - Based upon inspection",
+                    badge: null
+                }
+            ],
+            "Repair & Maintenance": [
+                {
+                    title: "Commode Blockage Repair",
+                    features: [
+                        "Professional plumbing service",
+                        "Skilled & trusted plumbers",
+                        "Quick and hygienic service",
+                        "Limited-time festive discount"
+                    ],
+                    price: "Rs 4000",
+                    badge: {type: "offer", text: "Special Offer"}
+                },
+                {
+                    title: "Washing Machine Installation",
+                    features: [
+                        "Professional installation",
+                        "Skilled & trusted technicians",
+                        "Safe and proper installation",
+                        "Limited-time discount"
+                    ],
+                    price: "Rs 500",
+                    badge: {type: "offer", text: "Special Offer"}
+                }
+            ],
+            "Setup": [
+                {
+                    title: "Shower Installation and Fitting",
+                    features: [
+                        "Professional shower installation",
+                        "All fittings included",
+                        "Materials cost extra",
+                        "Free inspection available"
+                    ],
+                    price: "Rs 0 - Based upon inspection",
+                    badge: null
+                }
+            ]
         }
-    </script>
+    },
+    
+    // Electrician services
+    electrician: {
+        categories: ["Installation", "Repair & Maintenance", "Setup"],
+        services: {
+            "Installation": [
+                {
+                    title: "Solar Plant Installation (Single Phase)",
+                    features: [
+                        "75W to 80W capacity",
+                        "Converts solar energy into electricity",
+                        "Duration: 1 to 2 days",
+                        "Materials cost extra"
+                    ],
+                    price: "Rs 0 - Upon Inspection",
+                    badge: null
+                },
+                {
+                    title: "MCB Installation (Single Phase)",
+                    features: [
+                        "Per point installation",
+                        "Electromagnetic circuit protection",
+                        "Duration: 15 to 20 minutes",
+                        "Materials cost extra"
+                    ],
+                    price: "Rs 350",
+                    badge: null
+                }
+            ],
+            "Repair & Maintenance": [
+                {
+                    title: "Switchboard Repair",
+                    features: [
+                        "Professional electrical service",
+                        "Skilled & trusted electricians",
+                        "Quick and safe service",
+                        "Free inspection available"
+                    ],
+                    price: "Rs 0 - Upon Inspection",
+                    badge: null
+                }
+            ],
+            "Setup": [
+                {
+                    title: "Wiring Installation",
+                    features: [
+                        "Complete wiring setup",
+                        "Quality materials used",
+                        "Safety compliance",
+                        "Free consultation"
+                    ],
+                    price: "Rs 0 - Upon Inspection",
+                    badge: null
+                }
+            ]
+        }
+    },
+    
+    // Painter services
+    painter: {
+        categories: ["Interior Painting", "Exterior Painting", "Special Finishes"],
+        services: {
+            "Interior Painting": [
+                {
+                    title: "Wall Color",
+                    features: [
+                        "Professional painting service",
+                        "Price may vary based on job nature",
+                        "Extra cost for materials",
+                        "Free expert consultation"
+                    ],
+                    price: "Rs 7 per sq ft",
+                    badge: null
+                },
+                {
+                    title: "Wall Putty",
+                    features: [
+                        "Surface preparation service",
+                        "Price may vary based on job nature",
+                        "Extra cost for materials",
+                        "Free expert consultation"
+                    ],
+                    price: "Rs 8 per sq ft",
+                    badge: null
+                }
+            ],
+            "Exterior Painting": [
+                {
+                    title: "Exterior Wall Painting",
+                    features: [
+                        "Weather-resistant paints",
+                        "Surface preparation included",
+                        "Long-lasting finish",
+                        "Free color consultation"
+                    ],
+                    price: "Rs 12 per sq ft",
+                    badge: null
+                }
+            ],
+            "Special Finishes": [
+                {
+                    title: "Putty and Color",
+                    features: [
+                        "Complete wall finishing service",
+                        "Price may vary based on job nature",
+                        "Extra cost for materials",
+                        "Free color consultation"
+                    ],
+                    price: "Rs 15 per sq ft",
+                    badge: null
+                },
+                {
+                    title: "Enamel Painting",
+                    features: [
+                        "High-gloss finish",
+                        "Durable and washable",
+                        "Perfect for doors and windows",
+                        "Free consultation"
+                    ],
+                    price: "Rs 20 per sq ft",
+                    badge: null
+                }
+            ]
+        }
+    },
+    
+    // Cleaning services
+    cleaning: {
+        categories: ["Residential Cleaning", "Commercial Cleaning", "Specialized Cleaning"],
+        services: {
+            "Residential Cleaning": [
+                {
+                    title: "Standard Internal Cleaning",
+                    features: [
+                        "Dirt and Stain Removal",
+                        "Wet Cleaning using professional tools and chemicals",
+                        "Price includes cost of chemicals, manpower, transportation and machinery",
+                        "Duration: 2 hour or more",
+                        "Minimum order: Rs 3500"
+                    ],
+                    price: "Rs 0 - Price Upon Inspection",
+                    badge: null
+                },
+                {
+                    title: "Premium Bathroom Cleaning",
+                    features: [
+                        "Dirt Stains & black stain removal",
+                        "Toilet Seat Stain Removal, Wash Basin Cleaning",
+                        "Professional tools and chemicals for 5x shine",
+                        "Duration: 1 hour or more",
+                        "Minimum order: Rs 3500"
+                    ],
+                    price: "Rs 0 - Upon Inspection",
+                    badge: null
+                }
+            ],
+            "Commercial Cleaning": [
+                {
+                    title: "Advertising Board Cleaning",
+                    features: [
+                        "Professional cleaning service",
+                        "T&C applied",
+                        "Free inspection available"
+                    ],
+                    price: "Rs 0 - Price Upon Inspection",
+                    badge: null
+                }
+            ],
+            "Specialized Cleaning": [
+                {
+                    title: "Tile/Marble/Granotte Deep Cleaning",
+                    features: [
+                        "Scrubbing entire premises with machines & washing",
+                        "Use of professional tools and chemicals",
+                        "Price includes cost of chemicals, manpower, transportation and machinery",
+                        "Duration: 2 hour or more",
+                        "Minimum order: Rs 3500"
+                    ],
+                    price: "Rs 15 per sq ft",
+                    badge: null
+                },
+                {
+                    title: "Marble / Tiles Polishing Service",
+                    features: [
+                        "Specialized polishing service",
+                        "Professional tools and chemicals",
+                        "Price includes all costs",
+                        "Minimum order: Rs 3500"
+                    ],
+                    price: "Rs 60 sq ft onwards",
+                    badge: null
+                }
+            ]
+        }
+    },
+    
+    // Construction services
+    construction: {
+        categories: ["Residential", "Commercial", "Survey & Planning"],
+        services: {
+            "Residential": [
+                {
+                    title: "Residential Construction",
+                    features: [
+                        "Preferred structure: RCC, Steel, or Combination",
+                        "Available land area in sq. ft required",
+                        "Land coverage preference in sq. ft required",
+                        "Free inspection available"
+                    ],
+                    price: "Rs 0 - Price Upon Inspection",
+                    badge: null
+                }
+            ],
+            "Commercial": [
+                {
+                    title: "Commercial Construction",
+                    features: [
+                        "Preferred structure: RCC, Steel, or Combination",
+                        "Available land area in sq. ft required",
+                        "Land coverage preference in sq. ft required",
+                        "Free inspection available"
+                    ],
+                    price: "Rs 0 - Price Upon Inspection",
+                    badge: null
+                }
+            ],
+            "Survey & Planning": [
+                {
+                    title: "New Land Survey",
+                    features: [
+                        "Detailed measurement using state of art instruments",
+                        "Spreadsheet, AutoCAD plan & contour map provided",
+                        "Price up to 5476 sq. ft (1 ropani)",
+                        "Additional 2500 charged per ropani"
+                    ],
+                    price: "Rs 1.83 Per sq ft",
+                    badge: null
+                },
+                {
+                    title: "Building Survey (Nagarpalika)",
+                    features: [
+                        "Expert inspection of property's condition",
+                        "Evaluates structural capacity",
+                        "CAD design in ETABS, SAP000 software",
+                        "Professional assessment"
+                    ],
+                    price: "Rs 25 per sq.ft. for total built up area",
+                    badge: null
+                }
+            ]
+        }
+    },
+    
+    // Carpenter services
+    carpenter: {
+        categories: ["Furniture", "Doors & Windows", "Repair & Maintenance"],
+        services: {
+            "Furniture": [
+                {
+                    title: "Custom Furniture Making",
+                    features: [
+                        "Any work related to wood, ply, carpentry machinery",
+                        "Price may vary upon inspection",
+                        "Material cost extra",
+                        "Free consultation available"
+                    ],
+                    price: "Rs 250 per sq ft",
+                    badge: null
+                }
+            ],
+            "Doors & Windows": [
+                {
+                    title: "Door Installation",
+                    features: [
+                        "Professional door installation",
+                        "Various types of doors available",
+                        "Material cost extra",
+                        "Free measurement"
+                    ],
+                    price: "Rs 0 - Upon Inspection",
+                    badge: null
+                }
+            ],
+            "Repair & Maintenance": [
+                {
+                    title: "Door Lock Replacement",
+                    features: [
+                        "Professional lock replacement",
+                        "Price may vary on the model of the door lock",
+                        "Material cost extra",
+                        "Quick service"
+                    ],
+                    price: "Rs 1000",
+                    badge: null
+                },
+                {
+                    title: "Daily Carpentry Work",
+                    features: [
+                        "Any work related to wood, ply, carpentry machinery",
+                        "Price may vary upon inspection",
+                        "Material cost extra",
+                        "Expert craftsmen"
+                    ],
+                    price: "Rs 2300 per day",
+                    badge: null
+                }
+            ]
+        }
+    }
+};
+
+// Determine worker type based on category or other attributes
+function getWorkerType() {
+    const category = "{{ object.category|lower }}";
+    const name = "{{ object.name|lower }}";
+    const tagline = "{{ object.tagline|lower }}";
+    
+    if (category.includes("plumb") || name.includes("plumb") || tagline.includes("plumb")) {
+        return "plumber";
+    } else if (category.includes("electric") || name.includes("electric") || tagline.includes("electric")) {
+        return "electrician";
+    } else if (category.includes("paint") || name.includes("paint") || tagline.includes("paint")) {
+        return "painter";
+    } else if (category.includes("clean") || name.includes("clean") || tagline.includes("clean")) {
+        return "cleaning";
+    } else if (category.includes("construct") || name.includes("construct") || tagline.includes("construct")) {
+        return "construction";
+    } else if (category.includes("carpent") || name.includes("carpent") || tagline.includes("carpent")) {
+        return "carpenter";
+    }
+    
+    return "plumber";
+}
+
+// Initialize services based on worker type
+document.addEventListener('DOMContentLoaded', function() {
+    const workerType = getWorkerType();
+    const serviceNav = document.getElementById('service-nav');
+    const serviceContentContainer = document.getElementById('service-content-container');
+    const serviceTypeSelect = document.getElementById('service-type');
+    
+    // Clear existing content
+    serviceNav.innerHTML = '';
+    serviceContentContainer.innerHTML = '';
+    serviceTypeSelect.innerHTML = '<option value="">Select Service Type</option>';
+    
+    // Get service data for this worker type
+    const services = serviceData[workerType];
+    
+    if (!services) {
+        serviceContentContainer.innerHTML = '<p>No services available for this worker type.</p>';
+        return;
+    }
+    
+    // Create navigation items
+    let firstCategory = true;
+    for (const category of services.categories) {
+        // Add to navigation
+        const navItem = document.createElement('div');
+        navItem.className = `service-nav-item ${firstCategory ? 'active' : ''}`;
+        navItem.textContent = category;
+        navItem.setAttribute('data-category', category);
+        serviceNav.appendChild(navItem);
+        
+        // Add to service type select
+        const option = document.createElement('option');
+        option.value = category.toLowerCase().replace(/\s+/g, '-');
+        option.textContent = category;
+        serviceTypeSelect.appendChild(option);
+        
+        // Create service content
+        const contentDiv = document.createElement('div');
+        contentDiv.className = `service-content ${firstCategory ? 'active' : ''}`;
+        contentDiv.id = `${category.toLowerCase().replace(/\s+/g, '-')}-content`;
+        
+        // Create service grid for this category
+        const serviceGrid = document.createElement('div');
+        serviceGrid.className = 'service-grid';
+        
+        // Add service items for this category
+        const categoryServices = services.services[category] || [];
+        for (const service of categoryServices) {
+            const serviceItem = document.createElement('div');
+            serviceItem.className = 'service-item';
+            
+            let titleHTML = `<h4>${service.title}</h4>`;
+            if (service.badge) {
+                titleHTML = `<h4>${service.title}</h4><span class="service-badge badge-${service.badge.type}">${service.badge.text}</span>`;
+            }
+            
+            serviceItem.innerHTML = `
+                ${titleHTML}
+                <ul class="service-features">
+                    ${service.features.map(feature => `<li>${feature}</li>`).join('')}
+                </ul>
+                <div class="service-price ${service.price.includes('Inspection') ? 'inspection' : ''}">${service.price}</div>
+            `;
+            
+            serviceGrid.appendChild(serviceItem);
+        }
+        
+        contentDiv.appendChild(serviceGrid);
+        serviceContentContainer.appendChild(contentDiv);
+        firstCategory = false;
+    }
+    
+    // Add event listeners to navigation items
+    document.querySelectorAll('.service-nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+            // Update active nav item
+            document.querySelectorAll('.service-nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            // Show corresponding content
+            const category = this.getAttribute('data-category');
+            document.querySelectorAll('.service-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${category.toLowerCase().replace(/\s+/g, '-')}-content`).classList.add('active');
+            
+            // Update service type in booking form
+            document.getElementById('service-type').value = category.toLowerCase().replace(/\s+/g, '-');
+            updateSpecificServices(category);
+        });
+    });
+    
+    // Initialize the first category
+    if (services.categories.length > 0) {
+        updateSpecificServices(services.categories[0]);
+    }
+    
+    // Add animation to service items
+    gsap.utils.toArray(".service-item").forEach((item, i) => {
+        gsap.from(item, {
+            opacity: 0,
+            y: 20,
+            duration: 0.5,
+            delay: i * 0.1,
+            scrollTrigger: {
+                trigger: item,
+                start: "top 85%",
+                toggleActions: "play none none none"
+            }
+        });
+    });
+});
+
+// Update specific services based on service type
+function updateSpecificServices(serviceType) {
+    const specificServiceSelect = document.getElementById('specific-service');
+    specificServiceSelect.innerHTML = '<option value="">Select Specific Service</option>';
+    
+    const workerType = getWorkerType();
+    const services = serviceData[workerType];
+    
+    if (services && services.services[serviceType]) {
+        services.services[serviceType].forEach(service => {
+            const option = document.createElement('option');
+            option.value = service.title.toLowerCase().replace(/\s+/g, '-');
+            option.textContent = service.title;
+            specificServiceSelect.appendChild(option);
+        });
+    }
+    
+    document.getElementById('pricing-basis-container').style.display = 'block';
+}
+
+// Price calculation
+document.getElementById('calculate-price').addEventListener('click', function() {
+    const serviceType = document.getElementById('service-type').value;
+    const specificService = document.getElementById('specific-service').value;
+    const pricingBasis = document.getElementById('pricing-basis').value;
+    const quantity = document.querySelector('input[name="quantity"]')?.value || 1;
+    const calculateBtn = this;
+    
+    if (!serviceType || !specificService || !pricingBasis) {
+        alert('Please select service type, specific service, and pricing basis');
+        return;
+    }
+    
+    // Show loading state
+    const originalText = calculateBtn.innerHTML;
+    calculateBtn.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
+    calculateBtn.disabled = true;
+    
+    // Simulate API call delay
+    setTimeout(() => {
+        // Mock pricing calculation
+        let estimatedPrice = 0;
+        
+        // Sample pricing logic based on service type
+        if (serviceType.includes('installation')) {
+            if (pricingBasis === 'hourly') estimatedPrice = 500 * quantity;
+            else if (pricingBasis === 'sqft') estimatedPrice = 15 * quantity;
+            else if (pricingBasis === 'unit') estimatedPrice = 1000 * quantity;
+            else if (pricingBasis === 'inspection') estimatedPrice = 0;
+            else if (pricingBasis === 'shift') estimatedPrice = 2000 * quantity;
+        } 
+        else if (serviceType.includes('repair')) {
+            if (specificService.includes('commode')) estimatedPrice = 4000;
+            else if (specificService.includes('washing')) estimatedPrice = 500;
+            else estimatedPrice = 1500;
+        }
+        else if (serviceType.includes('cleaning')) {
+            if (pricingBasis === 'sqft') estimatedPrice = 15 * quantity;
+            else if (pricingBasis === 'unit') estimatedPrice = 3500;
+            else estimatedPrice = 2500;
+        }
+        else if (serviceType.includes('painting')) {
+            if (pricingBasis === 'sqft') estimatedPrice = 15 * quantity;
+            else estimatedPrice = 2000;
+        }
+        
+        // Show price
+        document.getElementById('estimated-price').textContent = estimatedPrice > 0 ? 'Rs ' + estimatedPrice : 'Based on Inspection';
+        document.getElementById('price-details').classList.add('active');
+        
+        // Restore button
+        calculateBtn.innerHTML = originalText;
+        calculateBtn.disabled = false;
+    }, 1500);
+});
+
+// Show quantity input for certain pricing bases
+document.getElementById('pricing-basis').addEventListener('change', function() {
+    const basis = this.value;
+    const quantityInput = document.getElementById('quantity-input');
+    
+    if (basis === 'sqft' || basis === 'unit' || basis === 'shift') {
+        quantityInput.style.display = 'block';
+    } else {
+        quantityInput.style.display = 'none';
+    }
+});
+
+// Initialize GSAP animations for stars
+gsap.utils.toArray(".star-animate").forEach((star) => {
+    gsap.to(star, {
+        y: "-8", 
+        yoyo: true, 
+        repeat: -1, 
+        duration: 0.8 + Math.random(), 
+        delay: Math.random() * 0.5
+    });
+});
+
+// Add scroll animations
+gsap.utils.toArray(".fade-in").forEach((elem, i) => {
+    gsap.from(elem, {
+        opacity: 0,
+        y: 30,
+        duration: 0.8,
+        delay: i * 0.1,
+        scrollTrigger: {
+            trigger: elem,
+            start: "top 85%",
+            toggleActions: "play none none none"
+        }
+    });
+});
+
+// Initialize service type change event
+document.getElementById('service-type').addEventListener('change', function() {
+    const serviceTypeText = this.options[this.selectedIndex].text;
+    updateSpecificServices(serviceTypeText);
+});
+</script>
 {% endblock content %}

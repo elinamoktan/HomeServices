@@ -1,0 +1,539 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer Dashboard - AppointMate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f5f7fa;
+      min-height: 100vh;
+    }
+
+    /* Dashboard Layout */
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+    
+    .sidebar-header {
+      padding: 1.5rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    
+    .nav-item {
+      padding: 0.9rem 1.5rem;
+      margin: 0.25rem 0.75rem;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: white;
+    }
+    
+    .nav-item:hover, .nav-item.active {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    
+    .nav-item i {
+      width: 24px;
+      margin-right: 12px;
+    }
+    
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      overflow-x: hidden;
+    }
+    
+    /* Header */
+    .header {
+      background-color: white;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background: #f5f7fa;
+      border-radius: 10px;
+      padding: 0.5rem 1rem;
+      width: 300px;
+    }
+    
+    .search-bar input {
+      background: transparent;
+      border: none;
+      outline: none;
+      width: 100%;
+      margin-left: 0.5rem;
+    }
+    
+    .user-profile {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e0e7ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 1rem;
+      overflow: hidden;
+    }
+    
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    /* Content Area */
+    .content-wrapper {
+      padding: 1.5rem;
+    }
+    
+    .dashboard-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+    
+    .stat-label {
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+    
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+
+    /* Notification indicator */
+    .notification-badge {
+      position: relative;
+    }
+    
+    .notification-badge .badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Recent appointments */
+    .appointment-preview {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid #3b82f6;
+    }
+
+    .worker-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e0e7ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      overflow: hidden;
+    }
+
+    .worker-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Status badges */
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 15px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .status-pending { background: #fef3c7; color: #d97706; }
+    .status-accepted { background: #d1fae5; color: #065f46; }
+    .status-completed { background: #dbeafe; color: #1e40af; }
+    .status-rejected { background: #fecaca; color: #b91c1c; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 70px;
+      }
+      
+      .sidebar .nav-text {
+        display: none;
+      }
+      
+      .sidebar-header {
+        padding: 1rem 0.5rem;
+        text-align: center;
+      }
+      
+      .sidebar-logo-text {
+        display: none;
+      }
+      
+      .nav-item {
+        padding: 0.9rem;
+        margin: 0.25rem 0.5rem;
+        text-align: center;
+        justify-content: center;
+      }
+      
+      .nav-item i {
+        margin-right: 0;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .search-bar {
+        width: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <i class="fas fa-calendar-check"></i>
+          <span class="sidebar-logo-text">AppointMate</span>
+        </div>
+      </div>
+      
+      <div class="sidebar-nav py-4">
+        <a href="{% url 'customer_dashboard' %}" class="nav-item {% if current_page == 'dashboard' %}active{% endif %}">
+          <i class="fas fa-home"></i>
+          <span class="nav-text">Dashboard</span>
+        </a>
+        <a href="{% url 'customer_appointments' %}" class="nav-item {% if current_page == 'appointments' %}active{% endif %}">
+          <i class="fas fa-calendar-alt"></i>
+          <span class="nav-text">Appointments</span>
+        </a>
+        <a href="{% url 'customer_reviews' %}" class="nav-item {% if current_page == 'reviews' %}active{% endif %}">
+          <i class="fas fa-star"></i>
+          <span class="nav-text">Reviews</span>
+        </a>
+        <a href="{% url 'customer_profile' %}" class="nav-item {% if current_page == 'profile' %}active{% endif %}">
+          <i class="fas fa-user-circle"></i>
+          <span class="nav-text">Profile</span>
+        </a>
+        <a href="{% url 'customer_settings' %}" class="nav-item {% if current_page == 'settings' %}active{% endif %}">
+          <i class="fas fa-cog"></i>
+          <span class="nav-text">Settings</span>
+        </a>
+        <a href="{% url 'customer_support' %}" class="nav-item {% if current_page == 'support' %}active{% endif %}">
+          <i class="fas fa-question-circle"></i>
+          <span class="nav-text">Help & Support</span>
+        </a>
+        
+        <!-- Fixed Logout Form in Sidebar -->
+        <form method="post" action="{% url 'logout' %}" class="nav-item" style="display: contents;">
+          {% csrf_token %}
+          <button type="submit" style="all: unset; display: flex; align-items: center; width: 100%; cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i>
+            <span class="nav-text">Logout</span>
+          </button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Header -->
+      <div class="header">
+        <div class="search-bar">
+          <i class="fas fa-search text-gray-400"></i>
+          <input type="text" placeholder="Search appointments...">
+        </div>
+        
+        <div class="flex items-center">
+          <div class="mr-6 relative notification-badge">
+            <i class="fas fa-bell text-gray-500 text-xl cursor-pointer hover:text-gray-700 transition-colors"></i>
+            {% if unread_notification_count > 0 %}
+              <span class="badge" id="notification-count">{{ unread_notification_count }}</span>
+            {% endif %}
+          </div>
+          
+          <div class="user-profile">
+            <div>
+              <div class="font-medium">{{ customer.name }}</div>
+              <div class="text-sm text-gray-500">Customer</div>
+            </div>
+            <div class="user-avatar">
+              {% if customer.profile_pic %}
+                <img src="{{ customer.profile_pic.url }}" alt="{{ customer.name }}">
+              {% else %}
+                <span class="text-indigo-600 font-semibold">{{ customer.name|first }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Content Wrapper -->
+      <div class="content-wrapper">
+        <!-- Dashboard Title -->
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-800">Welcome back, {{ customer.name }}!</h1>
+          <p class="text-gray-600">Here's what's happening with your appointments</p>
+        </div>
+        
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon bg-blue-100 text-blue-600">
+              <i class="fas fa-calendar"></i>
+            </div>
+            <div class="stat-value">{{ total_appointments }}</div>
+            <div class="stat-label">Total Appointments</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon bg-yellow-100 text-yellow-600">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-value">{{ pending_appointments }}</div>
+            <div class="stat-label">Pending Requests</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon bg-green-100 text-green-600">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-value">{{ completed_appointments }}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Recent Appointments -->
+          <div class="dashboard-card">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold text-gray-800">Recent Appointments</h2>
+              <a href="{% url 'customer_appointments' %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View All</a>
+            </div>
+
+            {% if appointments %}
+              {% for appointment in appointments|slice:":3" %}
+                <div class="appointment-preview">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="worker-avatar">
+                        {% if appointment.worker.profile_pic %}
+                          <img src="{{ appointment.worker.profile_pic.url }}" alt="{{ appointment.worker.name }}">
+                        {% else %}
+                          <span class="text-indigo-600 font-semibold text-sm">{{ appointment.worker.name|first }}</span>
+                        {% endif %}
+                      </div>
+                      <div>
+                        <h4 class="font-medium text-gray-800">{{ appointment.worker.name }}</h4>
+                        <p class="text-sm text-gray-600">{{ appointment.appointment_date|date:"M j, Y g:i A" }}</p>
+                      </div>
+                    </div>
+                    <span class="status-badge status-{{ appointment.status }}">{{ appointment.status }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-center py-8">
+                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600">No appointments yet</p>
+                <a href="{% url 'worker-list' %}" class="inline-block mt-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm">
+                  Book Your First Appointment
+                </a>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Recent Notifications -->
+          <div class="dashboard-card">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold text-gray-800">Recent Notifications</h2>
+              <span class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View All</span>
+            </div>
+
+            {% if notifications %}
+              {% for notification in notifications %}
+                <div class="flex items-start p-3 {% if not notification.is_read %}bg-blue-50{% endif %} rounded-lg mb-2">
+                  <div class="flex-shrink-0">
+                    {% if notification.notification_type == 'appointment_accepted' %}
+                      <i class="fas fa-check-circle text-green-500"></i>
+                    {% elif notification.notification_type == 'appointment_rejected' %}
+                      <i class="fas fa-times-circle text-red-500"></i>
+                    {% elif notification.notification_type == 'appointment_completed' %}
+                      <i class="fas fa-star text-yellow-500"></i>
+                    {% else %}
+                      <i class="fas fa-bell text-blue-500"></i>
+                    {% endif %}
+                  </div>
+                  <div class="ml-3 flex-1">
+                    <h4 class="text-sm font-medium text-gray-800">{{ notification.title }}</h4>
+                    <p class="text-xs text-gray-600 mt-1">{{ notification.message }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ notification.created_at|timesince }} ago</p>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-center py-8">
+                <i class="fas fa-bell-slash text-4xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600">No notifications yet</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dashboard-card">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="{% url 'worker-list' %}" class="flex items-center p-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all">
+              <i class="fas fa-plus-circle text-2xl mr-3"></i>
+              <div>
+                <h3 class="font-semibold">Book New Appointment</h3>
+                <p class="text-sm opacity-90">Find and book a worker</p>
+              </div>
+            </a>
+            <a href="{% url 'customer_reviews' %}" class="flex items-center p-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all">
+              <i class="fas fa-star text-2xl mr-3"></i>
+              <div>
+                <h3 class="font-semibold">View My Reviews</h3>
+                <p class="text-sm opacity-90">Check your ratings</p>
+              </div>
+            </a>
+            <a href="{% url 'customer_profile' %}" class="flex items-center p-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all">
+              <i class="fas fa-user-edit text-2xl mr-3"></i>
+              <div>
+                <h3 class="font-semibold">Update Profile</h3>
+                <p class="text-sm opacity-90">Edit your information</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Update notification count periodically
+    function updateNotificationCount() {
+      fetch('{% url "get_notification_count" %}', {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        const badge = document.getElementById('notification-count');
+        if (data.count > 0) {
+          if (badge) {
+            badge.textContent = data.count;
+          } else {
+            // Create badge if it doesn't exist
+            const notificationIcon = document.querySelector('.notification-badge i');
+            const newBadge = document.createElement('span');
+            newBadge.className = 'badge';
+            newBadge.id = 'notification-count';
+            newBadge.textContent = data.count;
+            notificationIcon.parentElement.appendChild(newBadge);
+          }
+        } else {
+          if (badge) {
+            badge.remove();
+          }
+        }
+      })
+      .catch(error => console.error('Error updating notification count:', error));
+    }
+
+    // Update notification count every 30 seconds
+    setInterval(updateNotificationCount, 30000);
+  </script>
+</body>
+</html>

@@ -3,24 +3,221 @@
 
 {% block content %}
 <style>
-    #map {
-        height: 500px;
-        position: relative;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap');
+
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #818cf8;
+        --primary-dark: #3730a3;
+        --accent: #10b981;
     }
+    
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafc;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    
+    .form-container {
+        background-color: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        transform: translateY(20px);
+        opacity: 0;
+        animation: slideUp 0.8s ease-out forwards;
+    }
+    
+    @keyframes slideUp {
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .header-icon {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.2);
+    }
+    
+    .title {
+        font-family: 'Poppins', sans-serif;
+        color: #1e293b;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .title::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+        border-radius: 2px;
+    }
+    
+    #map {
+        height: 450px;
+        width: 100%;
+        border-radius: 16px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border: 2px solid #e2e8f0;
+        transition: all 0.4s ease;
+        opacity: 0;
+        transform: scale(0.95);
+        animation: fadeInScale 0.8s ease-out 0.3s forwards;
+    }
+    
+    @keyframes fadeInScale {
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
     .locate-btn {
         position: absolute;
-        bottom: 180px;
-        right: 10px;
+        top: 20px;
+        right: 20px;
         z-index: 1000;
-        background-color: white;
-        border: none;
-        padding: 10px;
-        cursor: pointer;
+        background-color: #ffffff;
+        border: 1px solid #cbd5e0;
+        width: 52px;
+        height: 52px;
         border-radius: 50%;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
     }
+    
+    .locate-btn:hover {
+        transform: scale(1.1) translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    
     .locate-btn i {
-        font-size: 20px;
+        font-size: 1.5rem;
+        color: var(--primary);
+    }
+    
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+        font-weight: 600;
+        padding: 16px 32px;
+        border-radius: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.35);
+    }
+    
+    .btn-primary:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(79, 70, 229, 0.5);
+    }
+    
+    .form-input {
+        transition: all 0.3s ease;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 18px;
+        font-size: 1rem;
+        background-color: #f1f5f9;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+    
+    .form-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
+        transform: translateY(-2px);
+        background-color: #ffffff;
+    }
+    
+    label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-group {
+        animation: fadeInUp 0.6s ease-out forwards;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-group:nth-child(3) { animation-delay: 0.3s; }
+    .form-group:nth-child(4) { animation-delay: 0.4s; }
+    .form-group:nth-child(5) { animation-delay: 0.5s; }
+    
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.4s ease;
+    }
+    
+    .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .modal-content {
+        background-color: white;
+        color: #1f2937;
+        padding: 2.5rem;
+        border-radius: 20px;
+        max-width: 450px;
+        text-align: center;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        transform: scale(0.9) translateY(30px);
+        opacity: 0;
+        transition: all 0.4s ease;
+    }
+    
+    .modal-overlay.active .modal-content {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+    
+    .notification {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 10000;
+        transform: translateX(120%);
+        transition: transform 0.4s ease-in-out;
+    }
+    
+    .notification.show {
+        transform: translateX(0);
     }
 </style>
 
@@ -28,71 +225,223 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<div>
-    <h1 class="text-2xl my-4">Create Customer Profile</h1>
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form|crispy }}   
-        <div id="map"></div>
-        <button class="locate-btn" onclick="locateUser()" type="button">
-            <i class="fas fa-location-arrow"></i>
+<div class="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="form-container max-w-5xl w-full p-8 lg:p-12 relative z-10">
+        <div class="text-center mb-10">
+            <div class="header-icon inline-flex items-center justify-center w-20 h-20 rounded-full mb-6">
+                <i class="fas fa-user-tie text-3xl text-white"></i>
+            </div>
+            <h1 class="title text-4xl md:text-5xl font-bold mb-4">Create Your Customer Profile</h1>
+            <p class="text-lg text-gray-700 font-medium max-w-lg mx-auto">Join our community and connect with skilled professionals.</p>
+        </div>
+        
+        <form method="POST" enctype="multipart/form-data" class="space-y-8">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for field in form %}
+                    {% if field.name != 'latitude' and field.name != 'longitude' %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ field.label }}
+                                {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="pt-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+                    Your Location
+                </h3>
+                
+                <div class="relative mt-4">
+                    <div id="map"></div>
+                    <button class="locate-btn" onclick="locateUser(event)" type="button" aria-label="Use my current location">
+                        <i class="fas fa-location-arrow"></i>
+                    </button>
+                    <input type="hidden" name="latitude" id="latitude">
+                    <input type="hidden" name="longitude" id="longitude">
+                </div>
+            </div>
+
+            <div class="flex justify-center pt-8">
+                <button class="btn-primary" type="submit">
+                    <i class="fas fa-user-plus mr-2"></i>Create Profile
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="error-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="flex items-center justify-center mb-5">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+            </div>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-3">Location Access Required</h3>
+        <p id="error-message" class="text-gray-600 mb-6"></p>
+        <button onclick="closeModal()" class="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md">
+            Understand
         </button>
-        <input type="hidden" name="latitude" id="latitude">
-        <input type="hidden" name="longitude" id="longitude">
-        <input class="px-8 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 hover:cursor-pointer" type="submit" value="Save">
-    </form>
+    </div>
 </div>
 
 <script>
-    var map = L.map('map').setView([27.7172, 85.3240], 12); // Default to Kathmandu, Nepal
-    var marker;
+    // Initialize map
+    var map = L.map('map', { zoomControl: false }).setView([27.7172, 85.3240], 13);
+    
+    L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Add OpenStreetMap tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
     }).addTo(map);
 
-    // Function to locate the user
-    function locateUser() {
+    var marker;
+
+    // Fix map size after CSS animation
+    setTimeout(() => { map.invalidateSize(); }, 900);
+
+    // Automatically get user's location when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Wait for animations to complete before trying to get location
+        setTimeout(() => {
+            locateUserOnLoad();
+        }, 1000);
+    });
+
+    function locateUserOnLoad() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function (position) {
                 var lat = position.coords.latitude;
                 var lon = position.coords.longitude;
                 updateLocation(lat, lon);
+                showNotification('Your location has been automatically detected!', 'success');
             }, function (error) {
-                alert("Error fetching location: " + error.message);
-            });
+                // Don't show error modal on page load, just silently fail
+                console.log("Could not get location on page load:", error);
+                
+                // Set default location if geolocation fails
+                updateLocation(27.7172, 85.3240);
+            }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 });
         } else {
-            alert("Geolocation is not supported by this browser.");
+            // Set default location if geolocation is not supported
+            updateLocation(27.7172, 85.3240);
         }
     }
 
-    // Function to update location and set marker
-    function updateLocation(lat, lon) {
-        map.setView([lat, lon], 13);
+    function showErrorModal(message) {
+        const modal = document.getElementById('error-modal');
+        const errorMessage = document.getElementById('error-message');
+        errorMessage.textContent = message;
+        modal.classList.add('active');
+        modal.classList.remove('hidden');
+    }
 
-        // Remove existing marker
+    function closeModal() {
+        const modal = document.getElementById('error-modal');
+        modal.classList.remove('active');
+        setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification px-6 py-4 rounded-lg shadow-lg text-white font-medium flex items-center ${
+            type === 'success' ? 'bg-green-500' : 
+            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`;
+        notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} mr-3"></i><span>${message}</span>`;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => { notification.classList.add('show'); }, 10);
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => { document.body.removeChild(notification); }, 400);
+        }, 4000);
+    }
+
+    function updateLocation(lat, lon) {
+        map.setView([lat, lon], 15);
         if (marker) {
-            map.removeLayer(marker);
+            marker.setLatLng([lat, lon]);
+        } else {
+            var customIcon = L.divIcon({
+                className: 'custom-marker',
+                html: '<i class="fas fa-map-marker-alt" style="color: #4f46e5; font-size: 32px; text-shadow: 0 2px 10px rgba(0,0,0,0.3);"></i>',
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            });
+            marker = L.marker([lat, lon], { icon: customIcon })
+                .addTo(map)
+                .bindPopup("<b>Your Location</b><br>This is where workers will contact you.")
+                .openPopup();
         }
 
-        // Add new marker
-        marker = L.marker([lat, lon]).addTo(map)
-            .bindPopup("Selected Location")
-            .openPopup();
-
-        // Set values in hidden fields
         document.getElementById('latitude').value = lat;
         document.getElementById('longitude').value = lon;
     }
 
-    // Allow user to click on the map to select location
+    function locateUser(event) {
+        if (event) event.preventDefault();
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                var lat = position.coords.latitude;
+                var lon = position.coords.longitude;
+                updateLocation(lat, lon);
+                showNotification('Location found successfully!', 'success');
+            }, function (error) {
+                let errorMessage;
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = "You denied the request for Geolocation. Please enable location access in your browser settings.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = "Location information is currently unavailable. Please try again or select manually.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = "The request to get your location timed out. Please try again.";
+                        break;
+                    default:
+                        errorMessage = "An unknown error occurred while trying to get your location.";
+                }
+                showErrorModal(errorMessage);
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+        } else {
+            showErrorModal("Geolocation is not supported by your browser.");
+        }
+    }
+
     map.on('click', function (e) {
-        var lat = e.latlng.lat;
-        var lon = e.latlng.lng;
-        updateLocation(lat, lon);
+        updateLocation(e.latlng.lat, e.latlng.lng);
+        showNotification('Location selected! You can adjust it by clicking elsewhere on the map.', 'info');
     });
 
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            if (input.type !== 'hidden') {
+                input.classList.add('form-input', 'w-full');
+            }
+        });
+
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating Profile...';
+            submitBtn.disabled = true;
+        });
+    });
 </script>
 
 {% endblock content %}

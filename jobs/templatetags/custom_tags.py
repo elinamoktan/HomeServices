@@ -1,12 +1,15 @@
-# custom_tags.py
 from django import template
 
 register = template.Library()
 
+@register.simple_tag
+def noop_custom_tag():
+    """
+    Minimal placeholder tag so `{% load custom_tags %}` succeeds.
+    Replace/add real tags/filters used by your templates here.
+    """
+    return ''
+    
 @register.filter
-def times(value):
-    try:
-        value = int(value)
-    except (ValueError, TypeError):
-        value = 0
-    return range(value)
+def noop_filter(value):
+    return value
