@@ -1,5 +1,5 @@
 env/
-venv
+.venv/
 jobs/__pycache__/
 config/__pycache__/
 jobs/migrations/__pycache__/
