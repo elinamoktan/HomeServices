@@ -2927,14 +2927,6 @@ def worker_settings(request):
 @require_POST
 def delete_worker_review(request):
     """Delete a worker review and update worker ratings"""
-    print("🟢 DELETE_REVIEW_VIEW: Request received!")
-    print("=" * 60)
-    print("🟢 DELETE_REVIEW_VIEW CALLED!")
-    print("🟢 Method:", request.method)
-    print("🟢 Path:", request.path)
-    print("🟢 User:", request.user)
-    print("🟢 Content-Type:", request.content_type)
-    print("=" * 60)
     try:
         # Handle both POST data and JSON body
         if request.content_type == 'application/json':

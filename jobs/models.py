@@ -8,7 +8,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
 import math
 import logging
-
+from decimal import Decimal
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
@@ -303,24 +303,53 @@ class WorkerSubTaskPricing(models.Model):
         return f"{self.worker_service.worker.name} - {self.subtask.name}: ₹{self.price}"
     
     def get_pricing_type_display(self):
-        return dict(PRICING_TYPES).get(self.pricing_type, self.pricing_type)
+        types_dict = {
+            'hourly': 'Hourly Rate',
+            'sqft': 'Per Square Foot',
+            'unit': 'Per Unit/Item',
+            'inspection': 'Per Inspection',
+            'shift': 'Shift-based',
+            'fixed': 'Fixed Price',
+        }
+        return types_dict.get(self.pricing_type, self.pricing_type)
     
     def get_experience_level_display(self):
         return dict(self.EXPERIENCE_LEVELS).get(self.experience_level, self.experience_level)
     
     def get_total_price(self, quantity=1, is_night_shift=False):
-        """Calculate total price based on pricing type and options"""
-        total = self.price
+        """
+        ✅ FIXED: Calculate total price with proper Decimal handling
+        All calculations use Decimal to avoid float/Decimal conflicts
+        """
+        # Ensure base price is Decimal
+        total = Decimal(str(self.price)) if self.price else Decimal('0.00')
         
-        if is_night_shift:
-            total += self.night_shift_extra
+        # Add night shift extra if applicable
+        if is_night_shift and self.night_shift_extra:
+            night_extra = Decimal(str(self.night_shift_extra))
+            total += night_extra
         
+        # Convert quantity to Decimal for safe arithmetic
+        try:
+            qty = Decimal(str(quantity))
+        except (ValueError, TypeError):
+            qty = Decimal('1.00')
+        
+        # Calculate based on pricing type
         if self.pricing_type in ['sqft', 'unit']:
-            total *= quantity
+            # Multiply by quantity for per-unit pricing
+            total = total * qty
+            
         elif self.pricing_type == 'hourly':
-            total *= max(self.min_hours, quantity)
+            # For hourly, use maximum of min_hours or quantity
+            min_hrs = Decimal(str(self.min_hours))
+            hours = max(min_hrs, qty)
+            total = total * hours
         
-        return total
+        # For 'fixed', 'shift', 'inspection' types, return base total
+        
+        # Round to 2 decimal places and return
+        return total.quantize(Decimal('0.01'))
 
 # Customer Model
 class Customer(models.Model):
@@ -452,40 +481,196 @@ class Customer(models.Model):
 
 
 class Appointment(models.Model):
-    # Keep the existing id field (auto-created by Django)
+    """
+    Appointment model for booking services between customers and workers
+    """
+    # Primary key
     id = models.BigAutoField(primary_key=True)
     
-    # Rest of your fields remain the same
+    # Status choices
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
         ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
     ]
     
+    # Shift type choices
     SHIFT_TYPES = [
         ('day', 'Day Shift'),
         ('night', 'Night Shift'),
     ]
     
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='customer_appointments')
-    worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='worker_appointments')
-    service_subtask = models.ForeignKey(WorkerSubTaskPricing, on_delete=models.SET_NULL, null=True, blank=True)
+    # Foreign Keys
+    customer = models.ForeignKey(
+        'Customer', 
+        on_delete=models.CASCADE, 
+        related_name='customer_appointments'
+    )
+    worker = models.ForeignKey(
+        'Worker', 
+        on_delete=models.CASCADE, 
+        related_name='worker_appointments'
+    )
+    service_subtask = models.ForeignKey(
+        'WorkerSubTaskPricing', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        help_text="Selected service and pricing"
+    )
+    
+    # Appointment details
     appointment_date = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    shift_type = models.CharField(max_length=10, choices=SHIFT_TYPES, default='day')
+    status = models.CharField(
+        max_length=10, 
+        choices=STATUS_CHOICES, 
+        default='pending'
+    )
+    shift_type = models.CharField(
+        max_length=10, 
+        choices=SHIFT_TYPES, 
+        default='day'
+    )
+    
+    # Location and instructions
     location = models.TextField(blank=True, null=True)
     special_instructions = models.TextField(blank=True, null=True)
     reason = models.TextField(blank=True, null=True)
+    
+    # Completion tracking
     customer_completed = models.BooleanField(default=False)
     worker_completed = models.BooleanField(default=False)
+    
+    # Customer location at time of booking
     customer_latitude = models.FloatField(null=True, blank=True)
     customer_longitude = models.FloatField(null=True, blank=True)
+    
+    # Pricing fields - REQUIRED TO FIX THE ERROR
+    total_price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Total calculated price for the service"
+    )
+    quantity = models.PositiveIntegerField(
+        default=1,
+        help_text="Quantity/hours for pricing calculation"
+    )
+    is_night_shift = models.BooleanField(
+        default=False,
+        help_text="Whether night shift extra charges apply"
+    )
+    
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-appointment_date']
+        indexes = [
+            models.Index(fields=['customer', 'status']),
+            models.Index(fields=['worker', 'status']),
+            models.Index(fields=['appointment_date']),
+            models.Index(fields=['created_at']),
+        ]
+        verbose_name = 'Appointment'
+        verbose_name_plural = 'Appointments'
 
     def __str__(self):
-        return f"Appointment with {self.worker} on {self.appointment_date}"
+        date_str = self.appointment_date.strftime('%Y-%m-%d %H:%M') if self.appointment_date else 'No date'
+        return f"{self.customer.name} → {self.worker.name} on {date_str}"
 
+    def calculate_total_price(self):
+        """
+        Calculate total price based on service subtask pricing
+        Returns Decimal value or 0 if service_subtask is not set
+        """
+        if not self.service_subtask:
+            return 0
+        
+        # Determine if night shift applies
+        night_shift = self.is_night_shift or (self.shift_type == 'night')
+        
+        # Use the get_total_price method from WorkerSubTaskPricing
+        return self.service_subtask.get_total_price(
+            quantity=self.quantity,
+            is_night_shift=night_shift
+        )
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save to auto-calculate total_price if not manually set
+        """
+        # Auto-calculate total_price if service_subtask exists and total_price not set
+        if self.service_subtask and not self.total_price:
+            self.total_price = self.calculate_total_price()
+        
+        # Set is_night_shift based on shift_type if not manually set
+        if self.shift_type == 'night' and not self.is_night_shift:
+            self.is_night_shift = True
+        
+        super().save(*args, **kwargs)
+
+    def get_status_display_color(self):
+        """Return Bootstrap color class for status"""
+        status_colors = {
+            'pending': 'warning',
+            'accepted': 'info',
+            'rejected': 'danger',
+            'completed': 'success',
+            'cancelled': 'secondary',
+        }
+        return status_colors.get(self.status, 'secondary')
+
+    def can_be_completed(self):
+        """Check if appointment can be marked as completed"""
+        return (
+            self.status == 'accepted' and 
+            self.appointment_date and 
+            self.appointment_date < timezone.now()
+        )
+
+    def can_be_cancelled(self):
+        """Check if appointment can be cancelled"""
+        return self.status in ['pending', 'accepted']
+
+    def get_service_name(self):
+        """Get the service name safely"""
+        if self.service_subtask and self.service_subtask.subtask:
+            return self.service_subtask.subtask.name
+        return "General Service"
+
+    def get_price_display(self):
+        """Get formatted price display"""
+        if self.total_price:
+            return f"₹{self.total_price:,.2f}"
+        elif self.service_subtask:
+            return f"₹{self.service_subtask.price:,.2f}"
+        return "Contact for pricing"
+
+    @property
+    def is_past(self):
+        """Check if appointment date is in the past"""
+        if not self.appointment_date:
+            return False
+        return self.appointment_date < timezone.now()
+
+    @property
+    def is_today(self):
+        """Check if appointment is today"""
+        if not self.appointment_date:
+            return False
+        return self.appointment_date.date() == timezone.now().date()
+
+    @property
+    def is_upcoming(self):
+        """Check if appointment is in the future"""
+        if not self.appointment_date:
+            return False
+        return self.appointment_date > timezone.now()
 # Worker Rating Model
 class WorkerRating(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='ratings')
@@ -749,16 +934,30 @@ def create_worker_settings(sender, instance, created, **kwargs):
     if created:
         WorkerSettings.objects.create(worker=instance)
 
+from decimal import Decimal
+
 @receiver(post_save, sender=Appointment)
 def create_worker_earning(sender, instance, created, **kwargs):
-    if created and instance.service_subtask and instance.total_price:
-        WorkerEarning.objects.create(
-            worker=instance.worker,
-            appointment=instance,
-            amount=instance.total_price,
-            platform_fee=instance.total_price * 0.10,  # 10% platform fee
-        )
-
+    """✅ FIXED: Create worker earning with proper Decimal handling"""
+    if created and instance.service_subtask:
+        # Get amount as Decimal
+        amount = instance.total_price if instance.total_price else instance.calculate_total_price()
+        
+        # Ensure it's a Decimal
+        if amount:
+            amount = Decimal(str(amount))
+            
+            if amount > Decimal('0.00'):
+                # ✅ Calculate platform fee using Decimal (not 0.10 which is float)
+                platform_fee = amount * Decimal('0.10')
+                
+                WorkerEarning.objects.create(
+                    worker=instance.worker,
+                    appointment=instance,
+                    amount=amount,
+                    platform_fee=platform_fee,
+                )
+                
 @receiver(post_save, sender=Appointment)
 def create_appointment_notification(sender, instance, created, **kwargs):
     if created:
