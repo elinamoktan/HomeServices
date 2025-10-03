@@ -11,7 +11,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
-    /* Include all your existing dashboard styles here */
     :root {
       --primary: #3b82f6;
       --primary-dark: #2563eb;
@@ -78,42 +77,58 @@
     .settings-card {
       background: white;
       border-radius: 20px;
-      padding: 2rem;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      padding: 2.5rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
       margin-bottom: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .settings-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
     }
 
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.75rem;
     }
 
     .form-label {
       display: block;
       font-weight: 600;
       color: #374151;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.95rem;
     }
 
     .form-input {
       width: 100%;
-      padding: 0.75rem 1rem;
+      padding: 0.875rem 1.25rem;
       border: 2px solid #e5e7eb;
-      border-radius: 12px;
+      border-radius: 14px;
       font-size: 1rem;
       transition: all 0.3s ease;
+      background: #fafafa;
     }
 
     .form-input:focus {
       outline: none;
       border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+      background: white;
     }
 
     .toggle-switch {
       position: relative;
       display: inline-block;
       width: 60px;
-      height: 34px;
+      height: 32px;
     }
 
     .toggle-switch input {
@@ -129,7 +144,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: #ccc;
+      background-color: #d1d5db;
       transition: .4s;
       border-radius: 34px;
     }
@@ -137,49 +152,221 @@
     .toggle-slider:before {
       position: absolute;
       content: "";
-      height: 26px;
-      width: 26px;
+      height: 24px;
+      width: 24px;
       left: 4px;
       bottom: 4px;
       background-color: white;
       transition: .4s;
       border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     input:checked + .toggle-slider {
-      background-color: #10b981;
+      background: linear-gradient(135deg, #10b981, #34d399);
     }
 
     input:checked + .toggle-slider:before {
-      transform: translateX(26px);
+      transform: translateX(28px);
     }
 
     .tab-button {
-      padding: 0.75rem 1.5rem;
-      border-radius: 12px;
+      padding: 0.875rem 1.75rem;
+      border-radius: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
       border: 2px solid transparent;
-      background: white;
+      background: rgba(255, 255, 255, 0.7);
       color: #64748b;
-      font-size: 0.875rem;
+      font-size: 0.9rem;
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transition: left 0.5s;
+    }
+
+    .tab-button:hover::before {
+      left: 100%;
     }
 
     .tab-button.active {
       background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: white;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
       transform: translateY(-2px);
     }
 
     .tab-content {
       display: none;
+      animation: fadeIn 0.5s ease;
     }
 
     .tab-content.active {
       display: block;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .customer-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .service-card {
+      padding: 1.5rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .service-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .security-card {
+      padding: 1.75rem;
+      border-radius: 16px;
+      border: 2px solid;
+      transition: all 0.3s ease;
+    }
+
+    .security-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn {
+      padding: 0.875rem 1.75rem;
+      border-radius: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .fade-in-up {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stagger-delay-1 { animation-delay: 0.1s; }
+    .stagger-delay-2 { animation-delay: 0.2s; }
+    .stagger-delay-3 { animation-delay: 0.3s; }
+    .stagger-delay-4 { animation-delay: 0.4s; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      position: relative;
+      background: white;
+      margin: 5% auto;
+      padding: 0;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+      transform: scale(0.7);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .modal.active .modal-content {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #3b82f6);
+      transition: width 0.3s ease;
+    }
+
+    .password-strength {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .strength-weak { color: #ef4444; }
+    .strength-medium { color: #f59e0b; }
+    .strength-strong { color: #10b981; }
 
     @media (max-width: 768px) {
       .sidebar {
@@ -210,42 +397,44 @@
 
     <nav class="p-4 flex-1 overflow-y-auto">
       <a href="{% url 'worker_dashboard' %}" class="nav-item">
-        <i class="fas fa-home"></i>
+        <i class="fas fa-home w-5 mr-3"></i>
         Dashboard
       </a>
       <a href="{% url 'worker_service_details' worker.id %}" class="nav-item">
-        <i class="fas fa-concierge-bell"></i>
+        <i class="fas fa-concierge-bell w-5 mr-3"></i>
         My Services
       </a>
       <a href="{% url 'worker_calendar' %}" class="nav-item">
-        <i class="fas fa-calendar-alt"></i>
+        <i class="fas fa-calendar-alt w-5 mr-3"></i>
         Calendar
       </a>
       <a href="{% url 'worker_reviews' %}" class="nav-item">
-        <i class="fas fa-star"></i>
+        <i class="fas fa-star w-5 mr-3"></i>
         Reviews
       </a>
       <a href="{% url 'worker_analytics' %}" class="nav-item">
-        <i class="fas fa-chart-line"></i>
+        <i class="fas fa-chart-line w-5 mr-3"></i>
         Analytics
       </a>
       <a href="{% url 'worker_earnings' %}" class="nav-item">
-        <i class="fas fa-wallet"></i>
+        <i class="fas fa-wallet w-5 mr-3"></i>
         Earnings
       </a>
       <a href="{% url 'worker_settings' %}" class="nav-item active">
-        <i class="fas fa-cog"></i>
+        <i class="fas fa-cog w-5 mr-3"></i>
         Settings
       </a>
     </nav>
 
     <div class="absolute bottom-0 w-full p-4 border-t border-white border-opacity-20 bg-black bg-opacity-10">
       <div class="flex items-center space-x-3 mb-4">
-        <div class="customer-avatar bg-white">
+        <div class="customer-avatar">
           {% if worker.profile_pic %}
             <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="w-full h-full rounded-full object-cover">
           {% else %}
-            <span class="text-blue-600">{{ worker.name|first }}</span>
+            <div class="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
+              {{ worker.name|first|upper }}
+            </div>
           {% endif %}
         </div>
         <div class="flex-1 min-w-0">
@@ -272,11 +461,15 @@
           <h1 class="text-3xl font-bold text-gray-900 mb-2">Account Settings ⚙️</h1>
           <p class="text-gray-600 text-lg">Manage your profile, preferences, and account security</p>
         </div>
+        <div class="flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-lg">
+          <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+          <span class="text-sm font-medium text-gray-700">Online</span>
+        </div>
       </div>
     </div>
 
     <!-- Settings Tabs -->
-    <div class="flex flex-wrap gap-2 mb-6 fade-in-up">
+    <div class="flex flex-wrap gap-3 mb-8 fade-in-up stagger-delay-1">
       <button class="tab-button active" onclick="showSettingsTab('profile')">
         <i class="fas fa-user mr-2"></i>Profile
       </button>
@@ -296,9 +489,9 @@
 
     <!-- Profile Settings -->
     <div id="profile-tab" class="tab-content active">
-      <div class="settings-card fade-in-up">
+      <div class="settings-card fade-in-up stagger-delay-2">
         <h3 class="text-xl font-bold text-gray-900 mb-6">Profile Information</h3>
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" id="profile-form">
           {% csrf_token %}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="form-group">
@@ -330,23 +523,27 @@
           
           <div class="form-group">
             <label class="form-label">Profile Picture</label>
-            <div class="flex items-center gap-4">
-              <div class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            <div class="flex items-center gap-6">
+              <div class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
                 {% if worker.profile_pic %}
-                  <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="w-full h-full object-cover">
+                  <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="w-full h-full object-cover" id="profile-preview">
                 {% else %}
-                  <i class="fas fa-user text-gray-400 text-2xl"></i>
+                  <i class="fas fa-user text-gray-400 text-3xl" id="profile-default"></i>
                 {% endif %}
               </div>
-              <input type="file" name="profile_pic" accept="image/*" class="form-input">
+              <div class="flex-1">
+                <input type="file" name="profile_pic" accept="image/*" class="form-input" id="profile-pic-input">
+                <p class="text-sm text-gray-500 mt-2">Recommended: Square image, 500x500 pixels</p>
+              </div>
             </div>
           </div>
           
-          <div class="flex justify-end gap-4 mt-6">
-            <button type="button" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
-              Cancel
+          <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-100">
+            <button type="button" class="px-8 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all duration-300" onclick="resetProfileForm()">
+              Reset
             </button>
-            <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl font-semibold text-white hover:shadow-lg transition-all">
+            <button type="submit" class="px-8 py-3 btn btn-primary">
+              <i class="fas fa-save mr-2"></i>
               Save Changes
             </button>
           </div>
@@ -356,33 +553,45 @@
 
     <!-- Services Settings -->
     <div id="services-tab" class="tab-content">
-      <div class="settings-card fade-in-up">
+      <div class="settings-card fade-in-up stagger-delay-2">
         <h3 class="text-xl font-bold text-gray-900 mb-6">Service Management</h3>
-        <div class="space-y-4">
+        <div class="space-y-4" id="services-container">
           {% for service in worker_services %}
-          <div class="p-4 border border-gray-200 rounded-xl hover:border-blue-300 transition-colors">
+          <div class="service-card" data-service-id="{{ service.id }}">
             <div class="flex justify-between items-center">
-              <div>
-                <h4 class="font-semibold text-gray-900">{{ service.service.name }}</h4>
-                <p class="text-sm text-gray-600">{{ service.service.description }}</p>
+              <div class="flex-1">
+                <h4 class="font-semibold text-gray-900 text-lg">{{ service.service.name }}</h4>
+                <p class="text-sm text-gray-600 mt-1">{{ service.service.description }}</p>
+                <div class="flex items-center gap-4 mt-3">
+                  <span class="text-sm font-medium text-gray-700">रू {{ service.price }}</span>
+                  <span class="text-sm text-gray-500">•</span>
+                  <span class="text-sm text-gray-600">{{ service.duration }} mins</span>
+                </div>
               </div>
-              <label class="toggle-switch">
-                <input type="checkbox" {% if service.is_available %}checked{% endif %}>
-                <span class="toggle-slider"></span>
-              </label>
+              <div class="flex items-center gap-4">
+                <label class="toggle-switch">
+                  <input type="checkbox" {% if service.is_available %}checked{% endif %} onchange="toggleServiceAvailability(this, {{ service.id }})">
+                  <span class="toggle-slider"></span>
+                </label>
+                <button class="p-2 text-gray-400 hover:text-blue-600 transition-colors" onclick="editService({{ service.id }})">
+                  <i class="fas fa-edit"></i>
+                </button>
+              </div>
             </div>
           </div>
           {% empty %}
-          <div class="text-center py-8 text-gray-500">
-            <i class="fas fa-concierge-bell text-3xl mb-2"></i>
-            <p>No services configured yet</p>
+          <div class="text-center py-12 text-gray-500">
+            <i class="fas fa-concierge-bell text-4xl mb-4 text-gray-300"></i>
+            <p class="text-lg">No services configured yet</p>
+            <p class="text-sm mt-1">Add your first service to start receiving bookings</p>
           </div>
           {% endfor %}
         </div>
         
-        <div class="mt-6">
-          <button class="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-colors">
-            <i class="fas fa-plus mr-2"></i>Add New Service
+        <div class="mt-8">
+          <button class="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-all duration-300 group" onclick="openAddServiceModal()">
+            <i class="fas fa-plus mr-2 group-hover:scale-110 transition-transform"></i>
+            Add New Service
           </button>
         </div>
       </div>
@@ -390,49 +599,49 @@
 
     <!-- Notification Settings -->
     <div id="notifications-tab" class="tab-content">
-      <div class="settings-card fade-in-up">
+      <div class="settings-card fade-in-up stagger-delay-2">
         <h3 class="text-xl font-bold text-gray-900 mb-6">Notification Preferences</h3>
-        <div class="space-y-6">
-          <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
+        <div class="space-y-4">
+          <div class="flex justify-between items-center p-5 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200 hover:border-blue-200 transition-all duration-300">
             <div>
               <h4 class="font-semibold text-gray-900">Email Notifications</h4>
-              <p class="text-sm text-gray-600">Receive email alerts for new appointments</p>
+              <p class="text-sm text-gray-600 mt-1">Receive email alerts for new appointments</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" checked>
+              <input type="checkbox" id="email-notifications" checked onchange="updateNotificationSetting('email', this.checked)">
               <span class="toggle-slider"></span>
             </label>
           </div>
           
-          <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
+          <div class="flex justify-between items-center p-5 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200 hover:border-blue-200 transition-all duration-300">
             <div>
               <h4 class="font-semibold text-gray-900">SMS Notifications</h4>
-              <p class="text-sm text-gray-600">Get text messages for urgent updates</p>
+              <p class="text-sm text-gray-600 mt-1">Get text messages for urgent updates</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox">
+              <input type="checkbox" id="sms-notifications" onchange="updateNotificationSetting('sms', this.checked)">
               <span class="toggle-slider"></span>
             </label>
           </div>
           
-          <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
+          <div class="flex justify-between items-center p-5 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200 hover:border-blue-200 transition-all duration-300">
             <div>
               <h4 class="font-semibold text-gray-900">Appointment Reminders</h4>
-              <p class="text-sm text-gray-600">Reminders before scheduled appointments</p>
+              <p class="text-sm text-gray-600 mt-1">Reminders before scheduled appointments</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" checked>
+              <input type="checkbox" id="appointment-reminders" checked onchange="updateNotificationSetting('reminders', this.checked)">
               <span class="toggle-slider"></span>
             </label>
           </div>
           
-          <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
+          <div class="flex justify-between items-center p-5 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200 hover:border-blue-200 transition-all duration-300">
             <div>
               <h4 class="font-semibold text-gray-900">Review Notifications</h4>
-              <p class="text-sm text-gray-600">Alerts when customers leave reviews</p>
+              <p class="text-sm text-gray-600 mt-1">Alerts when customers leave reviews</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" checked>
+              <input type="checkbox" id="review-notifications" checked onchange="updateNotificationSetting('reviews', this.checked)">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -442,31 +651,88 @@
 
     <!-- Security Settings -->
     <div id="security-tab" class="tab-content">
-      <div class="settings-card fade-in-up">
-        <h3 class="text-xl font-bold text-gray-900 mb-6">Security Settings</h3>
-        <div class="space-y-6">
-          <div class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-            <h4 class="font-semibold text-gray-900 mb-2">Change Password</h4>
-            <p class="text-sm text-gray-600 mb-4">Update your password to keep your account secure</p>
-            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-              Change Password
-            </button>
+      <div class="space-y-6">
+        <div class="settings-card fade-in-up stagger-delay-2">
+          <h3 class="text-xl font-bold text-gray-900 mb-6">Security Settings</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="security-card bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <i class="fas fa-key text-blue-600 text-lg"></i>
+                </div>
+                <div class="flex-1">
+                  <h4 class="font-semibold text-gray-900 mb-2">Change Password</h4>
+                  <p class="text-sm text-gray-600 mb-4">Update your password to keep your account secure</p>
+                  <button class="btn btn-primary" onclick="openPasswordModal()">
+                    Change Password
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="security-card bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                  <i class="fas fa-shield-alt text-green-600 text-lg"></i>
+                </div>
+                <div class="flex-1">
+                  <h4 class="font-semibold text-gray-900 mb-2">Two-Factor Authentication</h4>
+                  <p class="text-sm text-gray-600 mb-4">Add an extra layer of security to your account</p>
+                  <button class="btn bg-green-600 hover:bg-green-700 text-white" onclick="toggle2FA()">
+                    <span id="2fa-status">Enable 2FA</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="security-card bg-gradient-to-br from-red-50 to-rose-50 border-red-200">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                  <i class="fas fa-exclamation-triangle text-red-600 text-lg"></i>
+                </div>
+                <div class="flex-1">
+                  <h4 class="font-semibold text-gray-900 mb-2">Account Deletion</h4>
+                  <p class="text-sm text-gray-600 mb-4">Permanently delete your account and all data</p>
+                  <button class="btn bg-red-600 hover:bg-red-700 text-white" onclick="showDeleteConfirmation()">
+                    Delete Account
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="security-card bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                  <i class="fas fa-history text-purple-600 text-lg"></i>
+                </div>
+                <div class="flex-1">
+                  <h4 class="font-semibold text-gray-900 mb-2">Login Activity</h4>
+                  <p class="text-sm text-gray-600 mb-4">Review your recent login sessions and devices</p>
+                  <button class="btn bg-purple-600 hover:bg-purple-700 text-white" onclick="viewLoginActivity()">
+                    View Activity
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div class="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-            <h4 class="font-semibold text-gray-900 mb-2">Two-Factor Authentication</h4>
-            <p class="text-sm text-gray-600 mb-4">Add an extra layer of security to your account</p>
-            <button class="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors">
-              Enable 2FA
-            </button>
-          </div>
-          
-          <div class="p-4 bg-gradient-to-r from-red-50 to-rose-50 rounded-xl border border-red-200">
-            <h4 class="font-semibold text-gray-900 mb-2">Account Deletion</h4>
-            <p class="text-sm text-gray-600 mb-4">Permanently delete your account and all data</p>
-            <button class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors">
-              Delete Account
-            </button>
+        </div>
+
+        <!-- Forgot Password Section -->
+        <div class="settings-card fade-in-up stagger-delay-3">
+          <h3 class="text-xl font-bold text-gray-900 mb-6">Password Recovery</h3>
+          <div class="security-card bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <i class="fas fa-unlock-alt text-orange-600 text-lg"></i>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-semibold text-gray-900 mb-2">Forgot Password Setup</h4>
+                <p class="text-sm text-gray-600 mb-4">Configure security questions for password recovery</p>
+                <button class="btn bg-orange-600 hover:bg-orange-700 text-white" onclick="setupSecurityQuestions()">
+                  Setup Recovery
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -474,57 +740,60 @@
 
     <!-- Preferences Settings -->
     <div id="preferences-tab" class="tab-content">
-      <div class="settings-card fade-in-up">
+      <div class="settings-card fade-in-up stagger-delay-2">
         <h3 class="text-xl font-bold text-gray-900 mb-6">Preferences</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="form-group">
             <label class="form-label">Working Hours Start</label>
-            <input type="time" value="09:00" class="form-input">
+            <input type="time" id="working-hours-start" value="09:00" class="form-input">
           </div>
           
           <div class="form-group">
             <label class="form-label">Working Hours End</label>
-            <input type="time" value="18:00" class="form-input">
+            <input type="time" id="working-hours-end" value="18:00" class="form-input">
           </div>
           
           <div class="form-group">
             <label class="form-label">Default Service Radius (km)</label>
-            <input type="number" value="25" class="form-input" min="1" max="100">
+            <input type="range" id="service-radius" value="25" min="1" max="100" class="w-full" oninput="updateRadiusValue(this.value)">
+            <div class="flex justify-between items-center mt-2">
+              <span class="text-sm text-gray-600">1 km</span>
+              <span id="radius-value" class="font-semibold text-blue-600">25 km</span>
+              <span class="text-sm text-gray-600">100 km</span>
+            </div>
           </div>
           
           <div class="form-group">
             <label class="form-label">Currency</label>
-            <select class="form-input">
-              <option>Indian Rupee (₹)</option>
-              <option>US Dollar ($)</option>
-              <option>Euro (€)</option>
+            <select class="form-input" id="currency-select">
+              <option value="NPR" selected>Nepalese Rupee (रू)</option>
             </select>
           </div>
           
           <div class="form-group">
             <label class="form-label">Language</label>
-            <select class="form-input">
-              <option>English</option>
-              <option>Hindi</option>
-              <option>Spanish</option>
+            <select class="form-input" id="language-select">
+              <option value="en">English</option>
+              <option value="ne">नेपाली (Nepali)</option>
+              <option value="hi">Hindi</option>
             </select>
           </div>
           
           <div class="form-group">
             <label class="form-label">Time Zone</label>
-            <select class="form-input">
-              <option>IST - India Standard Time</option>
-              <option>EST - Eastern Standard Time</option>
-              <option>PST - Pacific Standard Time</option>
+            <select class="form-input" id="timezone-select">
+              <option value="Asia/Kathmandu" selected>Nepal Time (NPT) - UTC+5:45</option>
+              <option value="UTC">UTC</option>
             </select>
           </div>
         </div>
         
-        <div class="flex justify-end gap-4 mt-6">
-          <button type="button" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+        <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-100">
+          <button type="button" class="px-8 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all duration-300" onclick="resetPreferences()">
             Reset to Defaults
           </button>
-          <button type="button" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl font-semibold text-white hover:shadow-lg transition-all">
+          <button type="button" class="px-8 py-3 btn btn-primary" onclick="savePreferences()">
+            <i class="fas fa-save mr-2"></i>
             Save Preferences
           </button>
         </div>
@@ -532,63 +801,430 @@
     </div>
   </div>
 
+  <!-- Password Change Modal -->
+  <div id="password-modal" class="modal">
+    <div class="modal-content">
+      <div class="p-8">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Change Password</h3>
+          <button class="text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('password-modal')">&times;</button>
+        </div>
+        <form id="password-form" onsubmit="changePassword(event)">
+          <div class="space-y-4">
+            <div class="form-group">
+              <label class="form-label">Current Password</label>
+              <input type="password" id="current-password" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input type="password" id="new-password" class="form-input" required oninput="checkPasswordStrength(this.value)">
+              <div class="progress-bar mt-2">
+                <div class="progress-fill" id="password-strength-bar" style="width: 0%"></div>
+              </div>
+              <div class="password-strength" id="password-strength-text">Password strength</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm New Password</label>
+              <input type="password" id="confirm-password" class="form-input" required>
+              <div id="password-match" class="text-sm mt-1"></div>
+            </div>
+          </div>
+          <div class="flex justify-end gap-4 mt-8">
+            <button type="button" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onclick="closeModal('password-modal')">
+              Cancel
+            </button>
+            <button type="submit" class="px-6 py-3 btn btn-primary">
+              Update Password
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Service Modal -->
+  <div id="add-service-modal" class="modal">
+    <div class="modal-content">
+      <div class="p-8">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Add New Service</h3>
+          <button class="text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('add-service-modal')">&times;</button>
+        </div>
+        <form id="add-service-form" onsubmit="addNewService(event)">
+          <div class="space-y-4">
+            <div class="form-group">
+              <label class="form-label">Service Name</label>
+              <input type="text" id="service-name" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <textarea id="service-description" class="form-input" rows="3" required></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="form-group">
+                <label class="form-label">Price (रू)</label>
+                <input type="number" id="service-price" class="form-input" min="0" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Duration (minutes)</label>
+                <input type="number" id="service-duration" class="form-input" min="15" step="15" required>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end gap-4 mt-8">
+            <button type="button" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onclick="closeModal('add-service-modal')">
+              Cancel
+            </button>
+            <button type="submit" class="px-6 py-3 btn btn-primary">
+              Add Service
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security Questions Modal -->
+  <div id="security-questions-modal" class="modal">
+    <div class="modal-content">
+      <div class="p-8">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Security Questions</h3>
+          <button class="text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('security-questions-modal')">&times;</button>
+        </div>
+        <form id="security-questions-form" onsubmit="saveSecurityQuestions(event)">
+          <div class="space-y-4">
+            <div class="form-group">
+              <label class="form-label">What was your first pet's name?</label>
+              <input type="text" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">What city were you born in?</label>
+              <input type="text" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">What is your mother's maiden name?</label>
+              <input type="text" class="form-input" required>
+            </div>
+          </div>
+          <div class="flex justify-end gap-4 mt-8">
+            <button type="button" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onclick="closeModal('security-questions-modal')">
+              Cancel
+            </button>
+            <button type="submit" class="px-6 py-3 btn btn-primary">
+              Save Questions
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // Global state management
+    const state = {
+      services: [],
+      preferences: {
+        workingHours: { start: '09:00', end: '18:00' },
+        serviceRadius: 25,
+        currency: 'NPR',
+        language: 'en',
+        timezone: 'Asia/Kathmandu'
+      },
+      security: {
+        twoFactorEnabled: false,
+        securityQuestionsSet: false
+      },
+      notifications: {
+        email: true,
+        sms: false,
+        reminders: true,
+        reviews: true
+      }
+    };
+
+    // Tab Management
     function showSettingsTab(tabName) {
-      // Hide all tab contents
-      document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      
-      // Remove active class from all tab buttons
-      document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('active');
-      });
-      
-      // Show selected tab
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
       document.getElementById(tabName + '-tab').classList.add('active');
       event.target.classList.add('active');
     }
 
-    // Animation for elements
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
+    // Service Management
+    function toggleServiceAvailability(checkbox, serviceId) {
+      const isAvailable = checkbox.checked;
+      state.services = state.services.map(service => 
+        service.id === serviceId ? { ...service, is_available: isAvailable } : service
+      );
+      showNotification(`Service ${isAvailable ? 'enabled' : 'disabled'} successfully`, 'success');
+    }
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.opacity = '1';
-          entry.target.style.transform = 'translateY(0)';
-        }
-      });
-    }, observerOptions);
+    function openAddServiceModal() {
+      openModal('add-service-modal');
+    }
 
-    document.querySelectorAll('.fade-in-up').forEach(el => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(30px)';
-      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-      observer.observe(el);
-    });
+    function addNewService(event) {
+      event.preventDefault();
+      const newService = {
+        id: Date.now(),
+        name: document.getElementById('service-name').value,
+        description: document.getElementById('service-description').value,
+        price: document.getElementById('service-price').value,
+        duration: document.getElementById('service-duration').value,
+        is_available: true
+      };
+      
+      state.services.push(newService);
+      renderServices();
+      closeModal('add-service-modal');
+      showNotification('Service added successfully!', 'success');
+    }
 
-    // Form submission handling
-    document.querySelectorAll('form').forEach(form => {
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        // Show success message
-        const successMsg = document.createElement('div');
-        successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg z-50';
-        successMsg.innerHTML = `
-          <div class="flex items-center gap-2">
-            <i class="fas fa-check-circle"></i>
-            <span>Settings saved successfully!</span>
+    function renderServices() {
+      const container = document.getElementById('services-container');
+      if (state.services.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 text-gray-500">
+            <i class="fas fa-concierge-bell text-4xl mb-4 text-gray-300"></i>
+            <p class="text-lg">No services configured yet</p>
+            <p class="text-sm mt-1">Add your first service to start receiving bookings</p>
           </div>
         `;
-        document.body.appendChild(successMsg);
+      } else {
+        container.innerHTML = state.services.map(service => `
+          <div class="service-card" data-service-id="${service.id}">
+            <div class="flex justify-between items-center">
+              <div class="flex-1">
+                <h4 class="font-semibold text-gray-900 text-lg">${service.name}</h4>
+                <p class="text-sm text-gray-600 mt-1">${service.description}</p>
+                <div class="flex items-center gap-4 mt-3">
+                  <span class="text-sm font-medium text-gray-700">रू ${service.price}</span>
+                  <span class="text-sm text-gray-500">•</span>
+                  <span class="text-sm text-gray-600">${service.duration} mins</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <label class="toggle-switch">
+                  <input type="checkbox" ${service.is_available ? 'checked' : ''} onchange="toggleServiceAvailability(this, ${service.id})">
+                  <span class="toggle-slider"></span>
+                </label>
+                <button class="p-2 text-gray-400 hover:text-blue-600 transition-colors" onclick="editService(${service.id})">
+                  <i class="fas fa-edit"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Security Functions
+    function openPasswordModal() {
+      openModal('password-modal');
+    }
+
+    function checkPasswordStrength(password) {
+      let strength = 0;
+      const bar = document.getElementById('password-strength-bar');
+      const text = document.getElementById('password-strength-text');
+      
+      if (password.length >= 8) strength += 25;
+      if (/[A-Z]/.test(password)) strength += 25;
+      if (/[0-9]/.test(password)) strength += 25;
+      if (/[^A-Za-z0-9]/.test(password)) strength += 25;
+      
+      bar.style.width = strength + '%';
+      
+      if (strength < 50) {
+        text.className = 'password-strength strength-weak';
+        text.textContent = 'Weak password';
+      } else if (strength < 75) {
+        text.className = 'password-strength strength-medium';
+        text.textContent = 'Medium password';
+      } else {
+        text.className = 'password-strength strength-strong';
+        text.textContent = 'Strong password';
+      }
+    }
+
+    function changePassword(event) {
+      event.preventDefault();
+      const currentPassword = document.getElementById('current-password').value;
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      
+      if (newPassword !== confirmPassword) {
+        showNotification('New passwords do not match!', 'error');
+        return;
+      }
+      
+      // Simulate API call
+      setTimeout(() => {
+        closeModal('password-modal');
+        showNotification('Password changed successfully!', 'success');
+      }, 1000);
+    }
+
+    function toggle2FA() {
+      state.security.twoFactorEnabled = !state.security.twoFactorEnabled;
+      const button = document.querySelector('#2fa-status');
+      button.textContent = state.security.twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA';
+      showNotification(`Two-factor authentication ${state.security.twoFactorEnabled ? 'enabled' : 'disabled'}`, 'success');
+    }
+
+    function setupSecurityQuestions() {
+      openModal('security-questions-modal');
+    }
+
+    function saveSecurityQuestions(event) {
+      event.preventDefault();
+      state.security.securityQuestionsSet = true;
+      closeModal('security-questions-modal');
+      showNotification('Security questions saved successfully!', 'success');
+    }
+
+    // Notification Management
+    function updateNotificationSetting(type, enabled) {
+      state.notifications[type] = enabled;
+      showNotification('Notification settings updated', 'success');
+    }
+
+    // Preferences Management
+    function updateRadiusValue(value) {
+      document.getElementById('radius-value').textContent = value + ' km';
+      state.preferences.serviceRadius = parseInt(value);
+    }
+
+    function savePreferences() {
+      state.preferences.workingHours.start = document.getElementById('working-hours-start').value;
+      state.preferences.workingHours.end = document.getElementById('working-hours-end').value;
+      state.preferences.language = document.getElementById('language-select').value;
+      state.preferences.timezone = document.getElementById('timezone-select').value;
+      
+      showNotification('Preferences saved successfully!', 'success');
+    }
+
+    function resetPreferences() {
+      document.getElementById('working-hours-start').value = '09:00';
+      document.getElementById('working-hours-end').value = '18:00';
+      document.getElementById('service-radius').value = 25;
+      document.getElementById('radius-value').textContent = '25 km';
+      document.getElementById('language-select').value = 'en';
+      document.getElementById('timezone-select').value = 'Asia/Kathmandu';
+      
+      showNotification('Preferences reset to defaults', 'info');
+    }
+
+    // Modal Management
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.style.display = 'block';
+      setTimeout(() => modal.classList.add('active'), 10);
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.remove('active');
+      setTimeout(() => modal.style.display = 'none', 300);
+    }
+
+    // Profile Management
+    function resetProfileForm() {
+      document.getElementById('profile-form').reset();
+      showNotification('Form reset', 'info');
+    }
+
+    // Notification System
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-green-500' : 
+                     type === 'error' ? 'bg-red-500' : 
+                     type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
+      
+      notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg z-50 transform transition-all duration-300 translate-x-full`;
+      notification.innerHTML = `
+        <div class="flex items-center gap-3">
+          <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => notification.classList.remove('translate-x-full'), 10);
+      setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // Account Deletion
+    function showDeleteConfirmation() {
+      if (confirm('Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.')) {
+        showNotification('Account deletion scheduled. You will receive a confirmation email.', 'warning');
+      }
+    }
+
+    // View Login Activity
+    function viewLoginActivity() {
+      showNotification('Login activity feature coming soon!', 'info');
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize services from Django template
+      state.services = [
+        {% for service in worker_services %}
+        {
+          id: {{ service.id }},
+          name: "{{ service.service.name }}",
+          description: "{{ service.service.description }}",
+          price: {{ service.price }},
+          duration: {{ service.duration }},
+          is_available: {% if service.is_available %}true{% else %}false{% endif %}
+        },
+        {% endfor %}
+      ];
+      
+      // Set up profile picture preview
+      document.getElementById('profile-pic-input')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const preview = document.getElementById('profile-preview') || document.getElementById('profile-default');
+            if (preview.id === 'profile-default') {
+              preview.parentElement.innerHTML = `<img src="${e.target.result}" alt="Profile Preview" class="w-full h-full object-cover" id="profile-preview">`;
+            } else {
+              preview.src = e.target.result;
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Password confirmation check
+      document.getElementById('confirm-password')?.addEventListener('input', function() {
+        const matchDiv = document.getElementById('password-match');
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = this.value;
         
-        setTimeout(() => {
-          successMsg.remove();
-        }, 3000);
+        if (confirmPassword === '') {
+          matchDiv.textContent = '';
+        } else if (newPassword === confirmPassword) {
+          matchDiv.textContent = 'Passwords match!';
+          matchDiv.className = 'text-sm mt-1 text-green-600';
+        } else {
+          matchDiv.textContent = 'Passwords do not match!';
+          matchDiv.className = 'text-sm mt-1 text-red-600';
+        }
+      });
+
+      // Initialize animations
+      const animatedElements = document.querySelectorAll('.fade-in-up');
+      animatedElements.forEach((el, index) => {
+        el.style.animationDelay = `${index * 0.1}s`;
       });
     });
   </script>

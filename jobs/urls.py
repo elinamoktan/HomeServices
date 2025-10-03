@@ -92,6 +92,6 @@ urlpatterns = [
     path('worker/earnings/', views.worker_earnings, name='worker_earnings'),
     path('worker/settings/', views.worker_settings, name='worker_settings'),
 
-    # Add this URL pattern to your urlpatterns list
     path('delete-worker-review/', views.delete_worker_review, name='delete_worker_review'),
+# This should work, but let's verify
 ]

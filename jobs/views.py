@@ -2923,26 +2923,86 @@ def worker_settings(request):
     
     return render(request, 'jobs/worker_settings.html', context)
 
-
 @login_required
 @require_POST
 def delete_worker_review(request):
-    """Delete a worker review"""
+    """Delete a worker review and update worker ratings"""
+    print("🟢 DELETE_REVIEW_VIEW: Request received!")
+    print("=" * 60)
+    print("🟢 DELETE_REVIEW_VIEW CALLED!")
+    print("🟢 Method:", request.method)
+    print("🟢 Path:", request.path)
+    print("🟢 User:", request.user)
+    print("🟢 Content-Type:", request.content_type)
+    print("=" * 60)
     try:
-        review_id = request.POST.get('review_id')
-        review = get_object_or_404(WorkerRating, id=review_id)
+        # Handle both POST data and JSON body
+        if request.content_type == 'application/json':
+            import json
+            data = json.loads(request.body)
+            review_id = data.get('review_id') 
+            print(f"🟢 JSON data received - review_id: {review_id}")
+        else:
+            review_id = request.POST.get('review_id')
+            print(f"🟢 Form data received - review_id: {review_id}")
         
-        # Check if the current user owns this worker's reviews
-        if review.worker.owner != request.user:
-            return JsonResponse({'success': False, 'error': 'Permission denied'})
+        if not review_id:
+            print("🔴 No review_id provided")
+            return JsonResponse({
+                'success': False, 
+                'error': 'Review ID is required'
+            }, status=400)
+        
+        # Get the review
+        try:
+            review = WorkerRating.objects.get(id=review_id)
+            print(f"🟢 Review found - ID: {review.id}, Worker: {review.worker.name}")
+        except WorkerRating.DoesNotExist:
+            print(f"🔴 Review with ID {review_id} not found")
+            return JsonResponse({
+                'success': False, 
+                'error': 'Review not found'
+            }, status=404)
+        
+        # ✅ CRITICAL FIX: Check if the current user is the customer who wrote this review
+        if not hasattr(request.user, 'customer'):
+            print("🔴 User is not a customer")
+            return JsonResponse({
+                'success': False, 
+                'error': 'You must be a customer to delete reviews'
+            }, status=403)
+        
+        if review.customer != request.user.customer:
+            print(f"🔴 Review customer mismatch. Review customer: {review.customer.id}, Current user customer: {request.user.customer.id}")
+            return JsonResponse({
+                'success': False, 
+                'error': 'You can only delete your own reviews'
+            }, status=403)
+        
+        # Store worker reference before deletion for rating update
+        worker = review.worker
+        worker_name = worker.name
+        
+        print(f"🟢 Deleting review {review_id} for worker {worker_name}")
         
         # Delete the review
         review.delete()
         
-        # Update worker's average rating
-        review.worker.update_average_rating()
+        # ✅ IMPORTANT: Update worker's average rating after deletion
+        worker.update_average_rating()
         
-        return JsonResponse({'success': True, 'message': 'Review deleted successfully'})
+        print(f"🟢 Review {review_id} deleted successfully. Worker ratings updated.")
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Review for {worker_name} deleted successfully'
+        })
         
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        print(f"🔴 Unexpected error in delete_worker_review: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False, 
+            'error': f'An error occurred: {str(e)}'
+        }, status=500)

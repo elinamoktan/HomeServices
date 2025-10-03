@@ -10,17 +10,20 @@
 </div>
 
 {% if ratings %}
-  <div class="space-y-6">
+  <div class="space-y-6" id="reviews-container">
     {% for rating in ratings %}
-      <div class="bg-white rounded-2xl shadow-lg p-8 border-l-4 border-indigo-500 transition-all duration-300 hover:shadow-xl relative" id="review-{{ rating.id }}">
-        <!-- Delete Button -->
+      <div class="bg-white rounded-2xl shadow-lg p-8 border-l-4 border-indigo-500 transition-all duration-300 hover:shadow-xl relative" id="review-{{ rating.id }}" data-review-id="{{ rating.id }}">
+        <!-- Delete Button - ADDED DIRECT ONCLICK -->
         <button 
           type="button"
-          onclick="confirmDeleteReview('{{ rating.id }}', '{{ rating.worker.name }}')"
-          class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors duration-200 p-2 rounded-lg hover:bg-red-50"
+          class="delete-review-btn absolute top-4 right-4 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all duration-200 font-semibold text-sm flex items-center gap-2 shadow-sm hover:shadow-md"
           title="Delete this review"
+          data-review-id="{{ rating.id }}"
+          data-worker-name="{{ rating.worker.name }}"
+          onclick="deleteReview('{{ rating.id }}', '{{ rating.worker.name|escapejs }}')"
         >
-          <i class="fas fa-trash-alt text-lg"></i>
+          <i class="fas fa-trash-alt"></i>
+          Delete
         </button>
 
         <div class="flex items-start space-x-6">
@@ -37,7 +40,7 @@
 
           <div class="flex-1">
             <!-- Worker Info -->
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center justify-between mb-4 pr-24">
               <div>
                 <h3 class="text-xl font-bold text-gray-800">{{ rating.worker.name }}</h3>
                 <p class="text-gray-600 text-lg">{{ rating.worker.tagline }}</p>
@@ -124,7 +127,7 @@
       <div class="flex space-x-4 justify-center">
         <button 
           type="button" 
-          onclick="closeDeleteModal()"
+          id="cancelDeleteBtn"
           class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors duration-200 font-semibold"
         >
           Cancel
@@ -148,185 +151,128 @@
     <span class="text-gray-700 font-semibold">Deleting review...</span>
   </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-let currentReviewId = null;
-
-function confirmDeleteReview(reviewId, workerName) {
-  currentReviewId = reviewId;
-  const modal = document.getElementById('deleteModal');
-  const modalContent = document.getElementById('modalContent');
-  const modalMessage = document.getElementById('modalMessage');
-  
-  modalMessage.textContent = `Are you sure you want to delete your review for ${workerName}? This action cannot be undone.`;
-  
-  modal.classList.remove('hidden');
-  setTimeout(() => {
-    modalContent.classList.remove('scale-95', 'opacity-0');
-    modalContent.classList.add('scale-100', 'opacity-100');
-  }, 10);
-  
-  // Set up confirm button
-  const confirmBtn = document.getElementById('confirmDeleteBtn');
-  confirmBtn.onclick = deleteReview;
-}
-
-function closeDeleteModal() {
-  const modal = document.getElementById('deleteModal');
-  const modalContent = document.getElementById('modalContent');
-  
-  modalContent.classList.remove('scale-100', 'opacity-100');
-  modalContent.classList.add('scale-95', 'opacity-0');
-  
-  setTimeout(() => {
-    modal.classList.add('hidden');
-    currentReviewId = null;
-  }, 300);
-}
-
-function deleteReview() {
-  if (!currentReviewId) return;
-  
-  const loadingSpinner = document.getElementById('loadingSpinner');
-  loadingSpinner.classList.remove('hidden');
-  closeDeleteModal();
-  
-  // Send AJAX request to delete the review
-  const formData = new FormData();
-  formData.append('review_id', currentReviewId);
-  
-  fetch("{% url 'delete_worker_review' %}", {
-    method: 'POST',
-    headers: {
-      'X-CSRFToken': getCookie('csrftoken'),
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    body: formData
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
+// Global delete function
+window.deleteReview = function(reviewId, workerName) {
+    if (!confirm('Are you sure you want to delete your review for ' + workerName + '? This action cannot be undone.')) {
+        return;
     }
-    return response.json();
-  })
-  .then(data => {
-    if (data.success) {
-      // Remove the review element from the DOM with animation
-      const reviewElement = document.getElementById(`review-${currentReviewId}`);
-      if (reviewElement) {
-        reviewElement.style.opacity = '0';
-        reviewElement.style.transform = 'translateX(-100px)';
-        reviewElement.style.transition = 'all 0.3s ease';
+    
+    // Show loading spinner
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    if (loadingSpinner) {
+        loadingSpinner.classList.remove('hidden');
+    }
+    
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
+    
+    if (!csrfToken) {
+        alert('Security error: Please refresh the page and try again.');
+        if (loadingSpinner) loadingSpinner.classList.add('hidden');
+        return;
+    }
+    
+    // Send the delete request
+    fetch('/delete-worker-review/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            review_id: reviewId
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Remove the review element from the page
+            const reviewElement = document.getElementById(`review-${reviewId}`);
+            if (reviewElement) {
+                // Add fade-out animation
+                reviewElement.style.opacity = '0';
+                reviewElement.style.transform = 'translateX(-100px)';
+                reviewElement.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    reviewElement.remove();
+                    
+                    // Show success message
+                    alert('✅ Review deleted successfully!');
+                    
+                    // Check if no reviews left
+                    const remainingReviews = document.querySelectorAll('[id^="review-"]');
+                    
+                    if (remainingReviews.length === 0) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
+                }, 300);
+            } else {
+                alert('✅ Review deleted successfully!');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        } else {
+            throw new Error(data.error || 'Delete failed on server');
+        }
+    })
+    .catch(error => {
+        alert('❌ Failed to delete review: ' + error.message);
+    })
+    .finally(() => {
+        // Hide loading spinner
+        if (loadingSpinner) {
+            loadingSpinner.classList.add('hidden');
+        }
+    });
+};
+
+// CSRF token function
+function getCSRFToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    
+    return cookieValue;
+}
+
+// Simple button setup to ensure onclick works
+function setupDeleteButtons() {
+    const buttons = document.querySelectorAll('.delete-review-btn');
+    
+    buttons.forEach((button) => {
+        const reviewId = button.getAttribute('data-review-id');
+        const workerName = button.getAttribute('data-worker-name');
         
-        setTimeout(() => {
-          reviewElement.remove();
-          showNotification('Review deleted successfully!', 'success');
-          
-          // Check if no reviews left and reload to show empty state
-          const remainingReviews = document.querySelectorAll('[id^="review-"]');
-          if (remainingReviews.length === 0) {
-            setTimeout(() => {
-              window.location.reload();
-            }, 1500);
-          }
-        }, 300);
-      }
-    } else {
-      throw new Error(data.error || 'Failed to delete review');
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    showNotification('Error deleting review: ' + error.message, 'error');
-  })
-  .finally(() => {
-    loadingSpinner.classList.add('hidden');
-    currentReviewId = null;
-  });
+        // Ensure onclick attribute is set
+        button.setAttribute('onclick', `deleteReview('${reviewId}', '${workerName}')`);
+    });
 }
 
-// Utility function to get CSRF token
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-
-// Notification function
-function showNotification(message, type) {
-  // Remove existing notifications
-  const existingNotifications = document.querySelectorAll('.custom-notification');
-  existingNotifications.forEach(notification => notification.remove());
-  
-  const notification = document.createElement('div');
-  notification.className = `custom-notification fixed top-4 right-4 p-4 rounded-xl shadow-lg text-white font-semibold z-50 transform transition-all duration-300 ${
-    type === 'success' ? 'bg-green-500' : 'bg-red-500'
-  }`;
-  notification.textContent = message;
-  notification.style.transform = 'translateX(100%)';
-  
-  document.body.appendChild(notification);
-  
-  // Animate in
-  setTimeout(() => {
-    notification.style.transform = 'translateX(0)';
-  }, 10);
-  
-  // Animate out after 3 seconds
-  setTimeout(() => {
-    notification.style.transform = 'translateX(100%)';
-    setTimeout(() => {
-      if (notification.parentNode) {
-        document.body.removeChild(notification);
-      }
-    }, 300);
-  }, 3000);
-}
-
-// Close modal when clicking outside
-document.getElementById('deleteModal').addEventListener('click', function(e) {
-  if (e.target === this) {
-    closeDeleteModal();
-  }
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    closeDeleteModal();
-  }
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    setupDeleteButtons();
 });
 </script>
-
-<style>
-/* Smooth transitions for modal */
-#deleteModal {
-  transition: opacity 0.3s ease;
-}
-
-#modalContent {
-  transition: all 0.3s ease;
-}
-
-/* Custom notification styles */
-.custom-notification {
-  transition: transform 0.3s ease;
-}
-
-/* Smooth deletion animation */
-[id^="review-"] {
-  transition: all 0.3s ease;
-}
-</style>
 {% endblock %}
