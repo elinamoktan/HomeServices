@@ -1,10 +1,35 @@
-env/
-.venv/
-jobs/__pycache__/
-config/__pycache__/
-jobs/migrations/__pycache__/
-accounts/__pycache__/
-accounts/migrations/__pycache__/
-jobs/templatetags/__pycache__/
-__pycache__/
+# Python bytecode files
 *.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Virtual environment directories
+env/
+venv/
+
+# Django migration files (if you prefer to regenerate them)
+# jobs/migrations/
+
+# Database files
+db.sqlite3
+*.db
+
+# Media files uploaded by users
+media/
+
+# Static files collected during deployment
+static/
+
+# IDE/editor configuration files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Operating system-specific files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log

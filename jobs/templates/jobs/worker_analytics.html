@@ -1,0 +1,443 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics - BlueCollar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Include all your existing dashboard styles here */
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --secondary: #8b5cf6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #0f172a;
+      --light: #f8fafc;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #1e293b;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.95) 0%, rgba(37, 99, 235, 0.95) 100%);
+      backdrop-filter: blur(20px);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 1000;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-item {
+      padding: 1rem 1.5rem;
+      margin: 0.5rem 1rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .main-content {
+      margin-left: 280px;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .analytics-chart {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    .metric-card {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border-radius: 16px;
+      padding: 1.5rem;
+      border-left: 4px solid;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .main-content {
+        margin-left: 0;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <div class="sidebar w-72">
+    <div class="p-6 border-b border-white border-opacity-20">
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+          <span class="text-blue-600 font-bold text-xl">BC</span>
+        </div>
+        <div>
+          <h1 class="font-bold text-xl text-white">BlueCollar</h1>
+          <p class="text-sm text-blue-100">Worker Portal</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="p-4 flex-1 overflow-y-auto">
+      <a href="{% url 'worker_dashboard' %}" class="nav-item">
+        <i class="fas fa-home"></i>
+        Dashboard
+      </a>
+      <a href="{% url 'worker_service_details' worker.id %}" class="nav-item">
+        <i class="fas fa-concierge-bell"></i>
+        My Services
+      </a>
+      <a href="{% url 'worker_calendar' %}" class="nav-item">
+        <i class="fas fa-calendar-alt"></i>
+        Calendar
+      </a>
+      <a href="{% url 'worker_reviews' %}" class="nav-item">
+        <i class="fas fa-star"></i>
+        Reviews
+      </a>
+      <a href="{% url 'worker_analytics' %}" class="nav-item active">
+        <i class="fas fa-chart-line"></i>
+        Analytics
+      </a>
+      <a href="{% url 'worker_earnings' %}" class="nav-item">
+        <i class="fas fa-wallet"></i>
+        Earnings
+      </a>
+      <a href="{% url 'worker_settings' %}" class="nav-item">
+        <i class="fas fa-cog"></i>
+        Settings
+      </a>
+    </nav>
+
+    <div class="absolute bottom-0 w-full p-4 border-t border-white border-opacity-20 bg-black bg-opacity-10">
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="customer-avatar bg-white">
+          {% if worker.profile_pic %}
+            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="w-full h-full rounded-full object-cover">
+          {% else %}
+            <span class="text-blue-600">{{ worker.name|first }}</span>
+          {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-white truncate">{{ worker.name }}</p>
+          <p class="text-xs text-blue-100 truncate">Professional Worker</p>
+        </div>
+      </div>
+      <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="w-full btn btn-secondary">
+          <i class="fas fa-sign-out-alt"></i>
+          Logout
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Header -->
+    <div class="dashboard-header fade-in-up">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Performance Analytics 📊</h1>
+          <p class="text-gray-600 text-lg">Track your business performance and growth metrics</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="text-right bg-gradient-to-r from-purple-50 to-indigo-50 px-4 py-3 rounded-xl">
+            <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Performance Score</p>
+            <p class="font-bold text-gray-900">{{ performance_score }}%</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="stat-card fade-in-up" style="animation-delay: 0.1s">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Completion Rate</p>
+            <p class="text-4xl font-bold text-green-600">{{ completion_rate }}%</p>
+            <p class="text-xs text-gray-500 mt-2">+5.2% from last month</p>
+          </div>
+          <div class="stat-icon" style="--color-start: #10b981; --color-end: #059669; --color-shadow: rgba(16, 185, 129, 0.3);">
+            <i class="fas fa-check-double text-white"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card fade-in-up" style="animation-delay: 0.2s">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Avg. Response Time</p>
+            <p class="text-4xl font-bold text-blue-600">{{ avg_response_time }}m</p>
+            <p class="text-xs text-gray-500 mt-2">-2.1m faster</p>
+          </div>
+          <div class="stat-icon" style="--color-start: #3b82f6; --color-end: #2563eb; --color-shadow: rgba(59, 130, 246, 0.3);">
+            <i class="fas fa-clock text-white"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card fade-in-up" style="animation-delay: 0.3s">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Customer Satisfaction</p>
+            <p class="text-4xl font-bold text-yellow-600">{{ satisfaction_rate }}%</p>
+            <p class="text-xs text-gray-500 mt-2">Based on reviews</p>
+          </div>
+          <div class="stat-icon" style="--color-start: #f59e0b; --color-end: #d97706; --color-shadow: rgba(245, 158, 11, 0.3);">
+            <i class="fas fa-smile text-white"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card fade-in-up" style="animation-delay: 0.4s">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Repeat Customers</p>
+            <p class="text-4xl font-bold text-purple-600">{{ repeat_customers }}%</p>
+            <p class="text-xs text-gray-500 mt-2">Loyal clients</p>
+          </div>
+          <div class="stat-icon" style="--color-start: #8b5cf6; --color-end: #7c3aed; --color-shadow: rgba(139, 92, 246, 0.3);">
+            <i class="fas fa-redo text-white"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Appointments Trend -->
+      <div class="analytics-chart fade-in-up">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">Appointments Trend</h3>
+        <div class="h-80">
+          <canvas id="appointmentsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Service Distribution -->
+      <div class="analytics-chart fade-in-up">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">Service Distribution</h3>
+        <div class="h-80">
+          <canvas id="servicesChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional Metrics -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div class="metric-card fade-in-up" style="border-left-color: #3b82f6;">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-600 mb-1">Peak Hours</p>
+            <p class="text-2xl font-bold text-gray-900">10 AM - 2 PM</p>
+          </div>
+          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-card fade-in-up" style="border-left-color: #10b981;">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-600 mb-1">Busiest Day</p>
+            <p class="text-2xl font-bold text-gray-900">Wednesday</p>
+          </div>
+          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-calendar-day text-green-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-card fade-in-up" style="border-left-color: #f59e0b;">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-600 mb-1">Avg. Job Duration</p>
+            <p class="text-2xl font-bold text-gray-900">2.5 hours</p>
+          </div>
+          <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-hourglass-half text-yellow-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Insights -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 fade-in-up">
+      <h3 class="text-xl font-bold text-gray-900 mb-6">Performance Insights</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-trending-up text-green-600"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900">Strong Performance</p>
+              <p class="text-sm text-gray-600">Completion rate is excellent</p>
+            </div>
+          </div>
+          <p class="text-sm text-gray-700">Your job completion rate of {{ completion_rate }}% is above the platform average. Keep up the good work!</p>
+        </div>
+
+        <div class="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-users text-blue-600"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900">Customer Growth</p>
+              <p class="text-sm text-gray-600">{{ new_customers }} new clients this month</p>
+            </div>
+          </div>
+          <p class="text-sm text-gray-700">You've acquired {{ new_customers }} new customers this month, a {{ growth_rate }}% increase from last month.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Appointments Trend Chart
+    const appointmentsCtx = document.getElementById('appointmentsChart').getContext('2d');
+    const appointmentsChart = new Chart(appointmentsCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Appointments',
+          data: [45, 52, 48, 65, 72, 78],
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          },
+          x: {
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          }
+        }
+      }
+    });
+
+    // Services Distribution Chart
+    const servicesCtx = document.getElementById('servicesChart').getContext('2d');
+    const servicesChart = new Chart(servicesCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Plumbing', 'Electrical', 'Painting', 'Cleaning', 'Repairs'],
+        datasets: [{
+          data: [30, 25, 20, 15, 10],
+          backgroundColor: [
+            '#3b82f6',
+            '#10b981',
+            '#f59e0b',
+            '#8b5cf6',
+            '#ef4444'
+          ],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+
+    // Animation for elements
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in-up').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>

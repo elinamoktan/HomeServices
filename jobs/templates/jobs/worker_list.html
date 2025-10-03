@@ -27,7 +27,193 @@
         1000: { items: 3 }
       }
     });
+
+    // Distance slider functionality
+    const distanceSlider = document.getElementById('distanceSlider');
+    const distanceValue = document.getElementById('distanceValue');
+    const distanceForm = document.getElementById('distanceForm');
+
+    if (distanceSlider && distanceValue) {
+      // Set initial value from the URL parameter or default
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialDistance = urlParams.get('max_distance') || '{{ max_distance|default:50 }}';
+      distanceSlider.value = initialDistance;
+      distanceValue.textContent = initialDistance + ' km';
+
+      // Update value on input
+      distanceSlider.addEventListener('input', function() {
+        distanceValue.textContent = this.value + ' km';
+      });
+
+      // Submit form on change (release of the slider thumb)
+      distanceSlider.addEventListener('change', function() {
+        distanceForm.submit();
+      });
+    }
+
+    // Favorite functionality
+    $('.favorite-btn').on('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const btn = $(this);
+      const workerId = btn.data('worker-id');
+      const isCurrentlyFavorite = btn.hasClass('favorited');
+      
+      console.log('Toggling favorite for worker:', workerId, 'Current state:', isCurrentlyFavorite);
+      
+      $.ajax({
+        url: '{% url "toggle_favorite_worker" 0 %}'.replace('0', workerId),
+        type: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+          console.log('Favorite response:', response);
+          if (response.success) {
+            if (response.is_favorite) {
+              btn.addClass('favorited');
+              btn.find('.favorite-icon').html('❤️');
+              btn.attr('title', 'Remove from favorites');
+              btn.find('.favorite-text').text('Favorited');
+            } else {
+              btn.removeClass('favorited');
+              btn.find('.favorite-icon').html('🤍');
+              btn.attr('title', 'Add to favorites');
+              btn.find('.favorite-text').text('Add to Favorites');
+            }
+            
+            // Show temporary message
+            showMessage(response.message, 'success');
+            
+            // Update favorite count in dashboard if available
+            updateFavoriteCount();
+          }
+        },
+        error: function(xhr) {
+          console.error('Favorite error:', xhr);
+          showMessage('Error updating favorites', 'error');
+        }
+      });
+    });
+
+    // Check favorite status on page load
+    function checkFavoriteStatus() {
+      $('.favorite-btn').each(function() {
+        const btn = $(this);
+        const workerId = btn.data('worker-id');
+        
+        $.ajax({
+          url: '{% url "check_favorite_status" 0 %}'.replace('0', workerId),
+          type: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          success: function(response) {
+            if (response.is_favorite) {
+              btn.addClass('favorited');
+              btn.find('.favorite-icon').html('❤️');
+              btn.attr('title', 'Remove from favorites');
+              btn.find('.favorite-text').text('Favorited');
+            }
+          },
+          error: function(xhr) {
+            console.error('Error checking favorite status:', xhr);
+          }
+        });
+      });
+    }
+
+    // Initialize favorite status on page load
+    checkFavoriteStatus();
+
+    function showMessage(message, type) {
+      const messageDiv = $('<div class="fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-opacity duration-300"></div>');
+      
+      if (type === 'success') {
+        messageDiv.addClass('bg-green-500');
+      } else {
+        messageDiv.addClass('bg-red-500');
+      }
+      
+      messageDiv.text(message);
+      $('body').append(messageDiv);
+      
+      setTimeout(function() {
+        messageDiv.fadeOut(300, function() {
+          $(this).remove();
+        });
+      }, 3000);
+    }
+
+    function updateFavoriteCount() {
+      // This function would update the favorite count in the dashboard
+      // You can implement this if you have a real-time counter
+      console.log('Favorite count updated');
+    }
   });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Function to update location
+    function updateCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    // Send to server to update session
+                    fetch('{% url "update_current_location" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            latitude: latitude,
+                            longitude: longitude,
+                            accuracy: accuracy
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Location updated:', data);
+                            // Optionally reload the page to re-sort workers by new location
+                            // window.location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error updating location:', error);
+                    });
+                },
+                function(error) {
+                    console.warn('Location unavailable:', error.message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000 // Cache for 5 minutes
+                }
+            );
+        }
+    }
+    
+    // Update location on page load
+    updateCurrentLocation();
+    
+    // Optionally update location every 5 minutes while on the page
+    setInterval(updateCurrentLocation, 300000);
+    
+    // Show location indicator if available
+    const customerLocation = {{ customer_location|safe|default:'null' }};
+    if (customerLocation) {
+        console.log('Current location:', customerLocation.latitude, customerLocation.longitude);
+        console.log('Location source:', customerLocation.source);
+    }
+});
 </script>
 
 <div class="max-w-7xl mx-auto mb-12 px-4">
@@ -60,95 +246,151 @@
   </div>
 </div>
 
-
 <div class="min-h-screen bg-gradient-to-tr from-indigo-50 via-purple-50 to-pink-50 py-12 px-6">
 
-  <div class="flex flex-col md:flex-row items-center justify-between mb-12 max-w-7xl mx-auto w-full">
+  <div class="max-w-7xl mx-auto mb-12 px-4">
     {% if user.is_authenticated %}
-    <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6 w-full">
+    <div class="w-full">
 
       {% if user.customer.name %}
-      <form method="get" class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
-        <input
-          type="text"
-          name="q"
-          value="{{ query|default:'' }}"
-          placeholder="Search workers by tagline..."
-          class="w-full sm:w-80 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition"
-        >
+      <!-- Improved layout with more vertical space -->
+      <div class="flex flex-col gap-8 w-full">
+        
+        <!-- Search and Filter Section -->
+        <div class="bg-white rounded-2xl shadow-xl p-6">
+          <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+            <!-- Search Form -->
+            <form method="get" class="flex-1 min-w-0">
+              <div class="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="text"
+                  name="q"
+                  value="{{ query|default:'' }}"
+                  placeholder="Search workers by tagline..."
+                  class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg"
+                >
+                
+                <div class="flex gap-4">
+                  <div class="relative">
+                    <button
+                      type="button"
+                      onclick="this.nextElementSibling.classList.toggle('hidden')"
+                      class="px-6 py-3 bg-indigo-200 rounded-lg hover:bg-indigo-300 focus:outline-none transition flex items-center space-x-2 whitespace-nowrap text-lg"
+                      aria-label="Filter options"
+                    >
+                      <img src="{{ '/media/filter.png' }}" alt="Filter Icon" class="h-6 w-6">
+                      <span class="text-indigo-700 font-medium">Filter</span>
+                    </button>
 
-        <div class="relative">
-          <button
-            type="button"
-            onclick="this.nextElementSibling.classList.toggle('hidden')"
-            class="px-4 py-3 bg-indigo-200 rounded-lg hover:bg-indigo-300 focus:outline-none transition flex items-center space-x-2"
-            aria-label="Filter options"
-          >
-            <img src="{{ '/media/filter.png' }}" alt="Filter Icon" class="h-6 w-6">
-            <span class="text-indigo-700 font-medium">Filter</span>
-          </button>
+                    <div class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50">
+                      <button
+                        type="submit"
+                        name="filter"
+                        value="rating"
+                        class="block w-full px-4 py-3 text-left text-gray-700 hover:bg-indigo-100 transition text-lg"
+                      >
+                        Filter by Rating
+                      </button>
+                      <button
+                        type="submit"
+                        name="filter"
+                        value="distance"
+                        class="block w-full px-4 py-3 text-left text-gray-700 hover:bg-indigo-100 transition text-lg"
+                      >
+                        Filter by Distance
+                      </button>
+                    </div>
+                  </div>
 
-          <div class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50">
-            <button
-              type="submit"
-              name="filter"
-              value="rating"
-              class="block w-full px-4 py-2 text-left text-gray-700 hover:bg-indigo-100 transition"
-            >
-              Filter by Rating
-            </button>
-            <button
-              type="submit"
-              name="filter"
-              value="distance"
-              class="block w-full px-4 py-2 text-left text-gray-700 hover:bg-indigo-100 transition"
-            >
-              Filter by Distance
-            </button>
+                  <button
+                    type="submit"
+                    class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-2xl hover:scale-105 transition transform duration-300 whitespace-nowrap text-lg"
+                  >
+                    Search
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Distance Filter -->
+          <div class="mt-6 pt-6 border-t border-gray-200">
+            <form id="distanceForm" method="get" class="flex flex-col lg:flex-row items-center gap-6">
+              <input type="hidden" name="q" value="{{ query|default:'' }}">
+              
+              <div class="flex items-center gap-4 flex-1 min-w-0">
+                <label for="distanceSlider" class="text-indigo-700 font-semibold whitespace-nowrap text-lg min-w-[120px]">
+                  Max Distance:
+                </label>
+                <span id="distanceValue" class="text-indigo-600 font-medium whitespace-nowrap text-lg min-w-[60px]">
+                  {{ max_distance|default:50 }} km
+                </span>
+                <input
+                  type="range"
+                  id="distanceSlider"
+                  name="max_distance"
+                  min="1"
+                  max="100"
+                  value="{{ max_distance|default:50 }}"
+                  class="flex-1 min-w-0 h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer slider"
+                >
+              </div>
+              
+              <button
+                type="submit"
+                class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-lg font-semibold min-w-[120px]"
+              >
+                Apply Filter
+              </button>
+            </form>
           </div>
         </div>
 
-        <button
-          type="submit"
-          class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-2xl hover:scale-105 transition transform duration-300"
-        >
-          Search
-        </button>
-      </form>
-
-      <form action="{% url 'customer_appointments' %}" method="get" class="ml-auto">
-        <button
-          type="submit"
-          class="px-8 py-3 bg-gradient-to-r from-pink-500 to-red-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-2xl transform hover:scale-105 transition duration-300"
-        >
-          Manage Appointments
-        </button>
-      </form>
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-6">
+          <form action="{% url 'customer_appointments' %}" method="get" class="flex-1">
+            <button
+              type="submit"
+              class="w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
+            >
+              📅 Manage Appointments
+            </button>
+          </form>
+          <form action="{% url 'favorite_workers_list' %}" method="get" class="flex-1">
+            <button
+              type="submit"
+              class="w-full px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
+            >
+              ⭐ My Favorites
+            </button>
+          </form>
+        </div>
+      </div>
       {% endif %}
 
       {% if user.worker.name %}
-      <div class="max-w-7xl mx-auto my-10 p-8 bg-white bg-opacity-90 rounded-xl shadow-lg w-full">
+      <div class="max-w-full mx-auto my-10 p-8 bg-white bg-opacity-90 rounded-xl shadow-lg w-full">
         <h2 class="text-3xl font-extrabold text-indigo-700 mb-8 border-b-2 border-indigo-300 pb-2">My Appointments</h2>
         {% if appointments %}
         <ul class="space-y-6">
           {% for appointment in appointments %}
           <li
-            class="p-6 rounded-xl bg-indigo-50 shadow hover:bg-indigo-100 transition duration-300 flex flex-col md:flex-row justify-between items-start md:items-center"
+            class="p-6 rounded-xl bg-indigo-50 shadow hover:bg-indigo-100 transition duration-300 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4"
           >
-            <div class="text-indigo-900 space-y-2 text-lg font-medium">
+            <div class="text-indigo-900 space-y-2 text-lg font-medium flex-grow">
               <p><span class="font-semibold">Date:</span> {{ appointment.appointment_date|date:"F j, Y, g:i a" }}</p>
               <p><span class="font-semibold">Customer:</span> {{ appointment.customer.name }}</p>
               <p><span class="font-semibold">Contact No:</span> {{ appointment.customer.phone_number }}</p>
               <p><span class="font-semibold">Status:</span> <span class="capitalize">{{ appointment.status }}</span></p>
             </div>
 
-            <div class="mt-4 md:mt-0 flex space-x-4">
+            <div class="flex flex-col sm:flex-row gap-4 flex-shrink-0">
               {% if appointment.status == 'pending' %}
               <form action="{% url 'accept_appointment' appointment.id %}" method="post">
                 {% csrf_token %}
                 <button
                   type="submit"
-                  class="px-5 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+                  class="w-full sm:w-auto px-5 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition whitespace-nowrap"
                 >
                   Accept
                 </button>
@@ -157,7 +399,7 @@
                 {% csrf_token %}
                 <button
                   type="submit"
-                  class="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition"
+                  class="w-full sm:w-auto px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition whitespace-nowrap"
                 >
                   Reject
                 </button>
@@ -167,7 +409,7 @@
                 {% csrf_token %}
                 <button
                   type="submit"
-                  class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+                  class="w-full sm:w-auto px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition whitespace-nowrap"
                 >
                   Completed
                 </button>
@@ -177,7 +419,7 @@
                 {% csrf_token %}
                 <button
                   type="submit"
-                  class="px-5 py-2 bg-red-700 text-white font-semibold rounded-lg hover:bg-red-800 transition"
+                  class="w-full sm:w-auto px-5 py-2 bg-red-700 text-white font-semibold rounded-lg hover:bg-red-800 transition whitespace-nowrap"
                 >
                   Delete Appointment
                 </button>
@@ -200,117 +442,216 @@
   <h1 class="mb-8 text-4xl font-extrabold text-indigo-800 font-serif text-center">Search results for "{{ q }}"</h1>
   {% endif %}
 
+  {% if max_distance %}
+  <div class="mb-6 text-center">
+    <p class="text-lg text-indigo-700 font-semibold">
+      Showing workers within <span class="text-indigo-900 font-bold">{{ max_distance }} km</span> of your location
+    </p>
+  </div>
+  {% endif %}
+
   {% if user.customer.name %}
-  <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+  <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
     {% for worker in object_list %}
-    <a href="{% url 'worker-detail' worker.pk %}" class="group">
-      <div
-        class="bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden"
+    {% if not max_distance or worker.distance_km <= max_distance|add:"0" %}
+    <div class="group relative">
+      <!-- Favorite Button -->
+      <button 
+        class="favorite-btn absolute top-4 right-4 z-10 bg-white bg-opacity-90 rounded-full p-2 shadow-lg hover:scale-110 transition-transform duration-200"
+        data-worker-id="{{ worker.id }}"
+        title="Add to favorites"
       >
-        <div class="p-6 flex items-center space-x-6">
-          <div class="flex-shrink-0">
-            {% if worker.profile_pic %}
-            <img
-              class="w-28 h-28 object-cover rounded-full border-4 border-indigo-400 group-hover:border-pink-400 transition"
-              src="{{ worker.profile_pic.url }}"
-              alt="Profile pic"
-              loading="lazy"
-            >
-            {% else %}
-            <div class="w-28 h-28 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600 font-bold text-2xl">
-              {{ worker.name|slice:":1" }}
-            </div>
-            {% endif %}
-          </div>
-
-          <div class="flex flex-col space-y-2">
-            <p class="text-2xl font-extrabold text-indigo-900 group-hover:text-pink-600 transition">{{ worker.name }}</p>
-
-            <div class="flex items-center space-x-3 text-sm mt-1">
-              {% if worker.verified %}
-              <span
-                class="px-2 py-1 rounded-full bg-green-100 text-green-700 font-semibold flex items-center space-x-1"
-                title="Verified Worker"
+        <span class="favorite-icon text-xl">🤍</span>
+        <span class="favorite-text sr-only">Add to Favorites</span>
+      </button>
+      
+      <a href="{% url 'worker_service_details' worker.id %}" class="block">
+        <div
+          class="bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full"
+        >
+          <div class="p-6 flex flex-col items-center text-center space-y-4">
+            <div class="flex-shrink-0">
+              {% if worker.profile_pic %}
+              <img
+                class="w-28 h-28 object-cover rounded-full border-4 border-indigo-400 group-hover:border-pink-400 transition"
+                src="{{ worker.profile_pic.url }}"
+                alt="Profile pic"
+                loading="lazy"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Verified</span>
-              </span>
               {% else %}
-              <span
-                class="px-2 py-1 rounded-full bg-red-100 text-red-700 font-semibold flex items-center space-x-1"
-                title="Not Verified"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>Not Verified</span>
-              </span>
+              <div class="w-28 h-28 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600 font-bold text-2xl">
+                {{ worker.name|slice:":1" }}
+              </div>
               {% endif %}
             </div>
 
-            <p class="text-gray-700 italic text-lg mt-1 max-w-xs">{{ worker.tagline }}</p>
+            <div class="flex flex-col space-y-3 w-full">
+              <p class="text-2xl font-extrabold text-indigo-900 group-hover:text-pink-600 transition">{{ worker.name }}</p>
 
-            {% if worker.distance_km is not None %}
-            <p class="text-indigo-700 font-semibold pt-3">
-              {{ worker.distance_km }} km away
-            </p>
-            {% endif %}
-            
-            <div class="mt-4 flex flex-col items-start space-y-2">
-              <div class="flex items-center space-x-1">
-                {# Full Stars #}
-                {% for _ in worker.full_stars %}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gold" class="drop-shadow-md">
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+              <div class="flex justify-center">
+                {% if worker.verified %}
+                <span
+                  class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold flex items-center space-x-2 text-sm"
+                  title="Verified Worker"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                {% endfor %}
-
-                {# Half Star #}
-                {% if worker.half_star %}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" class="drop-shadow-md">
-                    <defs>
-                      <clipPath id="half-mask-{{ worker.id }}">
-                        <rect x="0" y="0" width="50%" height="100%" />
-                      </clipPath>
-                    </defs>
-                    <path fill="gold" clip-path="url(#half-mask-{{ worker.id }})"
-                          d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                    <path fill="gray"
-                          d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                  <span>Verified</span>
+                </span>
+                {% else %}
+                <span
+                  class="px-3 py-1 rounded-full bg-red-100 text-red-700 font-semibold flex items-center space-x-2 text-sm"
+                  title="Not Verified"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
+                  <span>Not Verified</span>
+                </span>
                 {% endif %}
-
-                {# Empty Stars #}
-                {% for _ in worker.empty_stars %}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="gray" class="drop-shadow-sm">
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                  </svg>
-                {% endfor %}
               </div>
 
-              <div class="flex flex-col">
-                <span class="text-indigo-900 font-bold text-xl">{{ worker.average_rating }} / 5</span>
-                <span class="text-indigo-600 font-medium text-sm">({{ worker.total_ratings }} reviews)</span>
+              <p class="text-gray-700 italic text-base leading-relaxed">{{ worker.tagline }}</p>
+
+              <div class="space-y-2">
+                {% if worker.location %}
+                <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span class="text-sm">{{ worker.location }}</span>
+                </p>
+                {% endif %}
+
+                {% if worker.distance_km is not None %}
+                <p class="text-indigo-700 font-semibold flex items-center justify-center space-x-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                  <span class="text-sm">{{ worker.distance_km }} km away</span>
+                </p>
+                {% endif %}
+              </div>
+              
+              <div class="flex flex-col items-center space-y-3">
+                <div class="flex items-center justify-center space-x-1">
+                  {# Full Stars #}
+                  {% for _ in worker.full_stars %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="gold" class="drop-shadow-md">
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                    </svg>
+                  {% endfor %}
+
+                  {# Half Star #}
+                  {% if worker.half_star %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" class="drop-shadow-md">
+                      <defs>
+                        <clipPath id="half-mask-{{ worker.id }}">
+                          <rect x="0" y="0" width="50%" height="100%" />
+                        </clipPath>
+                      </defs>
+                      <path fill="gold" clip-path="url(#half-mask-{{ worker.id }})"
+                            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                      <path fill="gray"
+                            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                  {% endif %}
+
+                  {# Empty Stars #}
+                  {% for _ in worker.empty_stars %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="gray" class="drop-shadow-sm">
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                    </svg>
+                  {% endfor %}
+                </div>
+
+                <div class="text-center">
+                  <span class="text-indigo-900 font-bold text-xl">{{ worker.average_rating }} / 5</span>
+                  <br>
+                  <span class="text-indigo-600 font-medium text-sm">({{ worker.total_ratings }} reviews)</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="px-6 py-4 bg-indigo-100 rounded-b-xl text-center">
-          <button
-            class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-110 transform transition duration-300 ease-in-out"
-          >
-            View Details
-          </button>
+          <div class="px-6 py-4 bg-indigo-100 rounded-b-xl text-center">
+            <button
+              class="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transform transition duration-300 ease-in-out"
+            >
+              View Details
+            </button>
+          </div>
         </div>
-      </div>
-    </a>
+      </a>
+    </div>
+    {% endif %}
+    {% empty %}
+    <div class="col-span-full text-center py-12">
+      <p class="text-xl text-indigo-700 font-semibold">
+        {% if max_distance %}
+          No workers found within {{ max_distance }} km of your location.
+        {% else %}
+          No workers found matching your search criteria.
+        {% endif %}
+      </p>
+    </div>
     {% endfor %}
   </div>
   {% endif %}
 
-</div> 
 </div>
+
+<style>
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #4f46e5;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .slider::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #4f46e5;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .slider::-webkit-slider-track {
+    height: 8px;
+    background: #c7d2fe;
+    border-radius: 4px;
+  }
+
+  .slider::-moz-range-track {
+    height: 8px;
+    background: #c7d2fe;
+    border-radius: 4px;
+    border: none;
+  }
+
+  .favorite-btn.favorited {
+    background: linear-gradient(135deg, #fce4ec, #f8bbd9);
+  }
+
+  .favorite-btn.favorited .favorite-icon {
+    animation: heartBeat 0.6s ease-in-out;
+  }
+
+  @keyframes heartBeat {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+</style>
 {% endblock content %}

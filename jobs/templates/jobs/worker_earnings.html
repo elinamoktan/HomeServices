@@ -1,0 +1,405 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earnings - BlueCollar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Include all your existing dashboard styles here */
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --secondary: #8b5cf6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #0f172a;
+      --light: #f8fafc;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #1e293b;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.95) 0%, rgba(37, 99, 235, 0.95) 100%);
+      backdrop-filter: blur(20px);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 1000;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-item {
+      padding: 1rem 1.5rem;
+      margin: 0.5rem 1rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .main-content {
+      margin-left: 280px;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .earning-chart {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    .transaction-item {
+      padding: 1rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      border-left: 4px solid;
+    }
+
+    .transaction-item:hover {
+      transform: translateX(5px);
+      background: #f8fafc;
+    }
+
+    .income { border-left-color: #10b981; }
+    .pending { border-left-color: #f59e0b; }
+    .completed { border-left-color: #3b82f6; }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .main-content {
+        margin-left: 0;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <div class="sidebar w-72">
+    <div class="p-6 border-b border-white border-opacity-20">
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+          <span class="text-blue-600 font-bold text-xl">BC</span>
+        </div>
+        <div>
+          <h1 class="font-bold text-xl text-white">BlueCollar</h1>
+          <p class="text-sm text-blue-100">Worker Portal</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="p-4 flex-1 overflow-y-auto">
+      <a href="{% url 'worker_dashboard' %}" class="nav-item">
+        <i class="fas fa-home"></i>
+        Dashboard
+      </a>
+      <a href="{% url 'worker_service_details' worker.id %}" class="nav-item">
+        <i class="fas fa-concierge-bell"></i>
+        My Services
+      </a>
+      <a href="{% url 'worker_calendar' %}" class="nav-item">
+        <i class="fas fa-calendar-alt"></i>
+        Calendar
+      </a>
+      <a href="{% url 'worker_reviews' %}" class="nav-item">
+        <i class="fas fa-star"></i>
+        Reviews
+      </a>
+      <a href="{% url 'worker_analytics' %}" class="nav-item">
+        <i class="fas fa-chart-line"></i>
+        Analytics
+      </a>
+      <a href="{% url 'worker_earnings' %}" class="nav-item active">
+        <i class="fas fa-wallet"></i>
+        Earnings
+      </a>
+      <a href="{% url 'worker_settings' %}" class="nav-item">
+        <i class="fas fa-cog"></i>
+        Settings
+      </a>
+    </nav>
+
+    <div class="absolute bottom-0 w-full p-4 border-t border-white border-opacity-20 bg-black bg-opacity-10">
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="customer-avatar bg-white">
+          {% if worker.profile_pic %}
+            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="w-full h-full rounded-full object-cover">
+          {% else %}
+            <span class="text-blue-600">{{ worker.name|first }}</span>
+          {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-white truncate">{{ worker.name }}</p>
+          <p class="text-xs text-blue-100 truncate">Professional Worker</p>
+        </div>
+      </div>
+      <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="w-full btn btn-secondary">
+          <i class="fas fa-sign-out-alt"></i>
+          Logout
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Header -->
+    <div class="dashboard-header fade-in-up">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Earnings Overview 💰</h1>
+          <p class="text-gray-600 text-lg">Track your income and financial performance</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="text-right bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-3 rounded-xl">
+            <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Available Balance</p>
+            <p class="font-bold text-gray-900">₹{{ total_earnings|default:"0" }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Earnings Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="stat-card fade-in-up" style="animation-delay: 0.1s">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Total Earnings</p>
+            <p class="text-4xl font-bold text-gray-900">₹{{ total_earnings|default:"0" }}</p>
+            <p class="text-xs text-gray-500 mt-2">All time income</p>
+          </div>
+          <div class="stat-icon" style="--color-start: #10b981; --color-end: #059669; --color-shadow: rgba(16, 185, 129, 0.3);">
+            <i class="fas fa-rupee-sign text-white"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card fade-in-up" style="animation-delay: 0.2s">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">This Month</p>
+            <p class="text-4xl font-bold text-blue-600">₹{{ monthly_earnings|default:"0" }}</p>
+            <p class="text-xs text-gray-500 mt-2">Current month income</p>
+          </div>
+          <div class="stat-icon" style="--color-start: #3b82f6; --color-end: #2563eb; --color-shadow: rgba(59, 130, 246, 0.3);">
+            <i class="fas fa-calendar text-white"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card fade-in-up" style="animation-delay: 0.3s">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Pending</p>
+            <p class="text-4xl font-bold text-amber-600">₹{{ pending_earnings|default:"0" }}</p>
+            <p class="text-xs text-gray-500 mt-2">Awaiting payment</p>
+          </div>
+          <div class="stat-icon" style="--color-start: #f59e0b; --color-end: #d97706; --color-shadow: rgba(245, 158, 11, 0.3);">
+            <i class="fas fa-clock text-white"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card fade-in-up" style="animation-delay: 0.4s">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Completed Jobs</p>
+            <p class="text-4xl font-bold text-purple-600">{{ completed_jobs|default:"0" }}</p>
+            <p class="text-xs text-gray-500 mt-2">Total services delivered</p>
+          </div>
+          <div class="stat-icon" style="--color-start: #8b5cf6; --color-end: #7c3aed; --color-shadow: rgba(139, 92, 246, 0.3);">
+            <i class="fas fa-check-circle text-white"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts and Transactions -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Earnings Chart -->
+      <div class="earning-chart fade-in-up">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">Earnings Trend</h3>
+        <div class="h-80">
+          <canvas id="earningsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 fade-in-up">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Recent Transactions</h3>
+          <span class="text-sm text-blue-600 font-semibold cursor-pointer hover:underline">View All</span>
+        </div>
+        <div class="space-y-4">
+          {% for transaction in recent_transactions %}
+          <div class="transaction-item {{ transaction.status }}">
+            <div class="flex justify-between items-center">
+              <div>
+                <p class="font-semibold text-gray-900">{{ transaction.customer_name }}</p>
+                <p class="text-sm text-gray-500">{{ transaction.service_name }}</p>
+                <p class="text-xs text-gray-400">{{ transaction.date }}</p>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-gray-900">₹{{ transaction.amount }}</p>
+                <span class="text-xs font-medium px-2 py-1 rounded-full 
+                  {% if transaction.status == 'completed' %}bg-green-100 text-green-800
+                  {% elif transaction.status == 'pending' %}bg-yellow-100 text-yellow-800
+                  {% else %}bg-blue-100 text-blue-800{% endif %}">
+                  {{ transaction.status|title }}
+                </span>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="text-center text-gray-500 py-8">
+            <i class="fas fa-receipt text-3xl mb-2"></i>
+            <p>No transactions yet</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Service Performance -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 fade-in-up">
+      <h3 class="text-xl font-bold text-gray-900 mb-6">Service Performance</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {% for service in top_services %}
+        <div class="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-semibold text-gray-900">{{ service.name }}</span>
+            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{{ service.count }} jobs</span>
+          </div>
+          <p class="text-2xl font-bold text-gray-900">₹{{ service.earnings }}</p>
+          <p class="text-xs text-gray-500 mt-1">Average: ₹{{ service.average_price }}</p>
+        </div>
+        {% empty %}
+        <div class="col-span-4 text-center text-gray-500 py-8">
+          <i class="fas fa-chart-pie text-3xl mb-2"></i>
+          <p>No service data available</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Earnings Chart
+    const earningsCtx = document.getElementById('earningsChart').getContext('2d');
+    const earningsChart = new Chart(earningsCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Monthly Earnings',
+          data: [12000, 19000, 15000, 25000, 22000, 30000],
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            },
+            ticks: {
+              callback: function(value) {
+                return '₹' + value;
+              }
+            }
+          },
+          x: {
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          }
+        }
+      }
+    });
+
+    // Animation for elements
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in-up').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>

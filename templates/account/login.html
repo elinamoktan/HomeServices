@@ -10,20 +10,176 @@
             <h2 class="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-1">Welcome Back</h2>
             <p class="text-gray-600 text-sm sm:text-base">Manage your appointments effortlessly.</p>
         </div>
-        <form method="POST" class="space-y-6 animate-fade-in">
+
+        {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                    <div class="p-3 rounded-lg text-sm 
+                        {% if message.tags == 'success' %} bg-green-100 text-green-700 border border-green-200
+                        {% elif message.tags == 'error' %} bg-red-100 text-red-700 border border-red-200
+                        {% else %} bg-blue-100 text-blue-700 border border-blue-200 {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Location status indicator -->
+        <div id="location-status" class="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 hidden">
+            <p class="text-sm text-blue-700 text-center">
+                <span id="location-message">📍 Getting your location...</span>
+            </p>
+        </div>
+
+        <form method="POST" id="login-form" class="space-y-6 animate-fade-in">
             {% csrf_token %}
             {{ form|crispy }}
-            <button type="submit"
-                class="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition duration-300 ease-in-out">
+            
+            <!-- Hidden fields for location data -->
+            <input type="hidden" name="latitude" id="latitude">
+            <input type="hidden" name="longitude" id="longitude">
+            <input type="hidden" name="location_accuracy" id="location_accuracy">
+            
+            <button type="submit" id="login-button"
+                class="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
                 Log In
             </button>
         </form>
-        <p class="mt-6 text-center text-sm text-gray-700">
-            Don't have an account?
-            <a href="{% url 'account_signup' %}" class="text-indigo-600 font-medium hover:underline hover:text-indigo-800">
+        
+        <div class="mt-6 text-center">
+            <span class="text-sm text-gray-500">Don't have an account?</span>
+            <a href="{% url 'account_signup' %}" class="ml-2 font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 underline">
                 Sign up here
             </a>
-        </p>
+        </div>
+        
+        <!-- OTP Info Box -->
+        <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p class="text-sm text-blue-700 text-center">
+                <span class="font-semibold">Secure Login:</span> After entering your password, you'll receive an OTP code via email for verification.
+            </p>
+        </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('login-form');
+    const loginButton = document.getElementById('login-button');
+    const locationStatus = document.getElementById('location-status');
+    const locationMessage = document.getElementById('location-message');
+    
+    let locationCaptured = false;
+    let formSubmissionPending = false;
+
+    // Function to show location status
+    function showLocationStatus(message, isError = false) {
+        locationStatus.classList.remove('hidden');
+        locationMessage.textContent = message;
+        
+        if (isError) {
+            locationStatus.classList.remove('bg-blue-50', 'border-blue-200');
+            locationStatus.classList.add('bg-yellow-50', 'border-yellow-200');
+            locationMessage.classList.remove('text-blue-700');
+            locationMessage.classList.add('text-yellow-700');
+        }
+    }
+
+    // Function to capture geolocation
+    function captureLocation() {
+        return new Promise((resolve, reject) => {
+            // First check if we have recent location from landing page
+            const pendingLat = sessionStorage.getItem('pending_latitude');
+            const pendingLon = sessionStorage.getItem('pending_longitude');
+            const pendingAcc = sessionStorage.getItem('pending_accuracy');
+            
+            if (pendingLat && pendingLon) {
+                console.log('Using location from landing page');
+                document.getElementById('latitude').value = pendingLat;
+                document.getElementById('longitude').value = pendingLon;
+                document.getElementById('location_accuracy').value = pendingAcc || '';
+                
+                locationCaptured = true;
+                showLocationStatus('✓ Location ready');
+                setTimeout(() => locationStatus.classList.add('hidden'), 2000);
+                
+                // Clear session storage
+                sessionStorage.removeItem('pending_latitude');
+                sessionStorage.removeItem('pending_longitude');
+                sessionStorage.removeItem('pending_accuracy');
+                
+                resolve({ lat: pendingLat, lon: pendingLon, accuracy: pendingAcc });
+                return;
+            }
+
+            // If no cached location, get fresh location
+            if (!navigator.geolocation) {
+                reject(new Error('Geolocation not supported'));
+                return;
+            }
+
+            showLocationStatus('📍 Getting your location...');
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+
+                    document.getElementById('latitude').value = lat;
+                    document.getElementById('longitude').value = lon;
+                    document.getElementById('location_accuracy').value = accuracy;
+
+                    locationCaptured = true;
+                    showLocationStatus('✓ Location captured');
+                    
+                    setTimeout(() => locationStatus.classList.add('hidden'), 2000);
+                    resolve({ lat, lon, accuracy });
+                },
+                (error) => {
+                    console.warn('Geolocation error:', error);
+                    showLocationStatus('⚠ Location unavailable (will use IP fallback)', true);
+                    setTimeout(() => locationStatus.classList.add('hidden'), 3000);
+                    reject(error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        });
+    }
+
+    // Intercept form submission
+    loginForm.addEventListener('submit', function(e) {
+        if (!locationCaptured && !formSubmissionPending) {
+            e.preventDefault();
+            formSubmissionPending = true;
+            loginButton.disabled = true;
+            loginButton.textContent = 'Getting Location...';
+
+            captureLocation()
+                .then(() => {
+                    loginButton.textContent = 'Logging In...';
+                    loginForm.submit();
+                })
+                .catch(() => {
+                    console.log('Proceeding without browser location');
+                    loginButton.textContent = 'Logging In...';
+                    loginForm.submit();
+                });
+        }
+    });
+
+    // Proactively capture location on page load
+    setTimeout(() => {
+        captureLocation().catch(() => {
+            console.log('Background location capture failed');
+        });
+    }, 500);
+});
+</script>
+
+
 {% endblock content %}

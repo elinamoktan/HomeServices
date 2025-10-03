@@ -1,0 +1,894 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calendar - BlueCollar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      --secondary: #ec4899;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #0f172a;
+      --light: #f8fafc;
+      --sidebar-gradient-start: #1e1b4b;
+      --sidebar-gradient-end: #312e81;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      min-height: 100vh;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+
+    /* Animated Background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+      animation: backgroundShift 15s ease-in-out infinite;
+      z-index: -1;
+    }
+
+    @keyframes backgroundShift {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.1); }
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+      background: linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
+      backdrop-filter: blur(20px);
+      box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 1000;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 280px;
+    }
+
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+
+    .logo-container {
+      padding: 2rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+
+    .logo-box {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #6366f1, #ec4899);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-box::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shine 3s infinite;
+    }
+
+    @keyframes shine {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+
+    .logo-text {
+      font-size: 1.75rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff, #e0e7ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-item {
+      padding: 0.875rem 1.25rem;
+      margin: 0.5rem 1rem;
+      border-radius: 14px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-item i {
+      font-size: 1.1rem;
+      width: 24px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      transform: translateX(4px);
+    }
+
+    .nav-item:hover i {
+      transform: scale(1.2);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(236, 72, 153, 0.3));
+      color: white;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, #6366f1, #ec4899);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .main-content {
+      margin-left: 280px;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    .header-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      transform: translate(30%, -30%);
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 1.75rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    }
+
+    .stat-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+      box-shadow: 0 8px 24px var(--shadow-color);
+      font-size: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-icon::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* Calendar Styles */
+    .calendar-container {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .fc {
+      background: transparent;
+    }
+
+    .fc-toolbar-title {
+      font-size: 1.75rem !important;
+      font-weight: 800 !important;
+      background: linear-gradient(135deg, #6366f1, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .fc-button {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+      border: none !important;
+      border-radius: 12px !important;
+      font-weight: 600 !important;
+      padding: 0.75rem 1.25rem !important;
+      transition: all 0.3s ease !important;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+    }
+
+    .fc-button:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5) !important;
+    }
+
+    .fc-button-active {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    }
+
+    .fc-day-today {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(236, 72, 153, 0.15)) !important;
+      border: 2px solid rgba(99, 102, 241, 0.3) !important;
+    }
+
+    .fc-daygrid-day-number {
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .fc-col-header-cell {
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0) !important;
+      font-weight: 700 !important;
+      color: #475569 !important;
+      border: none !important;
+      padding: 1rem 0 !important;
+    }
+
+    .fc-event {
+      border-radius: 10px !important;
+      border: none !important;
+      padding: 0.5rem 0.75rem !important;
+      font-weight: 600 !important;
+      font-size: 0.875rem !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .fc-event:hover {
+      transform: scale(1.05) !important;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+    }
+
+    .event-pending { 
+      background: linear-gradient(135deg, #f59e0b, #d97706) !important; 
+    }
+    .event-accepted { 
+      background: linear-gradient(135deg, #22c55e, #16a34a) !important; 
+    }
+    .event-completed { 
+      background: linear-gradient(135deg, #6366f1, #4f46e5) !important; 
+    }
+    .event-rejected { 
+      background: linear-gradient(135deg, #ef4444, #dc2626) !important; 
+    }
+
+    /* Appointment Card */
+    .appointment-card {
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
+      border-radius: 14px;
+      border: 1px solid rgba(99, 102, 241, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .appointment-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, #6366f1, #ec4899);
+    }
+
+    .appointment-card:hover {
+      transform: translateX(4px);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.375rem 0.75rem;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-accepted { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; }
+    .status-pending { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+    .status-completed { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e3a8a; }
+
+    .quick-action-btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
+      border-radius: 14px;
+      border: 2px solid transparent;
+      text-align: left;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quick-action-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .quick-action-btn:hover::before {
+      left: 100%;
+    }
+
+    .quick-action-btn:hover {
+      border-color: var(--border-color);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px var(--shadow-color);
+    }
+
+    .action-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--icon-bg);
+      font-size: 1.25rem;
+      color: var(--icon-color);
+    }
+
+    .customer-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #6366f1, #ec4899);
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: #94a3b8;
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .main-content {
+        margin-left: 0;
+        padding: 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-card {
+        padding: 1.5rem;
+      }
+
+      .stat-card {
+        padding: 1.25rem;
+      }
+
+      .fc-toolbar-title {
+        font-size: 1.25rem !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <div class="sidebar">
+    <div class="logo-container">
+      <div class="flex items-center gap-3">
+        <div class="logo-box">
+          <span class="logo-text">BC</span>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-white">BlueCollar</h1>
+          <p class="text-sm text-indigo-200">Worker Portal</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="p-4 flex-1 overflow-y-auto" style="max-height: calc(100vh - 240px);">
+      <a href="{% url 'worker_dashboard' %}" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="{% url 'worker_service_details' worker.id %}" class="nav-item">
+        <i class="fas fa-concierge-bell"></i>
+        <span>My Services</span>
+      </a>
+      <a href="{% url 'worker_calendar' %}" class="nav-item active">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Calendar</span>
+      </a>
+      <a href="{% url 'worker_reviews' %}" class="nav-item">
+        <i class="fas fa-star"></i>
+        <span>Reviews</span>
+      </a>
+      <a href="{% url 'worker_analytics' %}" class="nav-item">
+        <i class="fas fa-chart-line"></i>
+        <span>Analytics</span>
+      </a>
+      <a href="{% url 'worker_earnings' %}" class="nav-item">
+        <i class="fas fa-wallet"></i>
+        <span>Earnings</span>
+      </a>
+      <a href="{% url 'worker_settings' %}" class="nav-item">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </a>
+    </nav>
+
+    <div style="position: absolute; bottom: 0; width: 100%; padding: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.2);">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="customer-avatar">
+          {% if worker.profile_pic %}
+            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" style="width: 100%; height: 100%; border-radius: 12px; object-fit: cover;">
+          {% else %}
+            <span>{{ worker.name|first }}</span>
+          {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-white truncate">{{ worker.name }}</p>
+          <p class="text-xs text-indigo-200 truncate">Professional Worker</p>
+        </div>
+      </div>
+      <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Header -->
+    <div class="header-card fade-in-up">
+      <div class="flex justify-between items-center flex-wrap gap-4" style="position: relative; z-index: 1;">
+        <div>
+          <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            Calendar Overview 
+            <span style="font-size: 2rem;">📅</span>
+          </h1>
+          <p class="text-gray-600 text-lg font-medium">Manage your appointments and schedule efficiently</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <div style="text-align: right; background: linear-gradient(135deg, #dbeafe, #e0e7ff); padding: 1rem 1.5rem; border-radius: 16px; border: 2px solid rgba(99, 102, 241, 0.2);">
+            <p style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem;">Today</p>
+            <p style="font-weight: 800; color: #1e293b; font-size: 1.125rem;">{{ today|date:"F j, Y" }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="stat-card fade-in-up" style="--gradient-start: #6366f1; --gradient-end: #4f46e5; --shadow-color: rgba(99, 102, 241, 0.3); animation-delay: 0.1s;">
+        <div class="flex items-center justify-between">
+          <div>
+            <p style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Today's Appointments</p>
+            <p style="font-size: 2.5rem; font-weight: 800; color: #1e293b; line-height: 1;">{{ today_appointments.count }}</p>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">Scheduled for today</p>
+          </div>
+          <div class="stat-icon" style="--gradient-start: #6366f1; --gradient-end: #4f46e5; --shadow-color: rgba(99, 102, 241, 0.3);">
+            <i class="fas fa-calendar-day text-white"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card fade-in-up" style="--gradient-start: #f59e0b; --gradient-end: #d97706; --shadow-color: rgba(245, 158, 11, 0.3); animation-delay: 0.2s;">
+        <div class="flex items-center justify-between">
+          <div>
+            <p style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">This Week</p>
+            <p style="font-size: 2.5rem; font-weight: 800; color: #d97706; line-height: 1;">{{ week_appointments.count }}</p>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">Total appointments</p>
+          </div>
+          <div class="stat-icon" style="--gradient-start: #f59e0b; --gradient-end: #d97706; --shadow-color: rgba(245, 158, 11, 0.3);">
+            <i class="fas fa-calendar-week text-white"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card fade-in-up" style="--gradient-start: #22c55e; --gradient-end: #16a34a; --shadow-color: rgba(34, 197, 94, 0.3); animation-delay: 0.3s;">
+        <div class="flex items-center justify-between">
+          <div>
+            <p style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Pending</p>
+            <p style="font-size: 2.5rem; font-weight: 800; color: #16a34a; line-height: 1;">{{ pending_count }}</p>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">Awaiting confirmation</p>
+          </div>
+          <div class="stat-icon" style="--gradient-start: #22c55e; --gradient-end: #16a34a; --shadow-color: rgba(34, 197, 94, 0.3);">
+            <i class="fas fa-clock text-white"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card fade-in-up" style="--gradient-start: #8b5cf6; --gradient-end: #7c3aed; --shadow-color: rgba(139, 92, 246, 0.3); animation-delay: 0.4s;">
+        <div class="flex items-center justify-between">
+          <div>
+            <p style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Completion Rate</p>
+            <p style="font-size: 2.5rem; font-weight: 800; color: #7c3aed; line-height: 1;">{{ completion_rate }}%</p>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">This month</p>
+          </div>
+          <div class="stat-icon" style="--gradient-start: #8b5cf6; --gradient-end: #7c3aed; --shadow-color: rgba(139, 92, 246, 0.3);">
+            <i class="fas fa-check-double text-white"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div class="lg:col-span-2">
+        <div class="calendar-container fade-in-up" style="animation-delay: 0.5s;">
+          <div id="calendar"></div>
+        </div>
+      </div>
+
+      <!-- Upcoming Appointments -->
+      <div class="space-y-6">
+        <!-- Today's Schedule -->
+        <div class="calendar-container fade-in-up" style="animation-delay: 0.6s;">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Today's Schedule</h3>
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #ec4899); display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-calendar-day text-white"></i>
+            </div>
+          </div>
+          <div class="space-y-3" style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
+            {% for appointment in today_appointments %}
+            <div class="appointment-card">
+              <div class="flex justify-between items-start mb-2">
+                <span class="font-semibold text-gray-900">{{ appointment.customer.name }}</span>
+                <span class="status-badge status-{{ appointment.status }}">
+                  {{ appointment.status|title }}
+                </span>
+              </div>
+              <p style="font-size: 0.875rem; color: #64748b; display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                <i class="far fa-clock" style="color: #6366f1;"></i>
+                {{ appointment.appointment_date|time:"g:i A" }}
+              </p>
+              {% if appointment.service_subtask %}
+              <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-briefcase" style="color: #ec4899;"></i>
+                {{ appointment.service_subtask.subtask.name }}
+              </p>
+              {% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-state">
+              <i class="fas fa-calendar-times"></i>
+              <p style="font-weight: 600; margin-top: 0.5rem;">No appointments today</p>
+              <p style="font-size: 0.875rem; margin-top: 0.25rem;">Enjoy your free day!</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="calendar-container fade-in-up" style="animation-delay: 0.7s;">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Quick Actions</h3>
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #22c55e, #16a34a); display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-bolt text-white"></i>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <button class="quick-action-btn" style="--border-color: #22c55e; --shadow-color: rgba(34, 197, 94, 0.2);">
+              <div class="flex items-center gap-3">
+                <div class="action-icon" style="--icon-bg: linear-gradient(135deg, #d1fae5, #a7f3d0); --icon-color: #16a34a;">
+                  <i class="fas fa-plus"></i>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">Set Availability</p>
+                  <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Update your working hours</p>
+                </div>
+              </div>
+            </button>
+            
+            <button class="quick-action-btn" style="--border-color: #6366f1; --shadow-color: rgba(99, 102, 241, 0.2);">
+              <div class="flex items-center gap-3">
+                <div class="action-icon" style="--icon-bg: linear-gradient(135deg, #dbeafe, #bfdbfe); --icon-color: #4f46e5;">
+                  <i class="fas fa-sync-alt"></i>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">Sync Calendar</p>
+                  <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Connect with external apps</p>
+                </div>
+              </div>
+            </button>
+
+            <button class="quick-action-btn" style="--border-color: #ec4899; --shadow-color: rgba(236, 72, 153, 0.2);">
+              <div class="flex items-center gap-3">
+                <div class="action-icon" style="--icon-bg: linear-gradient(135deg, #fce7f3, #fbcfe8); --icon-color: #db2777;">
+                  <i class="fas fa-bell"></i>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">Notifications</p>
+                  <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Manage your alerts</p>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: [
+          {% for appointment in appointments %}
+          {
+            title: '{{ appointment.customer.name }} - {{ appointment.service_subtask.subtask.name|default:"Service" }}',
+            start: '{{ appointment.appointment_date|date:"c" }}',
+            className: 'event-{{ appointment.status }}',
+            extendedProps: {
+              status: '{{ appointment.status }}',
+              customer: '{{ appointment.customer.name }}',
+              service: '{{ appointment.service_subtask.subtask.name|default:"Service" }}'
+            }
+          },
+          {% endfor %}
+        ],
+        eventClick: function(info) {
+          const event = info.event;
+          const statusEmoji = {
+            'pending': '⏳',
+            'accepted': '✅',
+            'completed': '🎉',
+            'rejected': '❌'
+          };
+          alert(`${statusEmoji[event.extendedProps.status] || '📅'} Appointment Details\n\nCustomer: ${event.extendedProps.customer}\nService: ${event.extendedProps.service}\nStatus: ${event.extendedProps.status.toUpperCase()}`);
+        },
+        eventDisplay: 'block',
+        eventTimeFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          meridiem: true
+        },
+        height: 'auto',
+        aspectRatio: 1.8
+      });
+      calendar.render();
+
+      // Add hover effect to calendar events
+      document.addEventListener('mouseover', function(e) {
+        if (e.target.closest('.fc-event')) {
+          e.target.closest('.fc-event').style.cursor = 'pointer';
+        }
+      });
+    });
+
+    // Animation observer
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in-up').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+
+    // Mobile menu toggle (if needed)
+    const createMobileMenu = () => {
+      if (window.innerWidth <= 1024) {
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (!document.querySelector('.menu-toggle')) {
+          const menuBtn = document.createElement('button');
+          menuBtn.className = 'menu-toggle';
+          menuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+          menuBtn.style.cssText = `
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+          `;
+          
+          menuBtn.addEventListener('click', () => {
+            const isOpen = sidebar.style.transform === 'translateX(0%)';
+            sidebar.style.transform = isOpen ? 'translateX(-100%)' : 'translateX(0%)';
+          });
+          
+          document.body.appendChild(menuBtn);
+        }
+      }
+    };
+
+    createMobileMenu();
+    window.addEventListener('resize', createMobileMenu);
+  </script>
+</body>
+</html>

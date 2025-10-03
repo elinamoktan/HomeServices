@@ -1,4 +1,4 @@
-{% load static %}
+{% comment %} {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -192,7 +192,8 @@
   </div>
 
   <!-- Form -->
-  <form id="appointment-form" method="POST" action="{% url 'appoint-worker' worker.id %}" class="space-y-6">
+<!-- Change this line in appointment_request.html -->
+<form id="appointment-form" method="POST" action="{% url 'appointment-request' worker.id %}" class="space-y-6">
     {% csrf_token %}
     <div>
       <label for="appointment_date" class="block mb-2 text-black font-medium">Appointment Date</label>
@@ -424,4 +425,4 @@
 </script>
 
 </body>
-</html>
+</html> {% endcomment %}

@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     #3rd party apps
     'crispy_forms',
     'crispy_tailwind',
+    'otp_auth',
 ]
 
 MIDDLEWARE = [
@@ -93,12 +94,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': "blueCaller",
-        'USER': "postgres" ,
+        'USER': "postgres",
         'PASSWORD': "postgres",
         'HOST': "127.0.0.1",
         'PORT': '5432',
     }
-    
 }
 
 
@@ -140,13 +140,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-
 STATICFILES_DIRS = [
-    BASE_DIR / "static",  
+    BASE_DIR / "static",
 ]
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 # Media files
 
@@ -182,11 +178,18 @@ PHONENUMBER_DB_FORMAT = 'INTERNATIONAL'  # Use INTERNATIONAL or NATIONAL
 PHONENUMBER_DEFAULT_VALIDATION = True
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email configuration for Gmail SMTP
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'alina.csit2078@nistcollege.edu.np'  # Your college Gmail
+EMAIL_HOST_PASSWORD = 'Nist@12345'               # Generated App Password
+DEFAULT_FROM_EMAIL = 'BlueCaller <alina.csit2078@nistcollege.edu.np>'
+SITE_URL = 'http://localhost:8000'  # Change to your domain in production
 
 SITE_ID = 1
 
 # CRISPY FORMS SETTINGS
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
-

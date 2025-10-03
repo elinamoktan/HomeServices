@@ -1,5 +1,4 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,81 +13,125 @@
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background-color: #f5f7fa;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
     }
 
-    /* Dashboard Layout */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
     }
     
-    /* Sidebar */
     .sidebar {
-      width: 260px;
-      background: linear-gradient(180deg, #4f46e5 0%, #7c3aed 100%);
-      color: white;
+      width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      color: #1f2937;
       transition: all 0.3s ease;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       z-index: 1000;
     }
     
     .sidebar-header {
-      padding: 1.5rem 1rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 2rem 1.5rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
     }
     
     .sidebar-logo {
-      font-size: 1.5rem;
+      font-size: 1.75rem;
       font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .sidebar-logo i {
+      background: white;
+      color: #667eea;
+      width: 45px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      font-size: 1.25rem;
     }
     
     .nav-item {
-      padding: 0.9rem 1.5rem;
-      margin: 0.25rem 0.75rem;
-      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      margin: 0.5rem 1rem;
+      border-radius: 12px;
       transition: all 0.3s ease;
       cursor: pointer;
       display: flex;
       align-items: center;
       text-decoration: none;
-      color: white;
+      color: #4b5563;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .nav-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 4px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
     }
     
     .nav-item:hover, .nav-item.active {
-      background-color: rgba(255, 255, 255, 0.1);
-      color: white;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      color: #667eea;
+    }
+    
+    .nav-item.active::before {
+      transform: scaleY(1);
     }
     
     .nav-item i {
       width: 24px;
       margin-right: 12px;
+      font-size: 1.1rem;
     }
     
-    /* Main Content */
     .main-content {
       flex: 1;
       overflow-x: hidden;
+      background: #f8fafc;
     }
     
-    /* Header */
     .header {
-      background-color: white;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 1.5rem 2rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin: 1rem;
+      border-radius: 16px;
     }
     
     .search-bar {
       display: flex;
       align-items: center;
-      background: #f5f7fa;
-      border-radius: 10px;
-      padding: 0.5rem 1rem;
-      width: 300px;
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 0.75rem 1.25rem;
+      width: 350px;
+      transition: all 0.3s ease;
+    }
+    
+    .search-bar:focus-within {
+      background: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
     }
     
     .search-bar input {
@@ -97,24 +140,26 @@
       outline: none;
       width: 100%;
       margin-left: 0.5rem;
+      color: #1f2937;
     }
     
     .user-profile {
       display: flex;
       align-items: center;
       cursor: pointer;
+      gap: 1rem;
     }
     
     .user-avatar {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      background: #e0e7ff;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-left: 1rem;
       overflow: hidden;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
     
     .user-avatar img {
@@ -123,97 +168,186 @@
       object-fit: cover;
     }
     
-    /* Content Area */
     .content-wrapper {
-      padding: 1.5rem;
+      padding: 2rem;
+    }
+    
+    .welcome-banner {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      color: white;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+    }
+    
+    .welcome-banner::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -5%;
+      width: 200px;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+    }
+    
+    .welcome-content {
+      position: relative;
+      z-index: 1;
     }
     
     .dashboard-card {
       background: white;
-      border-radius: 16px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
     }
     
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 1.5rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem;
     }
     
     .stat-card {
       background: white;
-      border-radius: 16px;
-      padding: 1.5rem;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       display: flex;
       flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
     }
     
+    .stat-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    }
+    
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    }
+    
+    .stat-card:nth-child(1) { --gradient-start: #667eea; --gradient-end: #764ba2; }
+    .stat-card:nth-child(2) { --gradient-start: #f093fb; --gradient-end: #f5576c; }
+    .stat-card:nth-child(3) { --gradient-start: #4facfe; --gradient-end: #00f2fe; }
+    .stat-card:nth-child(4) { --gradient-start: #43e97b; --gradient-end: #38f9d7; }
+    
     .stat-value {
-      font-size: 2rem;
+      font-size: 2.5rem;
       font-weight: 700;
-      margin: 0.5rem 0;
+      margin: 1rem 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     
     .stat-label {
       color: #64748b;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      font-weight: 500;
     }
     
     .stat-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 12px;
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 1rem;
-      font-size: 1.5rem;
+      font-size: 1.75rem;
     }
 
-    /* Notification indicator */
     .notification-badge {
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #f1f5f9;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .notification-badge:hover {
+      background: #e2e8f0;
     }
     
     .notification-badge .badge {
       position: absolute;
-      top: -8px;
-      right: -8px;
+      top: -6px;
+      right: -6px;
       background: #ef4444;
       color: white;
       border-radius: 50%;
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
     }
 
-    /* Recent appointments */
     .appointment-preview {
-      background: #f8fafc;
-      border-radius: 12px;
-      padding: 1rem;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: 16px;
+      padding: 1.5rem;
       margin-bottom: 1rem;
-      border-left: 4px solid #3b82f6;
+      border-left: 5px solid #667eea;
+      transition: all 0.3s ease;
+    }
+    
+    .appointment-preview:hover {
+      transform: translateX(8px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
 
     .worker-avatar {
-      width: 40px;
-      height: 40px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
-      background: #e0e7ff;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 12px;
+      margin-right: 1rem;
       overflow: hidden;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
     .worker-avatar img {
@@ -222,11 +356,10 @@
       object-fit: cover;
     }
 
-    /* Status badges */
     .status-badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 15px;
-      font-size: 0.75rem;
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
       font-weight: 600;
       text-transform: capitalize;
     }
@@ -236,7 +369,181 @@
     .status-completed { background: #dbeafe; color: #1e40af; }
     .status-rejected { background: #fecaca; color: #b91c1c; }
 
-    /* Responsive */
+    .quick-action-card {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    }
+    
+    .quick-action-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+    
+    .quick-action-icon {
+      width: 70px;
+      height: 70px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: white;
+      flex-shrink: 0;
+    }
+    
+    .service-category {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    }
+    
+    .service-category:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+    
+    .service-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1rem;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      color: white;
+    }
+
+    /* New styles for appointment requests */
+    .request-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border-left: 5px solid #f59e0b;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+    }
+    
+    .request-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    .request-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .btn-accept {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-accept:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+    
+    .btn-reject {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-reject:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+    
+    .btn-delete {
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-delete:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+    }
+    
+    .btn-view-details {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-view-details:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    
+    .request-badge {
+      background: #fef3c7;
+      color: #d97706;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .rate-worker-btn {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .rate-worker-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+      color: white;
+    }
+
     @media (max-width: 768px) {
       .sidebar {
         width: 70px;
@@ -256,9 +563,8 @@
       }
       
       .nav-item {
-        padding: 0.9rem;
-        margin: 0.25rem 0.5rem;
-        text-align: center;
+        padding: 1rem;
+        margin: 0.5rem;
         justify-content: center;
       }
       
@@ -271,14 +577,30 @@
       }
       
       .search-bar {
-        width: 200px;
+        width: 150px;
+      }
+      
+      .header {
+        padding: 1rem;
+        margin: 0.5rem;
+      }
+      
+      .content-wrapper {
+        padding: 1rem;
+      }
+      
+      .welcome-banner {
+        padding: 1.5rem;
+      }
+      
+      .request-actions {
+        flex-direction: column;
       }
     }
   </style>
 </head>
 <body>
   <div class="dashboard-container">
-    <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-logo">
@@ -294,10 +616,18 @@
         </a>
         <a href="{% url 'customer_appointments' %}" class="nav-item {% if current_page == 'appointments' %}active{% endif %}">
           <i class="fas fa-calendar-alt"></i>
-          <span class="nav-text">Appointments</span>
+          <span class="nav-text">My Bookings</span>
+        </a>
+        <a href="{% url 'worker-list' %}" class="nav-item">
+          <i class="fas fa-search"></i>
+          <span class="nav-text">Find Services</span>
+        </a>
+        <a href="{% url 'favorite_workers_list' %}" class="nav-item {% if current_page == 'favorites' %}active{% endif %}">
+          <i class="fas fa-heart"></i>
+          <span class="nav-text">Favorites</span>
         </a>
         <a href="{% url 'customer_reviews' %}" class="nav-item {% if current_page == 'reviews' %}active{% endif %}">
-          <i class="fas fa-star"></i>
+          <i class="fas fa-history"></i>
           <span class="nav-text">Reviews</span>
         </a>
         <a href="{% url 'customer_profile' %}" class="nav-item {% if current_page == 'profile' %}active{% endif %}">
@@ -313,7 +643,6 @@
           <span class="nav-text">Help & Support</span>
         </a>
         
-        <!-- Fixed Logout Form in Sidebar -->
         <form method="post" action="{% url 'logout' %}" class="nav-item" style="display: contents;">
           {% csrf_token %}
           <button type="submit" style="all: unset; display: flex; align-items: center; width: 100%; cursor: pointer;">
@@ -324,178 +653,386 @@
       </div>
     </div>
     
-    <!-- Main Content -->
     <div class="main-content">
-      <!-- Header -->
       <div class="header">
         <div class="search-bar">
           <i class="fas fa-search text-gray-400"></i>
-          <input type="text" placeholder="Search appointments...">
+          <input type="text" placeholder="Search services...">
         </div>
         
-        <div class="flex items-center">
-          <div class="mr-6 relative notification-badge">
-            <i class="fas fa-bell text-gray-500 text-xl cursor-pointer hover:text-gray-700 transition-colors"></i>
-            {% if unread_notification_count > 0 %}
+        <div class="flex items-center gap-4">
+          <div class="notification-badge">
+            <i class="fas fa-bell text-gray-500 text-xl"></i>
+            {% if unread_notification_count and unread_notification_count > 0 %}
               <span class="badge" id="notification-count">{{ unread_notification_count }}</span>
             {% endif %}
           </div>
           
           <div class="user-profile">
             <div>
-              <div class="font-medium">{{ customer.name }}</div>
+              <div class="font-semibold text-gray-800">{{ customer.name }}</div>
               <div class="text-sm text-gray-500">Customer</div>
             </div>
             <div class="user-avatar">
               {% if customer.profile_pic %}
                 <img src="{{ customer.profile_pic.url }}" alt="{{ customer.name }}">
               {% else %}
-                <span class="text-indigo-600 font-semibold">{{ customer.name|first }}</span>
+                <span class="text-white font-bold text-lg">{{ customer.name|first }}</span>
               {% endif %}
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Content Wrapper -->
       <div class="content-wrapper">
-        <!-- Dashboard Title -->
-        <div class="mb-6">
-          <h1 class="text-2xl font-bold text-gray-800">Welcome back, {{ customer.name }}!</h1>
-          <p class="text-gray-600">Here's what's happening with your appointments</p>
+        <div class="welcome-banner">
+          <div class="welcome-content">
+            <h1 class="text-3xl font-bold mb-2">Welcome back, {{ customer.name }}!</h1>
+            <p class="text-white text-opacity-90 text-lg">Ready to book your next service?</p>
+          </div>
         </div>
         
-        <!-- Stats Overview -->
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-icon bg-blue-100 text-blue-600">
-              <i class="fas fa-calendar"></i>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              <i class="fas fa-calendar-check text-white"></i>
             </div>
             <div class="stat-value">{{ total_appointments }}</div>
-            <div class="stat-label">Total Appointments</div>
+            <div class="stat-label">Total Bookings</div>
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon bg-yellow-100 text-yellow-600">
-              <i class="fas fa-clock"></i>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+              <i class="fas fa-clock text-white"></i>
             </div>
-            <div class="stat-value">{{ pending_appointments }}</div>
-            <div class="stat-label">Pending Requests</div>
+            <div class="stat-value">{{ pending_count }}</div>
+            <div class="stat-label">Pending</div>
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon bg-green-100 text-green-600">
-              <i class="fas fa-check-circle"></i>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+              <i class="fas fa-check-circle text-white"></i>
             </div>
-            <div class="stat-value">{{ completed_appointments }}</div>
+            <div class="stat-value">{{ completed_count }}</div>
             <div class="stat-label">Completed</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+              <i class="fas fa-heart text-white"></i>
+            </div>
+            <div class="stat-value">{{ favorite_workers_count|default:0 }}</div>
+            <div class="stat-label">Favorite Workers</div>
           </div>
         </div>
 
+        <!-- My Appointment Requests Section -->
+        <div class="dashboard-card">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">
+              <i class="fas fa-paper-plane text-orange-500 mr-2"></i>
+              My Appointment Requests
+            </h2>
+            {% if worker_requests %}
+            <span class="request-badge">
+              {{ worker_requests.count }} Pending Request{{ worker_requests.count|pluralize }}
+            </span>
+            {% endif %}
+          </div>
+
+          {% if worker_requests %}
+            {% for request in worker_requests %}
+              <div class="request-card">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center flex-1">
+                    <div class="worker-avatar">
+                      {% if request.worker.profile_pic %}
+                        <img src="{{ request.worker.profile_pic.url }}" alt="{{ request.worker.name }}">
+                      {% else %}
+                        <span class="text-white font-bold">{{ request.worker.name|first }}</span>
+                      {% endif %}
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex justify-between items-start">
+                        <div>
+                          <h4 class="font-semibold text-gray-800 text-lg">{{ request.worker.name }}</h4>
+                          <p class="text-sm text-gray-600">
+                            <i class="fas fa-briefcase mr-1"></i>
+                            {{ request.service_subtask.subtask.name|default:"General Service" }}
+                          </p>
+                          <p class="text-sm text-gray-600">
+                            <i class="far fa-calendar mr-1"></i>
+                            {{ request.appointment_date|date:"M j, Y" }}
+                            <i class="far fa-clock ml-3 mr-1"></i>
+                            {{ request.appointment_date|time:"g:i A" }}
+                          </p>
+                          {% if request.location %}
+                            <p class="text-sm text-gray-600">
+                              <i class="fas fa-map-marker-alt mr-1"></i>
+                              {{ request.location|truncatewords:5 }}
+                            </p>
+                          {% endif %}
+                          {% if request.special_instructions %}
+                            <p class="text-sm text-gray-600 mt-1">
+                              <i class="fas fa-sticky-note mr-1"></i>
+                              {{ request.special_instructions|truncatewords:10 }}
+                            </p>
+                          {% endif %}
+                        </div>
+                        <div class="text-right">
+                          <span class="status-badge status-pending">Waiting for Response</span>
+                          <p class="text-xs text-gray-500 mt-1">
+                            Sent {{ request.created_at|timesince }} ago
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div class="request-actions">
+                        <form method="post" action="{% url 'delete_appointment' request.id %}" class="inline">
+                          {% csrf_token %}
+                          <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
+                            <i class="fas fa-trash mr-1"></i>Cancel Request
+                          </button>
+                        </form>
+                        <button class="btn-view-details" onclick="showRequestDetails({{ request.id }})">
+                          <i class="fas fa-eye mr-1"></i>View Details
+                        </button>
+                        <a href="{% url 'worker_service_details' request.worker.id %}" class="btn-view-details">
+                          <i class="fas fa-edit mr-1"></i>Modify Request
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-12">
+              <i class="fas fa-paper-plane text-6xl text-gray-300 mb-4"></i>
+              <p class="text-gray-500 text-lg mb-4">No appointment requests sent yet</p>
+              <p class="text-gray-400 text-sm">When you book a service, your appointment requests will appear here.</p>
+              <a href="{% url 'worker-list' %}" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all mt-4">
+                Book Your First Service
+              </a>
+            </div>
+          {% endif %}
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Recent Appointments -->
           <div class="dashboard-card">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-semibold text-gray-800">Recent Appointments</h2>
-              <a href="{% url 'customer_appointments' %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View All</a>
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-calendar-alt text-indigo-600 mr-2"></i>
+                Upcoming Bookings
+              </h2>
+              <a href="{% url 'customer_appointments' %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-semibold">View All →</a>
             </div>
 
             {% if appointments %}
               {% for appointment in appointments|slice:":3" %}
                 <div class="appointment-preview">
                   <div class="flex items-center justify-between">
-                    <div class="flex items-center">
+                    <div class="flex items-center flex-1">
                       <div class="worker-avatar">
                         {% if appointment.worker.profile_pic %}
                           <img src="{{ appointment.worker.profile_pic.url }}" alt="{{ appointment.worker.name }}">
                         {% else %}
-                          <span class="text-indigo-600 font-semibold text-sm">{{ appointment.worker.name|first }}</span>
+                          <span class="text-white font-bold">{{ appointment.worker.name|first }}</span>
                         {% endif %}
                       </div>
                       <div>
-                        <h4 class="font-medium text-gray-800">{{ appointment.worker.name }}</h4>
-                        <p class="text-sm text-gray-600">{{ appointment.appointment_date|date:"M j, Y g:i A" }}</p>
+                        <h4 class="font-semibold text-gray-800 text-lg">{{ appointment.worker.name }}</h4>
+                        <p class="text-sm text-gray-600">
+                          <i class="far fa-calendar mr-1"></i>
+                          {{ appointment.appointment_date|date:"M j, Y" }}
+                          <i class="far fa-clock ml-3 mr-1"></i>
+                          {{ appointment.appointment_date|time:"g:i A" }}
+                        </p>
                       </div>
                     </div>
-                    <span class="status-badge status-{{ appointment.status }}">{{ appointment.status }}</span>
+                    <div class="flex items-center gap-2">
+                      <span class="status-badge status-{{ appointment.status }}">{{ appointment.status }}</span>
+                      {% if appointment.status == 'accepted' and not appointment.customer_completed %}
+                      <form method="post" action="{% url 'mark_customer_completed' appointment.id %}" class="ml-2">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-semibold transition-colors">
+                          Mark Completed
+                        </button>
+                      </form>
+                      {% elif appointment.status == 'accepted' and appointment.customer_completed %}
+                      <span class="text-green-600 text-sm font-semibold ml-2">
+                        <i class="fas fa-check-circle mr-1"></i>Waiting for worker confirmation
+                      </span>
+                      {% endif %}
+                    </div>
                   </div>
                 </div>
               {% endfor %}
             {% else %}
-              <div class="text-center py-8">
-                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
-                <p class="text-gray-600">No appointments yet</p>
-                <a href="{% url 'worker-list' %}" class="inline-block mt-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm">
-                  Book Your First Appointment
-                </a>
+              <div class="text-center py-12">
+                <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg mb-4">No confirmed bookings yet</p>
+                <p class="text-gray-400 text-sm">Your confirmed appointments will appear here once workers accept your requests.</p>
               </div>
             {% endif %}
           </div>
 
-          <!-- Recent Notifications -->
           <div class="dashboard-card">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-semibold text-gray-800">Recent Notifications</h2>
-              <span class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View All</span>
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-fire text-orange-500 mr-2"></i>
+                Popular Services
+              </h2>
+              <a href="{% url 'worker-list' %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-semibold">Explore All →</a>
             </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=plumbing'">
+                <div class="service-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                  <i class="fas fa-wrench"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800">Plumbing</h3>
+                <p class="text-sm text-gray-500 mt-1">24/7 Available</p>
+              </div>
+              
+              <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=electrical'">
+                <div class="service-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                  <i class="fas fa-bolt"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800">Electrical</h3>
+                <p class="text-sm text-gray-500 mt-1">Expert Service</p>
+              </div>
+              
+              <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=painting'">
+                <div class="service-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                  <i class="fas fa-paint-roller"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800">Painting</h3>
+                <p class="text-sm text-gray-500 mt-1">Quality Work</p>
+              </div>
+              
+              <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=cleaning'">
+                <div class="service-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                  <i class="fas fa-broom"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800">Cleaning</h3>
+                <p class="text-sm text-gray-500 mt-1">Deep Clean</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {% if notifications %}
-              {% for notification in notifications %}
-                <div class="flex items-start p-3 {% if not notification.is_read %}bg-blue-50{% endif %} rounded-lg mb-2">
-                  <div class="flex-shrink-0">
-                    {% if notification.notification_type == 'appointment_accepted' %}
-                      <i class="fas fa-check-circle text-green-500"></i>
-                    {% elif notification.notification_type == 'appointment_rejected' %}
-                      <i class="fas fa-times-circle text-red-500"></i>
-                    {% elif notification.notification_type == 'appointment_completed' %}
-                      <i class="fas fa-star text-yellow-500"></i>
+        <div class="dashboard-card">
+          <h2 class="text-2xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-bolt text-yellow-500 mr-2"></i>
+            Quick Actions
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href="{% url 'worker-list' %}" class="quick-action-card">
+              <div class="quick-action-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="fas fa-plus"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-800 text-lg">Book a Service</h3>
+                <p class="text-sm text-gray-600 mt-1">Find and book professionals</p>
+              </div>
+            </a>
+            
+            <a href="{% url 'customer_appointments' %}" class="quick-action-card">
+              <div class="quick-action-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <i class="fas fa-history"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-800 text-lg">View History</h3>
+                <p class="text-sm text-gray-600 mt-1">Check past bookings</p>
+              </div>
+            </a>
+            
+            <a href="{% url 'favorite_workers_list' %}" class="quick-action-card">
+              <div class="quick-action-icon" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa8a8 100%);">
+                <i class="fas fa-heart"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-800 text-lg">My Favorites</h3>
+                <p class="text-sm text-gray-600 mt-1">View saved workers</p>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <div class="dashboard-card">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">
+              <i class="fas fa-history text-blue-600 mr-2"></i>
+              Recent Activity
+            </h2>
+          </div>
+
+          {% if appointments %}
+            {% for appointment in appointments|slice:":4" %}
+              {% if appointment.status == 'completed' %}
+              <div class="appointment-preview" style="border-left-color: #3b82f6;">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center flex-1">
+                    <div class="worker-avatar">
+                      {% if appointment.worker.profile_pic %}
+                        <img src="{{ appointment.worker.profile_pic.url }}" alt="{{ appointment.worker.name }}">
+                      {% else %}
+                        <span class="text-white font-bold">{{ appointment.worker.name|first }}</span>
+                      {% endif %}
+                    </div>
+                    <div>
+                      <h4 class="font-semibold text-gray-800">{{ appointment.worker.name }}</h4>
+                      <p class="text-sm text-gray-600">Completed on {{ appointment.appointment_date|date:"M j, Y" }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="status-badge status-completed">
+                      <i class="fas fa-check mr-1"></i>Completed
+                    </span>
+                    {% if not appointment.has_rated %}
+                    <a href="{% url 'rate_worker' appointment.id %}" class="rate-worker-btn">
+                      <i class="fas fa-star"></i>
+                      Rate Worker
+                    </a>
                     {% else %}
-                      <i class="fas fa-bell text-blue-500"></i>
+                    <span class="text-green-500 flex items-center gap-2" title="Already rated">
+                      <i class="fas fa-check-circle text-xl"></i>
+                      <span class="text-sm font-semibold">Rated</span>
+                    </span>
                     {% endif %}
                   </div>
-                  <div class="ml-3 flex-1">
-                    <h4 class="text-sm font-medium text-gray-800">{{ notification.title }}</h4>
-                    <p class="text-xs text-gray-600 mt-1">{{ notification.message }}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{ notification.created_at|timesince }} ago</p>
-                  </div>
                 </div>
-              {% endfor %}
-            {% else %}
-              <div class="text-center py-8">
-                <i class="fas fa-bell-slash text-4xl text-gray-400 mb-4"></i>
-                <p class="text-gray-600">No notifications yet</p>
               </div>
-            {% endif %}
-          </div>
+              {% endif %}
+            {% empty %}
+              <div class="text-center py-12">
+                <i class="fas fa-clipboard-list text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg">No completed appointments yet</p>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-12">
+              <i class="fas fa-clipboard-list text-6xl text-gray-300 mb-4"></i>
+              <p class="text-gray-500 text-lg">No activity yet</p>
+            </div>
+          {% endif %}
         </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- Quick Actions -->
-        <div class="dashboard-card">
-          <h2 class="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="{% url 'worker-list' %}" class="flex items-center p-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all">
-              <i class="fas fa-plus-circle text-2xl mr-3"></i>
-              <div>
-                <h3 class="font-semibold">Book New Appointment</h3>
-                <p class="text-sm opacity-90">Find and book a worker</p>
-              </div>
-            </a>
-            <a href="{% url 'customer_reviews' %}" class="flex items-center p-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all">
-              <i class="fas fa-star text-2xl mr-3"></i>
-              <div>
-                <h3 class="font-semibold">View My Reviews</h3>
-                <p class="text-sm opacity-90">Check your ratings</p>
-              </div>
-            </a>
-            <a href="{% url 'customer_profile' %}" class="flex items-center p-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all">
-              <i class="fas fa-user-edit text-2xl mr-3"></i>
-              <div>
-                <h3 class="font-semibold">Update Profile</h3>
-                <p class="text-sm opacity-90">Edit your information</p>
-              </div>
-            </a>
-          </div>
-        </div>
+  <!-- Request Details Modal -->
+  <div id="requestDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-gray-800">Appointment Request Details</h3>
+        <button onclick="closeRequestDetails()" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <div id="requestDetailsContent">
+        <!-- Content will be loaded via AJAX -->
       </div>
     </div>
   </div>
@@ -515,13 +1052,12 @@
           if (badge) {
             badge.textContent = data.count;
           } else {
-            // Create badge if it doesn't exist
-            const notificationIcon = document.querySelector('.notification-badge i');
+            const notificationBadge = document.querySelector('.notification-badge');
             const newBadge = document.createElement('span');
             newBadge.className = 'badge';
             newBadge.id = 'notification-count';
             newBadge.textContent = data.count;
-            notificationIcon.parentElement.appendChild(newBadge);
+            notificationBadge.appendChild(newBadge);
           }
         } else {
           if (badge) {
@@ -534,6 +1070,246 @@
 
     // Update notification count every 30 seconds
     setInterval(updateNotificationCount, 30000);
+
+    // Smooth scroll for internal links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // Add animation on scroll
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    // Observe all cards for animation
+    document.querySelectorAll('.dashboard-card, .stat-card, .quick-action-card, .request-card').forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(card);
+    });
+
+    // Search functionality
+    const searchInput = document.querySelector('.search-bar input');
+    if (searchInput) {
+      searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        console.log('Searching for:', searchTerm);
+        // You can implement actual search functionality here
+      });
+    }
+
+    // Make service categories clickable
+    document.querySelectorAll('.service-category').forEach(category => {
+      category.addEventListener('click', function() {
+        // The onclick handler on the element will handle navigation
+      });
+    });
+
+    // Handle mark completed button clicks
+    document.querySelectorAll('form[action*="mark_customer_completed"]').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        const button = this.querySelector('button[type="submit"]');
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Marking...';
+        button.disabled = true;
+      });
+    });
+
+    // Handle delete appointment button clicks
+    document.querySelectorAll('form[action*="delete_appointment"]').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        const button = this.querySelector('button[type="submit"]');
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Cancelling...';
+        button.disabled = true;
+      });
+    });
+
+    // Request Details Modal Functions
+    function showRequestDetails(requestId) {
+      // Show loading state
+      document.getElementById('requestDetailsContent').innerHTML = `
+        <div class="text-center py-8">
+          <i class="fas fa-spinner fa-spin text-2xl text-indigo-600 mb-2"></i>
+          <p class="text-gray-600">Loading details...</p>
+        </div>
+      `;
+      
+      // Show modal
+      document.getElementById('requestDetailsModal').classList.remove('hidden');
+      
+      // Fetch request details via AJAX
+      fetch(`/appointments/${requestId}/details/`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('requestDetailsContent').innerHTML = `
+              <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                  <div class="worker-avatar">
+                    ${data.worker_profile_pic ? 
+                      `<img src="${data.worker_profile_pic}" alt="${data.worker_name}">` : 
+                      `<span class="text-white font-bold">${data.worker_name.charAt(0)}</span>`
+                    }
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-800">${data.worker_name}</h4>
+                    <p class="text-sm text-gray-600">${data.worker_tagline || 'Professional Service Provider'}</p>
+                  </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4">
+                  <h5 class="font-semibold text-gray-700 mb-2">Appointment Details</h5>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Service:</span>
+                      <span class="font-medium">${data.service_name}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Date:</span>
+                      <span class="font-medium">${data.appointment_date}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Time:</span>
+                      <span class="font-medium">${data.appointment_time}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Duration:</span>
+                      <span class="font-medium">${data.duration || '2 hours'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Estimated Price:</span>
+                      <span class="font-medium">${data.price || 'To be discussed'}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                ${data.special_instructions ? `
+                <div class="bg-blue-50 rounded-lg p-4">
+                  <h5 class="font-semibold text-blue-700 mb-2">Special Instructions</h5>
+                  <p class="text-sm text-blue-600">${data.special_instructions}</p>
+                </div>
+                ` : ''}
+                
+                <div class="bg-yellow-50 rounded-lg p-4">
+                  <h5 class="font-semibold text-yellow-700 mb-2">Status</h5>
+                  <p class="text-sm text-yellow-600">Waiting for ${data.worker_name} to respond to your request</p>
+                </div>
+                
+                <div class="flex space-x-2 pt-4">
+                  <form method="post" action="/appointments/${requestId}/delete/" class="flex-1">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-delete w-full text-center" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
+                      <i class="fas fa-trash mr-1"></i>Cancel Request
+                    </button>
+                  </form>
+                  <a href="/worker/${requestId}/service-details/" class="btn-view-details flex-1 text-center">
+                    <i class="fas fa-edit mr-1"></i>Modify Request
+                  </a>
+                </div>
+              </div>
+            `;
+          } else {
+            document.getElementById('requestDetailsContent').innerHTML = `
+              <div class="text-center py-8">
+                <i class="fas fa-exclamation-triangle text-2xl text-red-500 mb-2"></i>
+                <p class="text-gray-600">Error loading request details</p>
+                <button onclick="closeRequestDetails()" class="btn-view-details mt-4">
+                  Close
+                </button>
+              </div>
+            `;
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching request details:', error);
+          document.getElementById('requestDetailsContent').innerHTML = `
+            <div class="text-center py-8">
+              <i class="fas fa-exclamation-triangle text-2xl text-red-500 mb-2"></i>
+              <p class="text-gray-600">Error loading request details</p>
+              <button onclick="closeRequestDetails()" class="btn-view-details mt-4">
+                Close
+              </button>
+            </div>
+          `;
+        });
+    }
+
+    function closeRequestDetails() {
+      document.getElementById('requestDetailsModal').classList.add('hidden');
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('requestDetailsModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeRequestDetails();
+      }
+    });
+
+    // Auto-refresh requests every 2 minutes
+    setInterval(() => {
+      if (!document.getElementById('requestDetailsModal').classList.contains('hidden')) {
+        return; // Don't refresh if modal is open
+      }
+      
+      // You could add AJAX to refresh the requests section here
+      console.log('Auto-refreshing requests...');
+    }, 120000);
+
+    // Show success messages if any
+    {% if messages %}
+      {% for message in messages %}
+        showNotification('{{ message }}', '{{ message.tags }}');
+      {% endfor %}
+    {% endif %}
+
+    function showNotification(message, type) {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${
+        type === 'success' ? 'bg-green-500 text-white' : 
+        type === 'error' ? 'bg-red-500 text-white' : 
+        'bg-blue-500 text-white'
+      }`;
+      notification.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} mr-2"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Remove notification after 5 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
+    }
+
+    // Handle escape key to close modals
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeRequestDetails();
+      }
+    });
   </script>
 </body>
 </html>

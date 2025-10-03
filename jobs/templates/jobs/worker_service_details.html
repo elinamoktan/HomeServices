@@ -1,0 +1,1247 @@
+{% extends 'jobs/_base.html' %}
+{% load static %}
+
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+/* ================== GLOBAL STYLES ================== */
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary: #059669;
+    --accent: #dc2626;
+    --success: #16a34a;
+    --warning: #ea580c;
+    --light: #f8fafc;
+    --dark: #0f172a;
+    --gray: #64748b;
+    --light-gray: #e2e8f0;
+    --white: #ffffff;
+    --gradient-primary: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    --gradient-secondary: linear-gradient(135deg, #059669 0%, #047857 100%);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    color: var(--dark);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* ================== HEADER STYLES ================== */
+.service-header {
+    background: var(--white);
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--light-gray);
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.back-btn {
+    background: var(--light-gray);
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.back-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: var(--shadow-md);
+}
+
+.service-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.8rem;
+    font-weight: bold;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+    background: var(--gradient-primary);
+}
+
+.service-title {
+    flex: 1;
+}
+
+.service-title h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--dark);
+    margin: 0;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.service-title p {
+    color: var(--gray);
+    margin: 0.5rem 0 0 0;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* ================== SERVICE NAVIGATION ================== */
+.service-nav-container {
+    max-width: 1200px;
+    margin: 0 auto 2rem auto;
+    padding: 0 1rem;
+}
+
+.service-nav {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.service-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.service-nav-item {
+    padding: 1rem 2rem;
+    background: var(--white);
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    color: var(--gray);
+    font-size: 1rem;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.service-nav-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-primary);
+    transition: left 0.3s ease;
+    z-index: -1;
+}
+
+.service-nav-item.active {
+    color: white;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-lg);
+}
+
+.service-nav-item.active::before {
+    left: 0;
+}
+
+.service-nav-item:hover:not(.active) {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ================== EXPERT ASSISTANCE BANNER ================== */
+.expert-banner {
+    max-width: 1200px;
+    margin: 0 auto 2rem auto;
+    padding: 0 1rem;
+}
+
+.assistance-card {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+}
+
+.assistance-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+.assistance-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.assistance-icon {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.assistance-text h4 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.assistance-text p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+.assistance-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.assistance-btn {
+    background: var(--white);
+    color: var(--primary);
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    box-shadow: var(--shadow-md);
+    text-decoration: none;
+}
+
+.assistance-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-xl);
+    color: var(--primary);
+}
+
+/* ================== SERVICE CARDS ================== */
+.services-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.service-card {
+    background: var(--white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.4s ease;
+    border: 1px solid var(--light-gray);
+    position: relative;
+    display: none;
+}
+
+.service-card.show {
+    display: block;
+}
+
+.service-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-xl);
+}
+
+.service-card:hover::before {
+    transform: scaleX(1);
+}
+
+.service-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: var(--light-gray);
+    transition: transform 0.3s ease;
+}
+
+.service-card:hover .service-image {
+    transform: scale(1.05);
+}
+
+.service-content {
+    padding: 1.5rem;
+    position: relative;
+}
+
+.service-title-card {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.service-price {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0 0 1rem 0;
+    color: var(--primary);
+}
+
+.service-duration {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--gray);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.service-duration svg {
+    color: var(--primary);
+    width: 16px;
+    height: 16px;
+}
+
+.service-description {
+    color: var(--gray);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    font-weight: 400;
+}
+
+.service-features {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 1.5rem;
+}
+
+.service-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--gray);
+    font-weight: 500;
+}
+
+.service-features li::before {
+    content: "✓";
+    color: var(--success);
+    font-weight: bold;
+    font-size: 1rem;
+    flex-shrink: 0;
+    background: var(--success);
+    color: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+.book-service-btn {
+    width: 100%;
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: var(--shadow-md);
+}
+
+.book-service-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* ================== SERVICE SPECS ================== */
+.service-specs {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    border-left: 4px solid var(--primary);
+}
+
+.spec-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.spec-item:last-child {
+    margin-bottom: 0;
+}
+
+.spec-label {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.spec-value {
+    color: var(--gray);
+}
+
+.special-offer {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    text-align: center;
+    border: 2px dashed #ffc107;
+}
+
+.offer-badge {
+    background: #dc2626;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #666;
+    margin-right: 0.5rem;
+}
+
+.offer-price {
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* ================== BOOKING MODAL ================== */
+.booking-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.booking-modal.active {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--light-gray);
+    padding-bottom: 1rem;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray);
+    padding: 0.5rem;
+}
+
+.close-modal:hover {
+    color: var(--dark);
+}
+
+.booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--dark);
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    padding: 0.75rem;
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.time-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.time-slot {
+    padding: 0.75rem;
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--white);
+    font-size: 0.9rem;
+}
+
+.time-slot:hover {
+    border-color: var(--primary);
+    background: #f8fafc;
+}
+
+.time-slot.selected {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.service-summary {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--primary);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.summary-item:last-child {
+    margin-bottom: 0;
+}
+
+.summary-label {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.summary-value {
+    color: var(--gray);
+}
+
+.submit-booking {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    font-size: 1rem;
+    width: 100%;
+}
+
+.submit-booking:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.submit-booking:disabled {
+    background: var(--light-gray);
+    color: var(--gray);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ================== DATE PICKER ENHANCEMENTS ================== */
+.date-picker-container {
+    position: relative;
+}
+
+.calendar-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray);
+    pointer-events: none;
+}
+
+/* ================== RESPONSIVE DESIGN ================== */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .service-title h1 {
+        font-size: 1.5rem;
+    }
+    
+    .assistance-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .assistance-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .assistance-btn {
+        justify-content: center;
+    }
+    
+    .service-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .service-nav {
+        gap: 0.25rem;
+    }
+    
+    .service-nav-item {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .modal-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+        padding: 1.5rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .time-slots {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+
+<!-- ================== SERVICE HEADER ================== -->
+<div class="service-header">
+    <div class="header-content">
+        <button class="back-btn" onclick="history.back()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+        </button>
+        
+        <div class="service-icon" id="service-icon">
+            {% if categories_data and categories_data.0.icon %}
+                {{ categories_data.0.icon }}
+            {% else %}
+                🔧
+            {% endif %}
+        </div>
+        
+        <div class="service-title">
+            <h1 id="service-title">
+                {% if categories_data and categories_data.0.name %}
+                    {{ categories_data.0.name }}
+                {% else %}
+                    {{ worker_name }} Services
+                {% endif %}
+            </h1>
+            <p id="service-subtitle">{{ worker_tagline }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- ================== SERVICE NAVIGATION ================== -->
+{% if categories_data and categories_data|length > 1 %}
+<div class="service-nav-container">
+    <div class="service-nav" id="service-nav">
+        {% for category in categories_data %}
+            <div class="service-nav-item {% if forloop.first %}active{% endif %}" 
+                 data-category-id="{{ category.id }}"
+                 data-category-name="{{ category.name }}"
+                 data-category-icon="{{ category.icon }}">
+                {{ category.icon }} {{ category.name }}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% elif categories_data and categories_data|length == 1 %}
+<div style="display: none;" id="single-category" data-category-id="{{ categories_data.0.id }}"></div>
+{% endif %}
+
+<!-- ================== EXPERT ASSISTANCE BANNER ================== -->
+<div class="expert-banner">
+    <div class="assistance-card fade-in">
+        <div class="assistance-content">
+            <div class="assistance-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </div>
+            <div class="assistance-text">
+                <h4>Expert {{ worker_name }} Assistance</h4>
+                <p>Get free consultation and quotes for your project.</p>
+            </div>
+        </div>
+        <div class="assistance-actions">
+            <a href="tel:{{ worker_phone }}" class="assistance-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                Call Now
+            </a>
+            <button class="assistance-btn" onclick="openBookingModal('Schedule Visit', 'Contact for pricing', null, true)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                Schedule Visit
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================== SERVICE CONTENT ================== -->
+<div class="services-container">
+    <div class="service-grid" id="service-grid">
+        {% for category in categories_data %}
+            {% for service in category.services %}
+            <div class="service-card {% if forloop.parentloop.first %}show{% endif %}" data-category="{{ category.id }}">
+                {% if service.image %}
+                <img src="{{ service.image }}" alt="{{ service.name }}" class="service-image">
+                {% else %}
+                <img src="https://via.placeholder.com/400x200/f3f4f6/6b7280?text={{ service.name|urlencode }}" 
+                     alt="{{ service.name }}" class="service-image">
+                {% endif %}
+                
+                <div class="service-content">
+                    <h3 class="service-title-card">{{ service.name }}</h3>
+                    <div class="service-price">{{ service.price_display }}</div>
+                    
+                    <div class="service-duration">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        {{ service.duration }}
+                    </div>
+                    
+                    <p class="service-description">{{ service.description }}</p>
+                    
+                    {% if service.detailed_description %}
+                    <p class="service-description" style="font-style: italic; color: #666;">
+                        {{ service.detailed_description }}
+                    </p>
+                    {% endif %}
+                    
+                    {% if service.special_offer and service.offer_price %}
+                    <div class="special-offer">
+                        <span class="offer-badge">Special Offer</span>
+                        <span class="original-price">₹{{ service.original_price }}</span>
+                        <span class="offer-price">₹{{ service.offer_price }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="service-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Pricing Type:</span>
+                            <span class="spec-value">{{ service.pricing_type_display }}</span>
+                        </div>
+                        {% if service.min_hours > 1 %}
+                        <div class="spec-item">
+                            <span class="spec-label">Minimum Hours:</span>
+                            <span class="spec-value">{{ service.min_hours }} hours</span>
+                        </div>
+                        {% endif %}
+                        {% if service.night_shift_extra > 0 %}
+                        <div class="spec-item">
+                            <span class="spec-label">Night Shift Extra:</span>
+                            <span class="spec-value">+₹{{ service.night_shift_extra }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="spec-item">
+                            <span class="spec-label">Materials:</span>
+                            <span class="spec-value">
+                                {% if service.materials_included %}Included{% else %}Not included{% endif %}
+                            </span>
+                        </div>
+                        {% if service.experience_level_display %}
+                        <div class="spec-item">
+                            <span class="spec-label">Experience Level:</span>
+                            <span class="spec-value">{{ service.experience_level_display }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if service.requirements and service.requirements != 'Standard requirements apply' %}
+                    <div class="service-specs" style="background: #fff3cd; border-left-color: #ffc107;">
+                        <strong>Requirements:</strong> {{ service.requirements }}
+                    </div>
+                    {% endif %}
+                    
+                    <ul class="service-features">
+                        {% for feature in service.features %}
+                        <li>{{ feature }}</li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <button class="book-service-btn" 
+                            data-service-id="{{ service.id }}"
+                            data-service-name="{{ service.name }}"
+                            data-service-price="{{ service.price_display }}"
+                            data-service-duration="{{ service.duration }}"
+                            {% if service.base_price == 0 %}data-consultation="true"{% endif %}>
+                        {% if service.base_price == 0 %}
+                        Request Consultation
+                        {% else %}
+                        Book This Service - {{ service.price_display }}
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% empty %}
+            <div class="no-services" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                <h3 style="color: var(--gray); margin-bottom: 1rem;">No Services Available</h3>
+                <p style="color: var(--gray); margin-bottom: 2rem;">This worker hasn't set up any services yet. Please contact them directly.</p>
+                <div class="contact-info" style="background: var(--light-gray); padding: 1.5rem; border-radius: 12px;">
+                    <p><strong>Phone:</strong> {{ worker_phone }}</p>
+                    <p><strong>Tagline:</strong> {{ worker_tagline }}</p>
+                    {% if worker_bio %}
+                    <p><strong>About:</strong> {{ worker_bio }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ================== BOOKING MODAL ================== -->
+<div class="booking-modal" id="bookingModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Book Service</h3>
+            <button class="close-modal" id="closeModal">&times;</button>
+        </div>
+        
+        <div class="service-summary" id="serviceSummary">
+            <div class="summary-item">
+                <span class="summary-label">Service:</span>
+                <span class="summary-value" id="summaryServiceName">-</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Price:</span>
+                <span class="summary-value" id="summaryServicePrice">-</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Duration:</span>
+                <span class="summary-value" id="summaryServiceDuration">-</span>
+            </div>
+        </div>
+        
+        <form class="booking-form" id="bookingForm" action="{% url 'appointment_request' worker.id %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" id="selectedServiceId" name="service_id">
+            <input type="hidden" id="selectedServiceName" name="service_name">
+            <input type="hidden" id="selectedServicePrice" name="service_price">
+            <input type="hidden" id="selectedTimeSlot" name="preferred_time">
+            
+            <div class="form-group">
+                <label for="serviceDate">Preferred Date *</label>
+                <input type="date" id="serviceDate" name="preferred_date" required>
+                <small style="color: var(--gray); font-size: 0.8rem;">Select today or a future date</small>
+            </div>
+            
+            <div class="form-group">
+                <label>Preferred Time Slot *</label>
+                <div class="time-slots" id="timeSlots">
+                    <div class="time-slot" data-time="09:00-11:00">09:00 - 11:00</div>
+                    <div class="time-slot" data-time="11:00-13:00">11:00 - 13:00</div>
+                    <div class="time-slot" data-time="13:00-15:00">13:00 - 15:00</div>
+                    <div class="time-slot" data-time="15:00-17:00">15:00 - 17:00</div>
+                    <div class="time-slot" data-time="17:00-19:00">17:00 - 19:00</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="serviceAddress">Service Location *</label>
+                <textarea id="serviceAddress" name="address" required placeholder="Enter complete service address" rows="3"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="customerName">Your Name *</label>
+                <input type="text" id="customerName" name="customer_name" required placeholder="Enter your full name">
+            </div>
+            
+            <div class="form-group">
+                <label for="customerPhone">Your Phone Number *</label>
+                <input type="tel" id="customerPhone" name="customer_phone" required placeholder="Enter your phone number">
+            </div>
+            
+            <button type="submit" class="submit-booking" id="submitBookingBtn">Confirm Booking</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Service data from Django template
+const categoriesData = {{ categories_data_json|safe }};
+const workerData = {
+    id: {{ worker.id }},
+    name: "{{ worker_name }}",
+    tagline: "{{ worker_tagline }}",
+    phone: "{{ worker_phone }}",
+};
+
+// Current booking data
+let currentBookingData = {
+    serviceId: null,
+    serviceName: null,
+    servicePrice: null,
+    serviceDuration: null
+};
+
+// ================== MODAL FUNCTIONS ==================
+function initializeModal() {
+    const modal = document.getElementById('bookingModal');
+    const closeModal = document.getElementById('closeModal');
+    
+    if (!modal) return;
+    
+    // Close modal when clicking X
+    if (closeModal) {
+        closeModal.addEventListener('click', function() {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        });
+    }
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+    });
+}
+
+function initializeEventListeners() {
+    // Event delegation for booking buttons
+    document.addEventListener('click', function(e) {
+        const bookButton = e.target.closest('.book-service-btn');
+        if (bookButton) {
+            handleBookingButtonClick(bookButton);
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+}
+
+function initializeFormElements() {
+    // Initialize date picker
+    const dateInput = document.getElementById('serviceDate');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+        dateInput.min = today;
+    }
+    
+    // Initialize time slots
+    const timeSlots = document.querySelectorAll('.time-slot');
+    const timeSlotInput = document.getElementById('selectedTimeSlot');
+    
+    timeSlots.forEach(slot => {
+        slot.addEventListener('click', function() {
+            // Remove selected class from all slots
+            timeSlots.forEach(s => s.classList.remove('selected'));
+            // Add selected class to clicked slot
+            this.classList.add('selected');
+            // Update hidden input value
+            const selectedTime = this.getAttribute('data-time');
+            if (timeSlotInput) {
+                timeSlotInput.value = selectedTime;
+            }
+        });
+    });
+    
+    // Form validation on submit
+    const bookingForm = document.getElementById('bookingForm');
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function(e) {
+            // Check if time slot is selected
+            if (!timeSlotInput.value) {
+                e.preventDefault();
+                alert('Please select a preferred time slot');
+                return false;
+            }
+            
+            // Check other required fields
+            const serviceDate = document.getElementById('serviceDate');
+            const serviceAddress = document.getElementById('serviceAddress');
+            const customerName = document.getElementById('customerName');
+            const customerPhone = document.getElementById('customerPhone');
+            
+            if (!serviceDate.value) {
+                e.preventDefault();
+                alert('Please select a preferred date');
+                return false;
+            }
+            
+            if (!serviceAddress.value.trim()) {
+                e.preventDefault();
+                alert('Please enter the service location');
+                return false;
+            }
+            
+            if (!customerName.value.trim()) {
+                e.preventDefault();
+                alert('Please enter your name');
+                return false;
+            }
+            
+            if (!customerPhone.value.trim()) {
+                e.preventDefault();
+                alert('Please enter your phone number');
+                return false;
+            }
+            
+            // All validations passed
+            return true;
+        });
+    }
+}
+
+function handleBookingButtonClick(button) {
+    const serviceId = button.getAttribute('data-service-id');
+    const serviceName = button.getAttribute('data-service-name');
+    const servicePrice = button.getAttribute('data-service-price');
+    const serviceDuration = button.getAttribute('data-service-duration');
+    
+    if (!serviceId) {
+        alert('Error: Service information not found. Please try again.');
+        return;
+    }
+    
+    // Store booking data
+    currentBookingData = {
+        serviceId: serviceId,
+        serviceName: serviceName || 'Service',
+        servicePrice: servicePrice || 'Contact for pricing',
+        serviceDuration: serviceDuration || 'Varies'
+    };
+    
+    // Open modal
+    openBookingModal(serviceName, servicePrice, serviceId);
+}
+
+function openBookingModal(serviceTitle, servicePrice, serviceId = null) {
+    const modal = document.getElementById('bookingModal');
+    if (!modal) return;
+    
+    // Update modal title
+    const modalTitle = document.getElementById('modalTitle');
+    if (modalTitle) {
+        modalTitle.textContent = `Book ${serviceTitle}`;
+    }
+    
+    // Update hidden inputs
+    const selectedServiceId = document.getElementById('selectedServiceId');
+    const selectedServiceName = document.getElementById('selectedServiceName');
+    const selectedServicePrice = document.getElementById('selectedServicePrice');
+    
+    if (selectedServiceId && serviceId) {
+        selectedServiceId.value = serviceId;
+    }
+    if (selectedServiceName) {
+        selectedServiceName.value = serviceTitle || 'Service';
+    }
+    if (selectedServicePrice) {
+        selectedServicePrice.value = servicePrice || 'Contact for pricing';
+    }
+    
+    // Update service summary
+    updateServiceSummary(
+        serviceTitle || 'Service', 
+        servicePrice || 'Contact for pricing', 
+        currentBookingData.serviceDuration || 'Varies'
+    );
+    
+    // Show modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function updateServiceSummary(name, price, duration) {
+    const nameElement = document.getElementById('summaryServiceName');
+    const priceElement = document.getElementById('summaryServicePrice');
+    const durationElement = document.getElementById('summaryServiceDuration');
+    
+    if (nameElement) nameElement.textContent = name || 'Not specified';
+    if (priceElement) priceElement.textContent = price || 'Contact for pricing';
+    if (durationElement) durationElement.textContent = duration || 'Varies';
+}
+
+// ================== INITIALIZATION ==================
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize everything
+    initializeModal();
+    initializeEventListeners();
+    initializeFormElements();
+});
+</script>
+{% endblock content %}

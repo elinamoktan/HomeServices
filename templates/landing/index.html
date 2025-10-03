@@ -466,6 +466,39 @@
             alert('Thank you for your message! We will get back to you soon.');
             this.reset();
         });
+        
+
+        document.addEventListener('DOMContentLoaded', function() {
+    function captureLocationOnLanding() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    // Store in sessionStorage for use after login
+                    sessionStorage.setItem('pending_latitude', latitude);
+                    sessionStorage.setItem('pending_longitude', longitude);
+                    sessionStorage.setItem('pending_accuracy', accuracy);
+                    
+                    console.log('Location captured on landing:', latitude, longitude);
+                },
+                function(error) {
+                    console.warn('Location unavailable on landing page:', error.message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000 // Cache for 5 minutes
+                }
+            );
+        }
+    }
+    
+    // Capture location after short delay to not block page load
+    setTimeout(captureLocationOnLanding, 1000);
+});
     </script>
 </body>
 </html>

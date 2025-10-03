@@ -4,76 +4,86 @@
 {% block title %}My Reviews - AppointMate{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-  <h1 class="text-2xl font-bold text-gray-800">My Reviews</h1>
-  <p class="text-gray-600">View all the reviews you've given to workers</p>
+<div class="mb-8">
+  <h1 class="text-3xl font-bold text-gray-800 mb-2">My Reviews</h1>
+  <p class="text-gray-600 text-lg">View all the reviews you've given to workers</p>
 </div>
 
 {% if ratings %}
   <div class="space-y-6">
     {% for rating in ratings %}
-      <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500">
-        <div class="flex items-start space-x-4">
+      <div class="bg-white rounded-2xl shadow-lg p-8 border-l-4 border-indigo-500 transition-all duration-300 hover:shadow-xl relative" id="review-{{ rating.id }}">
+        <!-- Delete Button -->
+        <button 
+          type="button"
+          onclick="confirmDeleteReview('{{ rating.id }}', '{{ rating.worker.name }}')"
+          class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors duration-200 p-2 rounded-lg hover:bg-red-50"
+          title="Delete this review"
+        >
+          <i class="fas fa-trash-alt text-lg"></i>
+        </button>
+
+        <div class="flex items-start space-x-6">
           <!-- Worker Avatar -->
           <div class="flex-shrink-0">
             {% if rating.worker.profile_pic %}
-              <img src="{{ rating.worker.profile_pic.url }}" alt="{{ rating.worker.name }}" class="w-16 h-16 rounded-full object-cover">
+              <img src="{{ rating.worker.profile_pic.url }}" alt="{{ rating.worker.name }}" class="w-20 h-20 rounded-full object-cover shadow-md">
             {% else %}
-              <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
-                <span class="text-indigo-600 font-semibold text-xl">{{ rating.worker.name|first }}</span>
+              <div class="w-20 h-20 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-full flex items-center justify-center shadow-md">
+                <span class="text-indigo-600 font-bold text-2xl">{{ rating.worker.name|first }}</span>
               </div>
             {% endif %}
           </div>
 
           <div class="flex-1">
             <!-- Worker Info -->
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center justify-between mb-4">
               <div>
-                <h3 class="text-lg font-semibold text-gray-800">{{ rating.worker.name }}</h3>
-                <p class="text-gray-600">{{ rating.worker.tagline }}</p>
+                <h3 class="text-xl font-bold text-gray-800">{{ rating.worker.name }}</h3>
+                <p class="text-gray-600 text-lg">{{ rating.worker.tagline }}</p>
               </div>
-              <div class="text-sm text-gray-500">
+              <div class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                 {{ rating.created_at|date:"M j, Y" }}
               </div>
             </div>
 
             <!-- Rating Stars -->
-            <div class="flex items-center mb-3">
+            <div class="flex items-center mb-4">
               {% for star in "12345" %}
                 {% if forloop.counter <= rating.rating %}
-                  <i class="fas fa-star text-yellow-400 text-lg"></i>
+                  <i class="fas fa-star text-yellow-400 text-xl"></i>
                 {% else %}
-                  <i class="far fa-star text-gray-300 text-lg"></i>
+                  <i class="far fa-star text-gray-300 text-xl"></i>
                 {% endif %}
               {% endfor %}
-              <span class="ml-2 text-gray-600 font-medium">{{ rating.rating }}/5</span>
+              <span class="ml-3 text-gray-700 font-semibold text-lg">{{ rating.rating }}/5</span>
             </div>
 
             <!-- Review Comment -->
             {% if rating.comment %}
-              <div class="bg-gray-50 rounded-lg p-4 mb-3">
-                <p class="text-gray-700 italic">"{{ rating.comment }}"</p>
+              <div class="bg-gray-50 rounded-xl p-5 mb-4 border border-gray-200">
+                <p class="text-gray-700 text-lg italic">"{{ rating.comment }}"</p>
               </div>
             {% endif %}
 
             <!-- Appointment Details -->
             {% if rating.appointment %}
-              <div class="bg-blue-50 rounded-lg p-4">
-                <h4 class="font-medium text-gray-800 mb-2">Appointment Details</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                  <div>
-                    <i class="far fa-calendar text-blue-500 mr-2"></i>
+              <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200">
+                <h4 class="font-semibold text-gray-800 text-lg mb-3">Appointment Details</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                  <div class="flex items-center">
+                    <i class="far fa-calendar text-blue-500 text-lg mr-3"></i>
                     <span>{{ rating.appointment.appointment_date|date:"F j, Y g:i A" }}</span>
                   </div>
                   {% if rating.appointment.service_subtask %}
-                    <div>
-                      <i class="fas fa-tools text-blue-500 mr-2"></i>
+                    <div class="flex items-center">
+                      <i class="fas fa-tools text-blue-500 text-lg mr-3"></i>
                       <span>{{ rating.appointment.service_subtask.subtask.name }}</span>
                     </div>
                   {% endif %}
                   {% if rating.appointment.location %}
-                    <div class="md:col-span-2">
-                      <i class="fas fa-map-marker-alt text-blue-500 mr-2"></i>
+                    <div class="md:col-span-2 flex items-center">
+                      <i class="fas fa-map-marker-alt text-blue-500 text-lg mr-3"></i>
                       <span>{{ rating.appointment.location }}</span>
                     </div>
                   {% endif %}
@@ -86,19 +96,237 @@
     {% endfor %}
   </div>
 
-  <!-- Pagination if needed -->
-  <!-- You can add pagination logic here if you have many ratings -->
-
 {% else %}
   <!-- Empty State -->
-  <div class="bg-white rounded-lg shadow-md p-12 text-center">
-    <i class="fas fa-star text-6xl text-gray-300 mb-6"></i>
-    <h3 class="text-xl font-semibold text-gray-800 mb-3">No Reviews Yet</h3>
-    <p class="text-gray-600 mb-6">You haven't reviewed any workers yet. Complete some appointments and share your experience!</p>
-    <a href="{% url 'worker-list' %}" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
-      <i class="fas fa-search mr-2"></i>
+  <div class="bg-white rounded-2xl shadow-lg p-12 text-center transition-all duration-300 hover:shadow-xl">
+    <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+      <i class="fas fa-star text-gray-400 text-4xl"></i>
+    </div>
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">No Reviews Yet</h3>
+    <p class="text-gray-600 text-lg mb-8 max-w-md mx-auto">You haven't reviewed any workers yet. Complete some appointments and share your experience!</p>
+    <a href="{% url 'worker-list' %}" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all text-lg font-semibold">
+      <i class="fas fa-search mr-3"></i>
       Find Workers
     </a>
   </div>
 {% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-2xl p-8 max-w-md mx-4 w-full transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+      </div>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Delete Review</h3>
+      <p class="text-gray-600 mb-6" id="modalMessage">Are you sure you want to delete your review for this worker? This action cannot be undone.</p>
+      
+      <div class="flex space-x-4 justify-center">
+        <button 
+          type="button" 
+          onclick="closeDeleteModal()"
+          class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors duration-200 font-semibold"
+        >
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          id="confirmDeleteBtn"
+          class="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors duration-200 font-semibold"
+        >
+          Delete Review
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-2xl p-8 flex items-center space-x-4">
+    <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+    <span class="text-gray-700 font-semibold">Deleting review...</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentReviewId = null;
+
+function confirmDeleteReview(reviewId, workerName) {
+  currentReviewId = reviewId;
+  const modal = document.getElementById('deleteModal');
+  const modalContent = document.getElementById('modalContent');
+  const modalMessage = document.getElementById('modalMessage');
+  
+  modalMessage.textContent = `Are you sure you want to delete your review for ${workerName}? This action cannot be undone.`;
+  
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    modalContent.classList.remove('scale-95', 'opacity-0');
+    modalContent.classList.add('scale-100', 'opacity-100');
+  }, 10);
+  
+  // Set up confirm button
+  const confirmBtn = document.getElementById('confirmDeleteBtn');
+  confirmBtn.onclick = deleteReview;
+}
+
+function closeDeleteModal() {
+  const modal = document.getElementById('deleteModal');
+  const modalContent = document.getElementById('modalContent');
+  
+  modalContent.classList.remove('scale-100', 'opacity-100');
+  modalContent.classList.add('scale-95', 'opacity-0');
+  
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    currentReviewId = null;
+  }, 300);
+}
+
+function deleteReview() {
+  if (!currentReviewId) return;
+  
+  const loadingSpinner = document.getElementById('loadingSpinner');
+  loadingSpinner.classList.remove('hidden');
+  closeDeleteModal();
+  
+  // Send AJAX request to delete the review
+  const formData = new FormData();
+  formData.append('review_id', currentReviewId);
+  
+  fetch("{% url 'delete_worker_review' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: formData
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(data => {
+    if (data.success) {
+      // Remove the review element from the DOM with animation
+      const reviewElement = document.getElementById(`review-${currentReviewId}`);
+      if (reviewElement) {
+        reviewElement.style.opacity = '0';
+        reviewElement.style.transform = 'translateX(-100px)';
+        reviewElement.style.transition = 'all 0.3s ease';
+        
+        setTimeout(() => {
+          reviewElement.remove();
+          showNotification('Review deleted successfully!', 'success');
+          
+          // Check if no reviews left and reload to show empty state
+          const remainingReviews = document.querySelectorAll('[id^="review-"]');
+          if (remainingReviews.length === 0) {
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          }
+        }, 300);
+      }
+    } else {
+      throw new Error(data.error || 'Failed to delete review');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showNotification('Error deleting review: ' + error.message, 'error');
+  })
+  .finally(() => {
+    loadingSpinner.classList.add('hidden');
+    currentReviewId = null;
+  });
+}
+
+// Utility function to get CSRF token
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+// Notification function
+function showNotification(message, type) {
+  // Remove existing notifications
+  const existingNotifications = document.querySelectorAll('.custom-notification');
+  existingNotifications.forEach(notification => notification.remove());
+  
+  const notification = document.createElement('div');
+  notification.className = `custom-notification fixed top-4 right-4 p-4 rounded-xl shadow-lg text-white font-semibold z-50 transform transition-all duration-300 ${
+    type === 'success' ? 'bg-green-500' : 'bg-red-500'
+  }`;
+  notification.textContent = message;
+  notification.style.transform = 'translateX(100%)';
+  
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.style.transform = 'translateX(0)';
+  }, 10);
+  
+  // Animate out after 3 seconds
+  setTimeout(() => {
+    notification.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        document.body.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
+}
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeDeleteModal();
+  }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeDeleteModal();
+  }
+});
+</script>
+
+<style>
+/* Smooth transitions for modal */
+#deleteModal {
+  transition: opacity 0.3s ease;
+}
+
+#modalContent {
+  transition: all 0.3s ease;
+}
+
+/* Custom notification styles */
+.custom-notification {
+  transition: transform 0.3s ease;
+}
+
+/* Smooth deletion animation */
+[id^="review-"] {
+  transition: all 0.3s ease;
+}
+</style>
 {% endblock %}
