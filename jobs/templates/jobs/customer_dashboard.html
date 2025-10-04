@@ -427,7 +427,6 @@
       color: white;
     }
 
-    /* New styles for appointment requests */
     .request-card {
       background: white;
       border-radius: 16px;
@@ -544,6 +543,179 @@
       color: white;
     }
 
+    /* NEW: Notification toast styles */
+    .notification-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      border-left: 4px solid;
+      z-index: 10000;
+      max-width: 400px;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .notification-toast.show {
+      transform: translateX(0);
+    }
+    
+    .notification-toast.success {
+      border-left-color: #10b981;
+    }
+    
+    .notification-toast.error {
+      border-left-color: #ef4444;
+    }
+    
+    .notification-toast.info {
+      border-left-color: #3b82f6;
+    }
+    
+    .notification-toast.warning {
+      border-left-color: #f59e0b;
+    }
+    
+    .notification-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    
+    .notification-toast.success .notification-icon {
+      background: #10b981;
+      color: white;
+    }
+    
+    .notification-toast.error .notification-icon {
+      background: #ef4444;
+      color: white;
+    }
+    
+    .notification-toast.info .notification-icon {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .notification-toast.warning .notification-icon {
+      background: #f59e0b;
+      color: white;
+    }
+    
+    .notification-content {
+      flex: 1;
+    }
+    
+    .notification-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .notification-message {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+    
+    .notification-close {
+      background: none;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .notification-close:hover {
+      color: #374151;
+      background: #f3f4f6;
+    }
+
+    /* NEW: Real-time status update styles */
+    .status-update-animation {
+      animation: statusPulse 2s ease-in-out;
+    }
+    
+    @keyframes statusPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .request-updated {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-left-color: #0ea5e9 !important;
+    }
+
+    /* NEW: Notifications Panel */
+    .notifications-panel {
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      width: 380px;
+      max-height: 500px;
+      overflow: hidden;
+      display: none;
+    }
+    
+    .notifications-panel.show {
+      display: block;
+    }
+    
+    .notifications-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: between;
+      align-items: center;
+    }
+    
+    .notifications-list {
+      max-height: 350px;
+      overflow-y: auto;
+    }
+    
+    .notification-item {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #f3f4f6;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .notification-item:hover {
+      background: #f9fafb;
+    }
+    
+    .notification-item.unread {
+      background: #f0f9ff;
+    }
+    
+    .notification-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3b82f6;
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+
     @media (max-width: 768px) {
       .sidebar {
         width: 70px;
@@ -595,6 +767,12 @@
       
       .request-actions {
         flex-direction: column;
+      }
+      
+      .notifications-panel {
+        width: 90vw;
+        right: 5vw;
+        left: 5vw;
       }
     }
   </style>
@@ -661,7 +839,7 @@
         </div>
         
         <div class="flex items-center gap-4">
-          <div class="notification-badge">
+          <div class="notification-badge" id="notificationBadge">
             <i class="fas fa-bell text-gray-500 text-xl"></i>
             {% if unread_notification_count and unread_notification_count > 0 %}
               <span class="badge" id="notification-count">{{ unread_notification_count }}</span>
@@ -734,88 +912,114 @@
               My Appointment Requests
             </h2>
             {% if worker_requests %}
-            <span class="request-badge">
-              {{ worker_requests.count }} Pending Request{{ worker_requests.count|pluralize }}
-            </span>
+            <div class="flex items-center gap-3">
+              <span class="request-badge" id="pendingRequestsCount">
+                {{ worker_requests.count }} Pending Request{{ worker_requests.count|pluralize }}
+              </span>
+              <button id="autoRefreshToggle" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg text-sm font-semibold hover:bg-indigo-200 transition-colors">
+                <i class="fas fa-sync-alt mr-1"></i>
+                Auto-refresh: <span id="autoRefreshStatus">ON</span>
+              </button>
+            </div>
             {% endif %}
           </div>
 
-          {% if worker_requests %}
-            {% for request in worker_requests %}
-              <div class="request-card">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center flex-1">
-                    <div class="worker-avatar">
-                      {% if request.worker.profile_pic %}
-                        <img src="{{ request.worker.profile_pic.url }}" alt="{{ request.worker.name }}">
-                      {% else %}
-                        <span class="text-white font-bold">{{ request.worker.name|first }}</span>
-                      {% endif %}
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex justify-between items-start">
-                        <div>
-                          <h4 class="font-semibold text-gray-800 text-lg">{{ request.worker.name }}</h4>
-                          <p class="text-sm text-gray-600">
-                            <i class="fas fa-briefcase mr-1"></i>
-                            {{ request.service_subtask.subtask.name|default:"General Service" }}
-                          </p>
-                          <p class="text-sm text-gray-600">
-                            <i class="far fa-calendar mr-1"></i>
-                            {{ request.appointment_date|date:"M j, Y" }}
-                            <i class="far fa-clock ml-3 mr-1"></i>
-                            {{ request.appointment_date|time:"g:i A" }}
-                          </p>
-                          {% if request.location %}
-                            <p class="text-sm text-gray-600">
-                              <i class="fas fa-map-marker-alt mr-1"></i>
-                              {{ request.location|truncatewords:5 }}
-                            </p>
-                          {% endif %}
-                          {% if request.special_instructions %}
-                            <p class="text-sm text-gray-600 mt-1">
-                              <i class="fas fa-sticky-note mr-1"></i>
-                              {{ request.special_instructions|truncatewords:10 }}
-                            </p>
-                          {% endif %}
-                        </div>
-                        <div class="text-right">
-                          <span class="status-badge status-pending">Waiting for Response</span>
-                          <p class="text-xs text-gray-500 mt-1">
-                            Sent {{ request.created_at|timesince }} ago
-                          </p>
-                        </div>
+          <div id="appointmentRequestsContainer">
+            {% if worker_requests %}
+              {% for request in worker_requests %}
+                <div class="request-card" id="request-{{ request.id }}" data-status="{{ request.status }}">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center flex-1">
+                      <div class="worker-avatar">
+                        {% if request.worker.profile_pic %}
+                          <img src="{{ request.worker.profile_pic.url }}" alt="{{ request.worker.name }}">
+                        {% else %}
+                          <span class="text-white font-bold">{{ request.worker.name|first }}</span>
+                        {% endif %}
                       </div>
-                      
-                      <div class="request-actions">
-                        <form method="post" action="{% url 'delete_appointment' request.id %}" class="inline">
-                          {% csrf_token %}
-                          <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
-                            <i class="fas fa-trash mr-1"></i>Cancel Request
+                      <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                          <div>
+                            <h4 class="font-semibold text-gray-800 text-lg">{{ request.worker.name }}</h4>
+                            <p class="text-sm text-gray-600">
+                              <i class="fas fa-briefcase mr-1"></i>
+                              {{ request.service_subtask.subtask.name|default:"General Service" }}
+                            </p>
+                            <p class="text-sm text-gray-600">
+                              <i class="far fa-calendar mr-1"></i>
+                              {{ request.appointment_date|date:"M j, Y" }}
+                              <i class="far fa-clock ml-3 mr-1"></i>
+                              {{ request.appointment_date|time:"g:i A" }}
+                            </p>
+                            {% if request.location %}
+                              <p class="text-sm text-gray-600">
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                {{ request.location|truncatewords:5 }}
+                              </p>
+                            {% endif %}
+                            {% if request.special_instructions %}
+                              <p class="text-sm text-gray-600 mt-1">
+                                <i class="fas fa-sticky-note mr-1"></i>
+                                {{ request.special_instructions|truncatewords:10 }}
+                              </p>
+                            {% endif %}
+                          </div>
+                          <div class="text-right">
+                            <span class="status-badge status-{{ request.status }}" id="status-{{ request.id }}">
+                              {% if request.status == 'pending' %}
+                                Waiting for Response
+                              {% elif request.status == 'accepted' %}
+                                Accepted ✓
+                              {% elif request.status == 'rejected' %}
+                                Declined ✗
+                              {% else %}
+                                {{ request.status|title }}
+                              {% endif %}
+                            </span>
+                            <p class="text-xs text-gray-500 mt-1">
+                              Sent {{ request.created_at|timesince }} ago
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div class="request-actions" id="actions-{{ request.id }}">
+                          {% if request.status == 'pending' %}
+                            <form method="post" action="{% url 'delete_appointment' request.id %}" class="inline">
+                              {% csrf_token %}
+                              <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
+                                <i class="fas fa-trash mr-1"></i>Cancel Request
+                              </button>
+                            </form>
+                          {% endif %}
+                          <button class="btn-view-details" onclick="showRequestDetails({{ request.id }})">
+                            <i class="fas fa-eye mr-1"></i>View Details
                           </button>
-                        </form>
-                        <button class="btn-view-details" onclick="showRequestDetails({{ request.id }})">
-                          <i class="fas fa-eye mr-1"></i>View Details
-                        </button>
-                        <a href="{% url 'worker_service_details' request.worker.id %}" class="btn-view-details">
-                          <i class="fas fa-edit mr-1"></i>Modify Request
-                        </a>
+                          {% if request.status == 'pending' %}
+                            <a href="{% url 'worker_service_details' request.worker.id %}" class="btn-view-details">
+                              <i class="fas fa-edit mr-1"></i>Modify Request
+                            </a>
+                          {% elif request.status == 'accepted' %}
+                            <a href="{% url 'customer_appointments' %}" class="btn-accept">
+                              <i class="fas fa-calendar-check mr-1"></i>View Booking
+                            </a>
+                          {% endif %}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-center py-12">
+                <i class="fas fa-paper-plane text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg mb-4">No appointment requests sent yet</p>
+                <p class="text-gray-400 text-sm">When you book a service, your appointment requests will appear here.</p>
+                <a href="{% url 'worker-list' %}" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all mt-4">
+                  Book Your First Service
+                </a>
               </div>
-            {% endfor %}
-          {% else %}
-            <div class="text-center py-12">
-              <i class="fas fa-paper-plane text-6xl text-gray-300 mb-4"></i>
-              <p class="text-gray-500 text-lg mb-4">No appointment requests sent yet</p>
-              <p class="text-gray-400 text-sm">When you book a service, your appointment requests will appear here.</p>
-              <a href="{% url 'worker-list' %}" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all mt-4">
-                Book Your First Service
-              </a>
-            </div>
-          {% endif %}
+            {% endif %}
+          </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1037,113 +1241,447 @@
     </div>
   </div>
 
+  <!-- NEW: Notifications Panel -->
+  <div id="notificationsPanel" class="notifications-panel">
+    <div class="notifications-header">
+      <h3 class="font-bold text-gray-800 text-lg">Notifications</h3>
+      <button onclick="markAllNotificationsAsRead()" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+        Mark all as read
+      </button>
+    </div>
+    <div id="notificationsList" class="notifications-list">
+      <!-- Notifications will be loaded here -->
+    </div>
+    <div class="p-3 border-t border-gray-200 text-center">
+      <a href="{% url 'customer_appointments' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+        View All Notifications
+      </a>
+    </div>
+  </div>
+
+  <!-- NEW: Notification Toast Container -->
+  <div id="notificationToastContainer"></div>
+
   <script>
-    // Update notification count periodically
-    function updateNotificationCount() {
-      fetch('{% url "get_notification_count" %}', {
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest'
+    // Global variables for real-time updates
+    let autoRefreshEnabled = true;
+    let refreshInterval;
+    let lastChecked = new Date();
+
+    // Initialize real-time updates
+    function initializeRealTimeUpdates() {
+      if (autoRefreshEnabled) {
+        startAutoRefresh();
+      }
+      
+      // Check for updates immediately on page load
+      checkForStatusUpdates();
+    }
+
+    // Start auto-refresh
+    function startAutoRefresh() {
+      refreshInterval = setInterval(() => {
+        checkForStatusUpdates();
+        updateNotificationCount();
+      }, 10000); // Check every 10 seconds
+    }
+
+    // Stop auto-refresh
+    function stopAutoRefresh() {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    }
+
+    // Toggle auto-refresh
+    document.getElementById('autoRefreshToggle')?.addEventListener('click', function() {
+      autoRefreshEnabled = !autoRefreshEnabled;
+      const statusElement = document.getElementById('autoRefreshStatus');
+      
+      if (autoRefreshEnabled) {
+        statusElement.textContent = 'ON';
+        this.classList.remove('bg-gray-100', 'text-gray-700');
+        this.classList.add('bg-indigo-100', 'text-indigo-700');
+        startAutoRefresh();
+        showNotification('Auto-refresh enabled', 'info');
+      } else {
+        statusElement.textContent = 'OFF';
+        this.classList.remove('bg-indigo-100', 'text-indigo-700');
+        this.classList.add('bg-gray-100', 'text-gray-700');
+        stopAutoRefresh();
+        showNotification('Auto-refresh disabled', 'warning');
+      }
+    });
+
+    // Check for appointment status updates
+    async function checkForStatusUpdates() {
+      try {
+        const response = await fetch('/customer/check-appointment-updates/', {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.updates && data.updates.length > 0) {
+            data.updates.forEach(update => {
+              handleStatusUpdate(update);
+            });
+          }
+          
+          lastChecked = new Date();
         }
-      })
-      .then(response => response.json())
-      .then(data => {
-        const badge = document.getElementById('notification-count');
-        if (data.count > 0) {
-          if (badge) {
-            badge.textContent = data.count;
+      } catch (error) {
+        console.error('Error checking for updates:', error);
+      }
+    }
+
+    // Handle individual status update
+    function handleStatusUpdate(update) {
+      const requestElement = document.getElementById(`request-${update.appointment_id}`);
+      const statusElement = document.getElementById(`status-${update.appointment_id}`);
+      
+      if (requestElement && statusElement) {
+        // Update status badge
+        statusElement.className = `status-badge status-${update.new_status}`;
+        statusElement.innerHTML = getStatusDisplayText(update.new_status);
+        
+        // Add visual feedback
+        requestElement.classList.add('request-updated', 'status-update-animation');
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+          requestElement.classList.remove('status-update-animation');
+        }, 2000);
+        
+        // Show notification toast
+        showStatusNotification(update);
+        
+        // Update request element data attribute
+        requestElement.setAttribute('data-status', update.new_status);
+        
+        // Update actions based on new status
+        updateRequestActions(update.appointment_id, update.new_status);
+        
+        // Update pending requests count
+        updatePendingRequestsCount();
+      }
+    }
+
+    // Get display text for status
+    function getStatusDisplayText(status) {
+      switch(status) {
+        case 'pending':
+          return 'Waiting for Response';
+        case 'accepted':
+          return 'Accepted ✓';
+        case 'rejected':
+          return 'Declined ✗';
+        case 'completed':
+          return 'Completed ✓';
+        default:
+          return status.charAt(0).toUpperCase() + status.slice(1);
+      }
+    }
+
+    // Update request actions based on status
+    function updateRequestActions(appointmentId, status) {
+      const requestElement = document.getElementById(`request-${appointmentId}`);
+      const actionsContainer = requestElement?.querySelector('.request-actions');
+      
+      if (!actionsContainer) return;
+      
+      let newActionsHTML = '';
+      
+      if (status === 'pending') {
+        newActionsHTML = `
+          <form method="post" action="/appointments/${appointmentId}/delete/" class="inline">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
+            <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
+              <i class="fas fa-trash mr-1"></i>Cancel Request
+            </button>
+          </form>
+          <button class="btn-view-details" onclick="showRequestDetails(${appointmentId})">
+            <i class="fas fa-eye mr-1"></i>View Details
+          </button>
+          <a href="/worker/service-details/${appointmentId}/" class="btn-view-details">
+            <i class="fas fa-edit mr-1"></i>Modify Request
+          </a>
+        `;
+      } else if (status === 'accepted') {
+        newActionsHTML = `
+          <button class="btn-view-details" onclick="showRequestDetails(${appointmentId})">
+            <i class="fas fa-eye mr-1"></i>View Details
+          </button>
+          <a href="{% url 'customer_appointments' %}" class="btn-accept">
+            <i class="fas fa-calendar-check mr-1"></i>View Booking
+          </a>
+        `;
+      } else if (status === 'rejected') {
+        newActionsHTML = `
+          <button class="btn-view-details" onclick="showRequestDetails(${appointmentId})">
+            <i class="fas fa-eye mr-1"></i>View Details
+          </button>
+          <a href="{% url 'worker-list' %}" class="btn-view-details">
+            <i class="fas fa-search mr-1"></i>Find Another Worker
+          </a>
+        `;
+      }
+      
+      actionsContainer.innerHTML = newActionsHTML;
+    }
+
+    // Update pending requests count
+    function updatePendingRequestsCount() {
+      const pendingRequests = document.querySelectorAll('.request-card[data-status="pending"]');
+      const countElement = document.getElementById('pendingRequestsCount');
+      if (countElement) {
+        countElement.textContent = `${pendingRequests.length} Pending Request${pendingRequests.length !== 1 ? 's' : ''}`;
+      }
+    }
+
+    // Show status notification toast
+    function showStatusNotification(update) {
+      let notificationType, title, message, icon;
+      
+      switch(update.new_status) {
+        case 'accepted':
+          notificationType = 'success';
+          title = 'Appointment Accepted!';
+          message = `${update.worker_name} has accepted your appointment request`;
+          icon = 'fa-check-circle';
+          break;
+        case 'rejected':
+          notificationType = 'error';
+          title = 'Appointment Declined';
+          message = `${update.worker_name} was unable to accept your request`;
+          icon = 'fa-times-circle';
+          break;
+        case 'completed':
+          notificationType = 'info';
+          title = 'Appointment Completed';
+          message = `Your appointment with ${update.worker_name} has been completed`;
+          icon = 'fa-flag-checkered';
+          break;
+        default:
+          return;
+      }
+      
+      showNotification(message, notificationType, title, icon);
+    }
+
+    // Enhanced notification function
+    function showNotification(message, type = 'info', title = null, icon = null) {
+      const container = document.getElementById('notificationToastContainer');
+      const notificationId = 'notification-' + Date.now();
+      
+      // Set default icon based on type
+      if (!icon) {
+        switch(type) {
+          case 'success': icon = 'fa-check-circle'; break;
+          case 'error': icon = 'fa-exclamation-triangle'; break;
+          case 'warning': icon = 'fa-exclamation-circle'; break;
+          default: icon = 'fa-info-circle';
+        }
+      }
+      
+      // Set default title based on type
+      if (!title) {
+        switch(type) {
+          case 'success': title = 'Success'; break;
+          case 'error': title = 'Error'; break;
+          case 'warning': title = 'Warning'; break;
+          default: title = 'Information';
+        }
+      }
+      
+      const notification = document.createElement('div');
+      notification.id = notificationId;
+      notification.className = `notification-toast ${type}`;
+      notification.innerHTML = `
+        <div class="notification-icon">
+          <i class="fas ${icon}"></i>
+        </div>
+        <div class="notification-content">
+          <div class="notification-title">${title}</div>
+          <div class="notification-message">${message}</div>
+        </div>
+        <button class="notification-close" onclick="closeNotification('${notificationId}')">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      
+      container.appendChild(notification);
+      
+      // Animate in
+      setTimeout(() => {
+        notification.classList.add('show');
+      }, 100);
+      
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        closeNotification(notificationId);
+      }, 5000);
+    }
+
+    // Close notification
+    function closeNotification(notificationId) {
+      const notification = document.getElementById(notificationId);
+      if (notification) {
+        notification.classList.remove('show');
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      }
+    }
+
+    // Show notifications panel
+    function showNotificationsPanel() {
+      const panel = document.getElementById('notificationsPanel');
+      panel.classList.toggle('show');
+      loadNotifications();
+    }
+
+    // Load notifications
+    async function loadNotifications() {
+      try {
+        const response = await fetch('/customer/notifications/', {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const container = document.getElementById('notificationsList');
+          
+          if (data.notifications && data.notifications.length > 0) {
+            container.innerHTML = data.notifications.map(notification => `
+              <div class="notification-item ${notification.is_read ? '' : 'unread'}" onclick="handleNotificationClick(${notification.id})">
+                <div class="flex items-start gap-3">
+                  ${!notification.is_read ? '<span class="notification-dot"></span>' : ''}
+                  <div class="flex-1">
+                    <div class="font-semibold text-sm text-gray-800">${notification.title}</div>
+                    <div class="text-xs text-gray-600 mt-1">${notification.message}</div>
+                    <div class="text-xs text-gray-400 mt-1">${notification.time_ago}</div>
+                  </div>
+                </div>
+              </div>
+            `).join('');
           } else {
-            const notificationBadge = document.querySelector('.notification-badge');
-            const newBadge = document.createElement('span');
-            newBadge.className = 'badge';
-            newBadge.id = 'notification-count';
-            newBadge.textContent = data.count;
-            notificationBadge.appendChild(newBadge);
-          }
-        } else {
-          if (badge) {
-            badge.remove();
+            container.innerHTML = `
+              <div class="p-4 text-center text-gray-500">
+                <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                <p>No notifications</p>
+              </div>
+            `;
           }
         }
-      })
-      .catch(error => console.error('Error updating notification count:', error));
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      }
     }
 
-    // Update notification count every 30 seconds
-    setInterval(updateNotificationCount, 30000);
-
-    // Smooth scroll for internal links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          target.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
+    // Handle notification click
+    function handleNotificationClick(notificationId) {
+      // Mark as read and redirect to relevant page
+      fetch(`/notifications/${notificationId}/mark-read/`, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCSRFToken()
         }
-      });
-    });
-
-    // Add animation on scroll
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.opacity = '1';
-          entry.target.style.transform = 'translateY(0)';
-        }
-      });
-    }, observerOptions);
-
-    // Observe all cards for animation
-    document.querySelectorAll('.dashboard-card, .stat-card, .quick-action-card, .request-card').forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(20px)';
-      card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-      observer.observe(card);
-    });
-
-    // Search functionality
-    const searchInput = document.querySelector('.search-bar input');
-    if (searchInput) {
-      searchInput.addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        console.log('Searching for:', searchTerm);
-        // You can implement actual search functionality here
+      }).then(() => {
+        updateNotificationCount();
+        loadNotifications();
       });
     }
 
-    // Make service categories clickable
-    document.querySelectorAll('.service-category').forEach(category => {
-      category.addEventListener('click', function() {
-        // The onclick handler on the element will handle navigation
+    // Mark all notifications as read
+    function markAllNotificationsAsRead() {
+      fetch('/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCSRFToken()
+        }
+      }).then(() => {
+        updateNotificationCount();
+        loadNotifications();
+        showNotification('All notifications marked as read', 'success');
       });
+    }
+
+    // Get CSRF token
+    function getCSRFToken() {
+      return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    // Update notification count
+    async function updateNotificationCount() {
+      try {
+        const response = await fetch('{% url "get_notification_count" %}', {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const badge = document.getElementById('notification-count');
+          
+          if (data.count > 0) {
+            if (badge) {
+              badge.textContent = data.count;
+            } else {
+              const notificationBadge = document.querySelector('.notification-badge');
+              const newBadge = document.createElement('span');
+              newBadge.className = 'badge';
+              newBadge.id = 'notification-count';
+              newBadge.textContent = data.count;
+              notificationBadge.appendChild(newBadge);
+            }
+          } else {
+            if (badge) {
+              badge.remove();
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error updating notification count:', error);
+      }
+    }
+
+    // Close notifications panel when clicking outside
+    document.addEventListener('click', function(event) {
+      const panel = document.getElementById('notificationsPanel');
+      const badge = document.getElementById('notificationBadge');
+      
+      if (panel && panel.classList.contains('show') && 
+          !panel.contains(event.target) && 
+          !badge.contains(event.target)) {
+        panel.classList.remove('show');
+      }
     });
 
-    // Handle mark completed button clicks
-    document.querySelectorAll('form[action*="mark_customer_completed"]').forEach(form => {
-      form.addEventListener('submit', function(e) {
-        const button = this.querySelector('button[type="submit"]');
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Marking...';
-        button.disabled = true;
-      });
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeRealTimeUpdates();
+      updateNotificationCount();
+      
+      // Show any initial messages
+      {% if messages %}
+        {% for message in messages %}
+          showNotification('{{ message }}', '{{ message.tags }}');
+        {% endfor %}
+      {% endif %}
     });
 
-    // Handle delete appointment button clicks
-    document.querySelectorAll('form[action*="delete_appointment"]').forEach(form => {
-      form.addEventListener('submit', function(e) {
-        const button = this.querySelector('button[type="submit"]');
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Cancelling...';
-        button.disabled = true;
-      });
-    });
-
-    // Request Details Modal Functions
+    // Your existing functions
     function showRequestDetails(requestId) {
       // Show loading state
       document.getElementById('requestDetailsContent').innerHTML = `
@@ -1216,12 +1754,12 @@
                 
                 <div class="flex space-x-2 pt-4">
                   <form method="post" action="/appointments/${requestId}/delete/" class="flex-1">
-                    {% csrf_token %}
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
                     <button type="submit" class="btn-delete w-full text-center" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
                       <i class="fas fa-trash mr-1"></i>Cancel Request
                     </button>
                   </form>
-                  <a href="/worker/${requestId}/service-details/" class="btn-view-details flex-1 text-center">
+                  <a href="/worker/service-details/${requestId}/" class="btn-view-details flex-1 text-center">
                     <i class="fas fa-edit mr-1"></i>Modify Request
                   </a>
                 </div>
@@ -1257,59 +1795,13 @@
       document.getElementById('requestDetailsModal').classList.add('hidden');
     }
 
-    // Close modal when clicking outside
-    document.getElementById('requestDetailsModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeRequestDetails();
-      }
+    // Clean up on page unload
+    window.addEventListener('beforeunload', function() {
+      stopAutoRefresh();
     });
 
-    // Auto-refresh requests every 2 minutes
-    setInterval(() => {
-      if (!document.getElementById('requestDetailsModal').classList.contains('hidden')) {
-        return; // Don't refresh if modal is open
-      }
-      
-      // You could add AJAX to refresh the requests section here
-      console.log('Auto-refreshing requests...');
-    }, 120000);
-
-    // Show success messages if any
-    {% if messages %}
-      {% for message in messages %}
-        showNotification('{{ message }}', '{{ message.tags }}');
-      {% endfor %}
-    {% endif %}
-
-    function showNotification(message, type) {
-      // Create notification element
-      const notification = document.createElement('div');
-      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${
-        type === 'success' ? 'bg-green-500 text-white' : 
-        type === 'error' ? 'bg-red-500 text-white' : 
-        'bg-blue-500 text-white'
-      }`;
-      notification.innerHTML = `
-        <div class="flex items-center">
-          <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} mr-2"></i>
-          <span>${message}</span>
-        </div>
-      `;
-      
-      document.body.appendChild(notification);
-      
-      // Remove notification after 5 seconds
-      setTimeout(() => {
-        notification.remove();
-      }, 5000);
-    }
-
-    // Handle escape key to close modals
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        closeRequestDetails();
-      }
-    });
+    // Setup notification badge click
+    document.getElementById('notificationBadge').addEventListener('click', showNotificationsPanel);
   </script>
 </body>
 </html>

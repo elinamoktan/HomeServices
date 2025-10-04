@@ -1,0 +1,686 @@
+{% extends 'jobs/_base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+/* ================== CHECKOUT STYLES ================== */
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary: #059669;
+    --accent: #dc2626;
+    --success: #16a34a;
+    --warning: #ea580c;
+    --light: #f8fafc;
+    --dark: #0f172a;
+    --gray: #64748b;
+    --light-gray: #e2e8f0;
+    --white: #ffffff;
+    --gradient-primary: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    --gradient-secondary: linear-gradient(135deg, #059669 0%, #047857 100%);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+.checkout-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.checkout-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.checkout-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.checkout-header p {
+    color: var(--gray);
+    font-size: 1.1rem;
+}
+
+.checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    align-items: start;
+}
+
+/* ================== ORDER SUMMARY ================== */
+.order-summary {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--light-gray);
+    position: sticky;
+    top: 2rem;
+}
+
+.summary-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--light-gray);
+}
+
+.summary-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0;
+}
+
+.service-badge {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.service-details {
+    margin-bottom: 2rem;
+}
+
+.service-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.service-item:last-child {
+    border-bottom: none;
+}
+
+.service-info h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0 0 0.5rem 0;
+}
+
+.service-info p {
+    color: var(--gray);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.service-price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.payment-breakdown {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.breakdown-item:last-child {
+    margin-bottom: 0;
+}
+
+.breakdown-label {
+    color: var(--gray);
+}
+
+.breakdown-value {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.breakdown-total {
+    border-top: 2px solid var(--light-gray);
+    padding-top: 1rem;
+    margin-top: 1rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.total-amount {
+    color: var(--primary);
+    font-size: 1.5rem;
+}
+
+/* ================== PAYMENT METHODS ================== */
+.payment-methods {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--light-gray);
+}
+
+.payment-header {
+    margin-bottom: 2rem;
+}
+
+.payment-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0 0 0.5rem 0;
+}
+
+.payment-header p {
+    color: var(--gray);
+    margin: 0;
+}
+
+.payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.payment-option {
+    border: 2px solid var(--light-gray);
+    border-radius: 16px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.payment-option:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.payment-option.selected {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+}
+
+.recommended-badge {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    background: var(--gradient-primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0 16px 0 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.payment-option-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.payment-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.khalti-icon {
+    background: linear-gradient(135deg, #7732E8 0%, #5C21E6 100%);
+}
+
+.cash-icon {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.payment-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0;
+}
+
+.payment-description {
+    color: var(--gray);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.payment-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+}
+
+.payment-features li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--gray);
+}
+
+.payment-features li::before {
+    content: "✓";
+    color: var(--success);
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.payment-action {
+    width: 100%;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.khalti-action {
+    background: linear-gradient(135deg, #7732E8 0%, #5C21E6 100%);
+    color: white;
+}
+
+.khalti-action:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.cash-action {
+    background: var(--light-gray);
+    color: var(--dark);
+}
+
+.cash-action:hover {
+    background: var(--gray);
+    color: white;
+}
+
+/* ================== SECURITY BADGES ================== */
+.security-section {
+    margin-top: 3rem;
+    text-align: center;
+}
+
+.security-badges {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.security-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--gray);
+    font-size: 0.9rem;
+}
+
+.security-badge svg {
+    color: var(--success);
+    width: 20px;
+    height: 20px;
+}
+
+/* ================== LOADING STATES ================== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ================== RESPONSIVE DESIGN ================== */
+@media (max-width: 768px) {
+    .checkout-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .order-summary {
+        position: static;
+    }
+    
+    .checkout-header h1 {
+        font-size: 2rem;
+    }
+    
+    .security-badges {
+        gap: 1rem;
+    }
+    
+    .payment-option {
+        padding: 1rem;
+    }
+}
+
+/* ================== ANIMATIONS ================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+</style>
+
+<div class="checkout-container">
+    <!-- Header -->
+    <div class="checkout-header fade-in-up">
+        <h1>Complete Your Booking</h1>
+        <p>Secure your appointment with prepayment - Instant confirmation guaranteed</p>
+    </div>
+
+    <div class="checkout-grid">
+        <!-- Order Summary -->
+        <div class="order-summary fade-in-up">
+            <div class="summary-header">
+                <h2>Order Summary</h2>
+                <span class="service-badge">Prepayment Required</span>
+            </div>
+            
+            <div class="service-details">
+                <div class="service-item">
+                    <div class="service-info">
+                        <h3>{{ appointment.service_subtask.subtask.name|default:"Professional Service" }}</h3>
+                        <p>with {{ appointment.worker.name }}</p>
+                        <p><small>{{ appointment.appointment_date|date:"M d, Y H:i" }}</small></p>
+                    </div>
+                    <div class="service-price">
+                        {% if appointment.total_price %}
+                            ₹{{ appointment.total_price }}
+                        {% else %}
+                            Contact for Price
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-breakdown">
+                <h4 style="margin: 0 0 1rem 0; color: var(--dark);">Payment Breakdown</h4>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Service Amount:</span>
+                    <span class="breakdown-value">
+                        {% if appointment.total_price %}
+                            ₹{{ appointment.total_price }}
+                        {% else %}
+                            To be determined
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Prepayment (Required):</span>
+                    <span class="breakdown-value">₹100.00</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Platform Fee:</span>
+                    <span class="breakdown-value">Free</span>
+                </div>
+                <div class="breakdown-item breakdown-total">
+                    <span class="breakdown-label">Amount to Pay Now:</span>
+                    <span class="breakdown-value total-amount">₹100.00</span>
+                </div>
+            </div>
+
+            <div class="service-info-card" style="background: #f0f9ff; padding: 1rem; border-radius: 12px; border-left: 4px solid var(--primary);">
+                <h4 style="margin: 0 0 0.5rem 0; color: var(--primary);">💡 How it works</h4>
+                <p style="margin: 0; font-size: 0.9rem; color: var(--gray);">
+                    Pay ₹100 now to secure your booking. The remaining amount will be paid directly to the worker after service completion.
+                </p>
+            </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="payment-methods fade-in-up">
+            <div class="payment-header">
+                <h2>Choose Payment Method</h2>
+                <p>Select your preferred payment method to complete the booking</p>
+            </div>
+
+            <div class="payment-options">
+                <!-- Khalti Payment Option -->
+                <div class="payment-option selected" id="khaltiOption">
+                    <div class="recommended-badge">Recommended</div>
+                    <div class="payment-option-header">
+                        <div class="payment-icon khalti-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                                <line x1="2" y1="10" x2="22" y2="10"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="payment-title">Khalti Digital Wallet</h3>
+                            <p class="payment-description">Instant payment with Nepal's most popular digital wallet</p>
+                        </div>
+                    </div>
+                    
+                    <ul class="payment-features">
+                        <li>Instant booking confirmation</li>
+                        <li>Secure SSL encrypted payment</li>
+                        <li>Support for all Nepali banks</li>
+                        <li>24/7 customer support</li>
+                    </ul>
+                    
+                    <button class="payment-action khalti-action" onclick="processKhaltiPayment()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                        Pay ₹100 with Khalti
+                    </button>
+                </div>
+
+                <!-- Cash Payment Option -->
+                <div class="payment-option" id="cashOption">
+                    <div class="payment-option-header">
+                        <div class="payment-icon cash-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="payment-title">Pay After Service</h3>
+                            <p class="payment-description">Skip prepayment and pay full amount after service completion</p>
+                        </div>
+                    </div>
+                    
+                    <ul class="payment-features">
+                        <li>No upfront payment required</li>
+                        <li>Pay cash directly to worker</li>
+                        <li>Service confirmation required</li>
+                        <li>Worker approval needed</li>
+                    </ul>
+                    
+                    <button class="payment-action cash-action" onclick="processCashPayment()">
+                        Skip Prepayment
+                    </button>
+                </div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="security-section">
+                <p style="color: var(--gray); margin-bottom: 1rem; font-size: 0.9rem;">Your payment is secure and encrypted</p>
+                <div class="security-badges">
+                    <div class="security-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        <span>SSL Secure</span>
+                    </div>
+                    <div class="security-badge">
+                        <svg xmlns="http://www.w3.org2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                        <span>PCI Compliant</span>
+                    </div>
+                    <div class="security-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                        <span>Money Back</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<script>
+// Payment method selection
+function selectPaymentMethod(method) {
+    document.querySelectorAll('.payment-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    if (method === 'khalti') {
+        document.getElementById('khaltiOption').classList.add('selected');
+    } else {
+        document.getElementById('cashOption').classList.add('selected');
+    }
+}
+
+// Khalti Payment Processing
+async function processKhaltiPayment() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Show loading
+    loadingOverlay.style.display = 'flex';
+    button.innerHTML = '<span>Processing...</span>';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch("{% url 'payments:initiate_payment' appointment.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.payment_url) {
+            // Redirect to Khalti payment page
+            window.location.href = data.payment_url;
+        } else {
+            throw new Error(data.error || 'Payment initiation failed');
+        }
+    } catch (error) {
+        console.error('Payment Error:', error);
+        alert('Payment failed: ' + error.message);
+        button.innerHTML = originalText;
+        button.disabled = false;
+    } finally {
+        loadingOverlay.style.display = 'none';
+    }
+}
+
+// Cash Payment Processing
+function processCashPayment() {
+    if (confirm('Skip prepayment? The worker will need to approve your booking request.')) {
+        // Redirect to appointment confirmation without payment
+        window.location.href = "{% url 'customer_appointments' %}";
+    }
+}
+
+// Initialize payment method selection
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('khaltiOption').addEventListener('click', function(e) {
+        if (!e.target.closest('button')) {
+            selectPaymentMethod('khalti');
+        }
+    });
+    
+    document.getElementById('cashOption').addEventListener('click', function(e) {
+        if (!e.target.closest('button')) {
+            selectPaymentMethod('cash');
+        }
+    });
+});
+</script>
+{% endblock %}

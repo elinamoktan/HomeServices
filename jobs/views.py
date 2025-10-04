@@ -26,7 +26,7 @@ import logging
 from .models import FavoriteWorker 
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt 
-
+from jobs.models import Notification
 # ✅ FIXED: Import CustomUser instead of User
 try:
     from accounts.models import CustomUser
@@ -2998,3 +2998,109 @@ def delete_worker_review(request):
             'success': False, 
             'error': f'An error occurred: {str(e)}'
         }, status=500)
+    
+
+
+# Add these new views to your existing views.py
+
+@login_required
+def customer_notifications(request):
+    """API endpoint to get customer notifications"""
+    customer = get_object_or_404(Customer, owner=request.user)
+    
+    notifications = Notification.objects.filter(
+        customer=customer
+    ).order_by('-created_at')[:10]
+    
+    notifications_data = []
+    for notification in notifications:
+        notifications_data.append({
+            'id': notification.id,
+            'title': notification.title,
+            'message': notification.message,
+            'is_read': notification.is_read,
+            'time_ago': get_time_ago(notification.created_at),
+            'notification_type': notification.notification_type
+        })
+    
+    return JsonResponse({
+        'notifications': notifications_data
+    })
+
+@login_required
+def check_appointment_updates(request):
+    """Check for appointment status updates"""
+    customer = get_object_or_404(Customer, owner=request.user)
+    last_checked = request.GET.get('last_checked')
+    
+    if last_checked:
+        try:
+            last_checked_date = timezone.datetime.fromisoformat(last_checked.replace('Z', '+00:00'))
+            updates = Appointment.objects.filter(
+                customer=customer,
+                updated_at__gt=last_checked_date,
+                status__in=['accepted', 'rejected', 'completed']
+            ).select_related('worker')
+            
+            updates_data = []
+            for appointment in updates:
+                updates_data.append({
+                    'appointment_id': appointment.id,
+                    'new_status': appointment.status,
+                    'worker_name': appointment.worker.name,
+                    'updated_at': appointment.updated_at.isoformat()
+                })
+            
+            return JsonResponse({
+                'updates': updates_data,
+                'has_updates': len(updates_data) > 0
+            })
+            
+        except ValueError:
+            pass
+    
+    return JsonResponse({'updates': [], 'has_updates': False})
+
+@require_POST
+@login_required
+def mark_notification_read(request, notification_id):
+    """Mark a single notification as read"""
+    try:
+        notification = Notification.objects.get(id=notification_id, customer__owner=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'success': True})
+    except Notification.DoesNotExist:
+        return JsonResponse({'error': 'Notification not found'}, status=404)
+
+@require_POST
+@login_required
+def mark_all_notifications_read(request):
+    """Mark all notifications as read for the current customer"""
+    customer = get_object_or_404(Customer, owner=request.user)
+    updated_count = Notification.objects.filter(
+        customer=customer, 
+        is_read=False
+    ).update(is_read=True)
+    
+    return JsonResponse({
+        'success': True,
+        'marked_read': updated_count
+    })
+
+@login_required
+def get_notification_count(request):
+    """Get unread notification count for customer"""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            customer = request.user.customer
+            count = Notification.objects.filter(
+                customer=customer, 
+                is_read=False
+            ).count()
+            
+            return JsonResponse({'count': count})
+        except AttributeError:
+            return JsonResponse({'count': 0})
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)

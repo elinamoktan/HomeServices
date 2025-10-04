@@ -3,16 +3,212 @@
 
 {% block title %}Help & Support - AppointMate{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* Notification Styles */
+  .notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid;
+    z-index: 10000;
+    max-width: 400px;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .notification-toast.show {
+    transform: translateX(0);
+  }
+  
+  .notification-toast.success {
+    border-left-color: #10b981;
+  }
+  
+  .notification-toast.error {
+    border-left-color: #ef4444;
+  }
+  
+  .notification-toast.info {
+    border-left-color: #3b82f6;
+  }
+  
+  .notification-toast.warning {
+    border-left-color: #f59e0b;
+  }
+  
+  .notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  
+  .notification-toast.success .notification-icon {
+    background: #10b981;
+    color: white;
+  }
+  
+  .notification-toast.error .notification-icon {
+    background: #ef4444;
+    color: white;
+  }
+  
+  .notification-toast.info .notification-icon {
+    background: #3b82f6;
+    color: white;
+  }
+  
+  .notification-toast.warning .notification-icon {
+    background: #f59e0b;
+    color: white;
+  }
+  
+  .notification-content {
+    flex: 1;
+  }
+  
+  .notification-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .notification-message {
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+  
+  .notification-close {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .notification-close:hover {
+    color: #374151;
+    background: #f3f4f6;
+  }
+
+  /* Notifications Panel */
+  .notifications-panel {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    width: 380px;
+    max-height: 500px;
+    overflow: hidden;
+    display: none;
+  }
+  
+  .notifications-panel.show {
+    display: block;
+  }
+  
+  .notifications-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+  }
+  
+  .notifications-list {
+    max-height: 350px;
+    overflow-y: auto;
+  }
+  
+  .notification-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .notification-item:hover {
+    background: #f9fafb;
+  }
+  
+  .notification-item.unread {
+    background: #f0f9ff;
+  }
+  
+  .notification-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3b82f6;
+    display: inline-block;
+    margin-right: 0.5rem;
+  }
+
+  /* Support specific styles */
+  .support-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+  }
+  
+  .support-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  @media (max-width: 768px) {
+    .notifications-panel {
+      width: 90vw;
+      right: 5vw;
+      left: 5vw;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mb-8">
   <h1 class="text-3xl font-bold text-gray-800 mb-2">Help & Support</h1>
   <p class="text-gray-600 text-lg">Get help with your account and find answers to common questions</p>
 </div>
 
+{% if messages %}
+  <div class="mb-6">
+    {% for message in messages %}
+      <div class="p-4 rounded-xl {% if message.tags %}bg-{{ message.tags }}-100 text-{{ message.tags }}-800 border border-{{ message.tags }}-200{% else %}bg-blue-100 text-blue-800 border border-blue-200{% endif %}">
+        <div class="flex items-center">
+          <i class="fas fa-check-circle mr-3"></i>
+          <span>{{ message }}</span>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
 <div class="space-y-8">
   <!-- Quick Help Cards -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div class="bg-white rounded-2xl shadow-lg p-6 text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+    <div class="support-card text-center">
       <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-question-circle text-blue-600 text-3xl"></i>
       </div>
@@ -23,18 +219,18 @@
       </a>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-lg p-6 text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+    <div class="support-card text-center">
       <div class="w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-comments text-green-600 text-3xl"></i>
       </div>
       <h3 class="text-xl font-semibold text-gray-800 mb-3">Live Chat</h3>
       <p class="text-gray-600 mb-4">Chat with our support team in real-time</p>
-      <button class="bg-gradient-to-r from-green-600 to-green-700 text-white px-5 py-3 rounded-xl hover:shadow-lg transition-all">
+      <button onclick="startLiveChat()" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-5 py-3 rounded-xl hover:shadow-lg transition-all">
         Start Chat
       </button>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-lg p-6 text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+    <div class="support-card text-center">
       <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-envelope text-purple-600 text-3xl"></i>
       </div>
@@ -47,28 +243,29 @@
   </div>
 
   <!-- Contact Form -->
-  <div class="bg-white rounded-2xl shadow-lg p-8 transition-all duration-300 hover:shadow-xl">
+  <div class="support-card">
     <h2 class="text-2xl font-bold text-gray-800 mb-2">Contact Support</h2>
     <p class="text-gray-600 mb-6">Fill out the form below and we'll get back to you as soon as possible</p>
     
-    <form class="space-y-6">
+    <form id="supportForm" class="space-y-6">
+      {% csrf_token %}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
           <input type="text" id="name" name="name" value="{{ customer.name }}" 
-                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" required>
         </div>
         
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
           <input type="email" id="email" name="email" value="{{ customer.owner.email }}" 
-                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" required>
         </div>
       </div>
 
       <div>
         <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-        <select id="subject" name="subject" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+        <select id="subject" name="subject" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" required>
           <option value="">Select a topic</option>
           <option value="booking_issue">Booking Issue</option>
           <option value="payment_problem">Payment Problem</option>
@@ -83,7 +280,7 @@
         <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message</label>
         <textarea id="message" name="message" rows="5" 
                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="Please describe your issue or question in detail..."></textarea>
+                  placeholder="Please describe your issue or question in detail..." required></textarea>
       </div>
 
       <div class="flex items-center">
@@ -101,7 +298,7 @@
   </div>
 
   <!-- FAQ Section -->
-  <div id="faq" class="bg-white rounded-2xl shadow-lg p-8 transition-all duration-300 hover:shadow-xl">
+  <div id="faq" class="support-card">
     <h2 class="text-2xl font-bold text-gray-800 mb-2">Frequently Asked Questions</h2>
     <p class="text-gray-600 mb-6">Quick answers to common questions</p>
     
@@ -199,7 +396,242 @@
   </div>
 </div>
 
+<!-- Notifications Panel -->
+<div id="notificationsPanel" class="notifications-panel">
+  <div class="notifications-header">
+    <h3 class="font-bold text-gray-800 text-lg">Notifications</h3>
+    <button onclick="markAllNotificationsAsRead()" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+      Mark all as read
+    </button>
+  </div>
+  <div id="notificationsList" class="notifications-list">
+    <!-- Notifications will be loaded here -->
+  </div>
+  <div class="p-3 border-t border-gray-200 text-center">
+    <a href="{% url 'customer_appointments' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+      View All Notifications
+    </a>
+  </div>
+</div>
+
+<!-- Notification Toast Container -->
+<div id="notificationToastContainer"></div>
+
 <script>
+// Notification functions
+function showNotification(message, type = 'info', title = null, icon = null) {
+  const container = document.getElementById('notificationToastContainer');
+  const notificationId = 'notification-' + Date.now();
+  
+  // Set default icon based on type
+  if (!icon) {
+    switch(type) {
+      case 'success': icon = 'fa-check-circle'; break;
+      case 'error': icon = 'fa-exclamation-triangle'; break;
+      case 'warning': icon = 'fa-exclamation-circle'; break;
+      default: icon = 'fa-info-circle';
+    }
+  }
+  
+  // Set default title based on type
+  if (!title) {
+    switch(type) {
+      case 'success': title = 'Success'; break;
+      case 'error': title = 'Error'; break;
+      case 'warning': title = 'Warning'; break;
+      default: title = 'Information';
+    }
+  }
+  
+  const notification = document.createElement('div');
+  notification.id = notificationId;
+  notification.className = `notification-toast ${type}`;
+  notification.innerHTML = `
+    <div class="notification-icon">
+      <i class="fas ${icon}"></i>
+    </div>
+    <div class="notification-content">
+      <div class="notification-title">${title}</div>
+      <div class="notification-message">${message}</div>
+    </div>
+    <button class="notification-close" onclick="closeNotification('${notificationId}')">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+  
+  container.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 100);
+  
+  // Auto remove after 5 seconds
+  setTimeout(() => {
+    closeNotification(notificationId);
+  }, 5000);
+}
+
+function closeNotification(notificationId) {
+  const notification = document.getElementById(notificationId);
+  if (notification) {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }
+}
+
+function showNotificationsPanel() {
+  const panel = document.getElementById('notificationsPanel');
+  panel.classList.toggle('show');
+  loadNotifications();
+}
+
+async function loadNotifications() {
+  try {
+    const response = await fetch('/customer/notifications/', {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const container = document.getElementById('notificationsList');
+      
+      if (data.notifications && data.notifications.length > 0) {
+        container.innerHTML = data.notifications.map(notification => `
+          <div class="notification-item ${notification.is_read ? '' : 'unread'}" onclick="handleNotificationClick(${notification.id})">
+            <div class="flex items-start gap-3">
+              ${!notification.is_read ? '<span class="notification-dot"></span>' : ''}
+              <div class="flex-1">
+                <div class="font-semibold text-sm text-gray-800">${notification.title}</div>
+                <div class="text-xs text-gray-600 mt-1">${notification.message}</div>
+                <div class="text-xs text-gray-400 mt-1">${notification.time_ago}</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = `
+          <div class="p-4 text-center text-gray-500">
+            <i class="fas fa-bell-slash text-2xl mb-2"></i>
+            <p>No notifications</p>
+          </div>
+        `;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading notifications:', error);
+  }
+}
+
+function handleNotificationClick(notificationId) {
+  fetch(`/notifications/${notificationId}/mark-read/`, {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRFToken': getCSRFToken()
+    }
+  }).then(() => {
+    updateNotificationCount();
+    loadNotifications();
+  });
+}
+
+function markAllNotificationsAsRead() {
+  fetch('/notifications/mark-all-read/', {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRFToken': getCSRFToken()
+    }
+  }).then(() => {
+    updateNotificationCount();
+    loadNotifications();
+    showNotification('All notifications marked as read', 'success');
+  });
+}
+
+function getCSRFToken() {
+  return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+async function updateNotificationCount() {
+  try {
+    const response = await fetch('/get-notification-count/', {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const badge = document.getElementById('notification-count');
+      
+      if (data.count > 0) {
+        if (badge) {
+          badge.textContent = data.count;
+        } else {
+          const notificationBadge = document.querySelector('.notification-badge');
+          if (notificationBadge) {
+            const newBadge = document.createElement('span');
+            newBadge.className = 'badge';
+            newBadge.id = 'notification-count';
+            newBadge.textContent = data.count;
+            notificationBadge.appendChild(newBadge);
+          }
+        }
+      } else {
+        if (badge) {
+          badge.remove();
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error updating notification count:', error);
+  }
+}
+
+// Close notifications panel when clicking outside
+document.addEventListener('click', function(event) {
+  const panel = document.getElementById('notificationsPanel');
+  const badge = document.querySelector('.notification-badge');
+  
+  if (panel && panel.classList.contains('show') && 
+      !panel.contains(event.target) && 
+      !badge.contains(event.target)) {
+    panel.classList.remove('show');
+  }
+});
+
+// Support form handling
+document.getElementById('supportForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(this);
+  const submitButton = this.querySelector('button[type="submit"]');
+  const originalText = submitButton.innerHTML;
+  
+  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+  submitButton.disabled = true;
+  
+  // Simulate form submission
+  setTimeout(() => {
+    showNotification('Your message has been sent successfully! We will get back to you soon.', 'success');
+    this.reset();
+    submitButton.innerHTML = originalText;
+    submitButton.disabled = false;
+  }, 2000);
+});
+
+function startLiveChat() {
+  showNotification('Live chat feature is coming soon!', 'info');
+}
+
 function toggleFaq(faqId) {
   const faq = document.getElementById(faqId);
   const icon = document.getElementById(faqId + '-icon');
@@ -212,5 +644,17 @@ function toggleFaq(faqId) {
     icon.classList.remove('rotate-180');
   }
 }
+
+// Initialize notification system
+document.addEventListener('DOMContentLoaded', function() {
+  updateNotificationCount();
+  
+  // Show any initial messages
+  {% if messages %}
+    {% for message in messages %}
+      showNotification('{{ message }}', '{{ message.tags }}');
+    {% endfor %}
+  {% endif %}
+});
 </script>
 {% endblock %}

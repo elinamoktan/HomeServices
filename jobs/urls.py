@@ -93,5 +93,13 @@ urlpatterns = [
     path('worker/settings/', views.worker_settings, name='worker_settings'),
 
     path('delete-worker-review/', views.delete_worker_review, name='delete_worker_review'),
-# This should work, but let's verify
+
+    # Add these to your urlpatterns in urls.py
+
+    path('customer/notifications/', views.customer_notifications, name='customer_notifications'),
+    path('customer/check-appointment-updates/', views.check_appointment_updates, name='check_appointment_updates'),
+    path('notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
+    path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+    path('get-notification-count/', views.get_notification_count, name='get_notification_count'),
+
 ]
