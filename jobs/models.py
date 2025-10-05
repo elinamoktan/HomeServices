@@ -9,6 +9,9 @@ import uuid
 import math
 import logging
 from decimal import Decimal
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
@@ -704,6 +707,7 @@ class Notification(models.Model):
         ('appointment_completed', 'Appointment Completed'),
         ('appointment_cancelled', 'Appointment Cancelled'),
         ('rating_received', 'Rating Received'),
+        ('customer_completed', 'Customer Marked Completed'),
     ]
 
     # Generic foreign keys to handle both Worker and Customer
@@ -728,6 +732,30 @@ class Notification(models.Model):
     def mark_as_read(self):
         self.is_read = True
         self.save()
+
+# ✅ NEW: Signal for customer completion notification
+@receiver(post_save, sender=Appointment)
+def create_customer_completion_notification(sender, instance, **kwargs):
+    """
+    Create notification when customer marks appointment as completed
+    """
+    # Check if customer_completed was just set to True
+    if instance.customer_completed and instance.pk:
+        try:
+            # Get the previous state
+            previous = Appointment.objects.get(pk=instance.pk)
+            if not previous.customer_completed and instance.customer_completed:
+                # Customer just marked as completed - notify worker
+                Notification.objects.create(
+                    worker=instance.worker,
+                    notification_type='customer_completed',
+                    title='Customer Marked Work as Completed',
+                    message=f'{instance.customer.name} has marked the appointment as completed. Please confirm completion.',
+                    appointment=instance
+                )
+                logger.info(f"Customer completion notification created for worker {instance.worker.name}")
+        except Appointment.DoesNotExist:
+            pass
 
 class FavoriteWorker(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='favorite_workers')
@@ -926,9 +954,6 @@ class WorkerPortfolio(models.Model):
         return f"{self.worker.name} - {self.title}"
 
 # Signal handlers for automatic creation of related objects
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
 @receiver(post_save, sender=Worker)
 def create_worker_settings(sender, instance, created, **kwargs):
     if created:

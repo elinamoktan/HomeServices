@@ -3,6 +3,161 @@
 
 {% block title %}My Reviews - AppointMate{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* Notification Toast */
+  .notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid;
+    z-index: 10000;
+    max-width: 400px;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .notification-toast.show { transform: translateX(0); }
+  .notification-toast.success { border-left-color: #10b981; }
+  .notification-toast.error { border-left-color: #ef4444; }
+  .notification-toast.info { border-left-color: #3b82f6; }
+  .notification-toast.warning { border-left-color: #f59e0b; }
+  
+  .notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  
+  .notification-toast.success .notification-icon { background: #10b981; color: white; }
+  .notification-toast.error .notification-icon { background: #ef4444; color: white; }
+  .notification-toast.info .notification-icon { background: #3b82f6; color: white; }
+  .notification-toast.warning .notification-icon { background: #f59e0b; color: white; }
+  
+  .notification-content { flex: 1; }
+  .notification-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; }
+  .notification-message { font-size: 0.85rem; color: #6b7280; }
+  
+  .notification-close {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .notification-close:hover { color: #374151; background: #f3f4f6; }
+
+  /* NOTIFICATIONS PANEL - HIDDEN BY DEFAULT */
+  .notifications-panel {
+    position: fixed !important;
+    top: 80px !important;
+    right: 20px !important;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    z-index: 10000 !important;
+    width: 380px;
+    max-height: 500px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+  
+  .notifications-panel.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+  }
+  
+  .notifications-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+  }
+  
+  .notifications-header h3 { color: white; margin: 0; }
+  .notifications-header button { color: white; opacity: 0.9; }
+  .notifications-header button:hover { opacity: 1; }
+  
+  .notifications-list {
+    max-height: 350px;
+    overflow-y: auto;
+  }
+  
+  .notification-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .notification-item:hover { background: #f9fafb; }
+  .notification-item.unread { background: #f0f9ff; }
+  
+  .notification-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3b82f6;
+    display: inline-block;
+    margin-right: 0.5rem;
+  }
+
+  /* Review Card Styles */
+  .review-card {
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .review-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  .delete-review-btn { transition: all 0.3s ease; }
+  .delete-review-btn:hover { transform: scale(1.05); }
+
+  @media (max-width: 768px) {
+    .notifications-panel {
+      width: 90vw !important;
+      right: 5vw !important;
+      left: 5vw !important;
+    }
+    
+    .notification-toast {
+      right: 10px;
+      left: 10px;
+      max-width: none;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mb-8">
   <h1 class="text-3xl font-bold text-gray-800 mb-2">My Reviews</h1>
@@ -12,14 +167,11 @@
 {% if ratings %}
   <div class="space-y-6" id="reviews-container">
     {% for rating in ratings %}
-      <div class="bg-white rounded-2xl shadow-lg p-8 border-l-4 border-indigo-500 transition-all duration-300 hover:shadow-xl relative" id="review-{{ rating.id }}" data-review-id="{{ rating.id }}">
-        <!-- Delete Button - ADDED DIRECT ONCLICK -->
+      <div class="bg-white rounded-2xl shadow-lg p-8 border-l-4 border-indigo-500 transition-all duration-300 hover:shadow-xl relative review-card" id="review-{{ rating.id }}" data-review-id="{{ rating.id }}">
         <button 
           type="button"
           class="delete-review-btn absolute top-4 right-4 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all duration-200 font-semibold text-sm flex items-center gap-2 shadow-sm hover:shadow-md"
           title="Delete this review"
-          data-review-id="{{ rating.id }}"
-          data-worker-name="{{ rating.worker.name }}"
           onclick="deleteReview('{{ rating.id }}', '{{ rating.worker.name|escapejs }}')"
         >
           <i class="fas fa-trash-alt"></i>
@@ -27,7 +179,6 @@
         </button>
 
         <div class="flex items-start space-x-6">
-          <!-- Worker Avatar -->
           <div class="flex-shrink-0">
             {% if rating.worker.profile_pic %}
               <img src="{{ rating.worker.profile_pic.url }}" alt="{{ rating.worker.name }}" class="w-20 h-20 rounded-full object-cover shadow-md">
@@ -39,7 +190,6 @@
           </div>
 
           <div class="flex-1">
-            <!-- Worker Info -->
             <div class="flex items-center justify-between mb-4 pr-24">
               <div>
                 <h3 class="text-xl font-bold text-gray-800">{{ rating.worker.name }}</h3>
@@ -50,7 +200,6 @@
               </div>
             </div>
 
-            <!-- Rating Stars -->
             <div class="flex items-center mb-4">
               {% for star in "12345" %}
                 {% if forloop.counter <= rating.rating %}
@@ -62,14 +211,12 @@
               <span class="ml-3 text-gray-700 font-semibold text-lg">{{ rating.rating }}/5</span>
             </div>
 
-            <!-- Review Comment -->
             {% if rating.comment %}
               <div class="bg-gray-50 rounded-xl p-5 mb-4 border border-gray-200">
                 <p class="text-gray-700 text-lg italic">"{{ rating.comment }}"</p>
               </div>
             {% endif %}
 
-            <!-- Appointment Details -->
             {% if rating.appointment %}
               <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200">
                 <h4 class="font-semibold text-gray-800 text-lg mb-3">Appointment Details</h4>
@@ -98,9 +245,7 @@
       </div>
     {% endfor %}
   </div>
-
 {% else %}
-  <!-- Empty State -->
   <div class="bg-white rounded-2xl shadow-lg p-12 text-center transition-all duration-300 hover:shadow-xl">
     <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
       <i class="fas fa-star text-gray-400 text-4xl"></i>
@@ -114,37 +259,6 @@
   </div>
 {% endif %}
 
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-  <div class="bg-white rounded-2xl p-8 max-w-md mx-4 w-full transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
-    <div class="text-center">
-      <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
-      </div>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">Delete Review</h3>
-      <p class="text-gray-600 mb-6" id="modalMessage">Are you sure you want to delete your review for this worker? This action cannot be undone.</p>
-      
-      <div class="flex space-x-4 justify-center">
-        <button 
-          type="button" 
-          id="cancelDeleteBtn"
-          class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors duration-200 font-semibold"
-        >
-          Cancel
-        </button>
-        <button 
-          type="button" 
-          id="confirmDeleteBtn"
-          class="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors duration-200 font-semibold"
-        >
-          Delete Review
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Loading Spinner -->
 <div id="loadingSpinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
   <div class="bg-white rounded-2xl p-8 flex items-center space-x-4">
     <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -152,127 +266,323 @@
   </div>
 </div>
 
+<!-- NOTIFICATION PANEL - PLACED AT END OF CONTENT BLOCK -->
+<div id="notificationsPanel" class="notifications-panel">
+  <div class="notifications-header">
+    <h3 class="font-bold text-lg">Notifications</h3>
+    <button onclick="markAllNotificationsAsRead()" class="text-sm font-semibold hover:underline">
+      Mark all as read
+    </button>
+  </div>
+  <div id="notificationsList" class="notifications-list">
+    <div class="p-4 text-center text-gray-500">
+      <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+      <p>Loading notifications...</p>
+    </div>
+  </div>
+  <div class="p-3 border-t border-gray-200 text-center">
+    <a href="{% url 'customer_appointments' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+      View All Notifications
+    </a>
+  </div>
+</div>
+
+<div id="notificationToastContainer"></div>
+
 <script>
-// Global delete function
-window.deleteReview = function(reviewId, workerName) {
-    if (!confirm('Are you sure you want to delete your review for ' + workerName + '? This action cannot be undone.')) {
-        return;
-    }
-    
-    // Show loading spinner
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    if (loadingSpinner) {
-        loadingSpinner.classList.remove('hidden');
-    }
-    
-    // Get CSRF token
-    const csrfToken = getCSRFToken();
-    
-    if (!csrfToken) {
-        alert('Security error: Please refresh the page and try again.');
-        if (loadingSpinner) loadingSpinner.classList.add('hidden');
-        return;
-    }
-    
-    // Send the delete request
-    fetch('/delete-worker-review/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({
-            review_id: reviewId
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Remove the review element from the page
-            const reviewElement = document.getElementById(`review-${reviewId}`);
-            if (reviewElement) {
-                // Add fade-out animation
-                reviewElement.style.opacity = '0';
-                reviewElement.style.transform = 'translateX(-100px)';
-                reviewElement.style.transition = 'all 0.3s ease';
-                
-                setTimeout(() => {
-                    reviewElement.remove();
-                    
-                    // Show success message
-                    alert('✅ Review deleted successfully!');
-                    
-                    // Check if no reviews left
-                    const remainingReviews = document.querySelectorAll('[id^="review-"]');
-                    
-                    if (remainingReviews.length === 0) {
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    }
-                }, 300);
-            } else {
-                alert('✅ Review deleted successfully!');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            }
-        } else {
-            throw new Error(data.error || 'Delete failed on server');
-        }
-    })
-    .catch(error => {
-        alert('❌ Failed to delete review: ' + error.message);
-    })
-    .finally(() => {
-        // Hide loading spinner
-        if (loadingSpinner) {
-            loadingSpinner.classList.add('hidden');
-        }
+// Notification Toast Functions
+function showNotification(message, type = 'info', title = null, icon = null) {
+  const container = document.getElementById('notificationToastContainer');
+  const notificationId = 'notification-' + Date.now();
+  
+  if (!icon) {
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-triangle', warning: 'fa-exclamation-circle', info: 'fa-info-circle' };
+    icon = icons[type] || 'fa-info-circle';
+  }
+  
+  if (!title) {
+    const titles = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Information' };
+    title = titles[type] || 'Information';
+  }
+  
+  const notification = document.createElement('div');
+  notification.id = notificationId;
+  notification.className = `notification-toast ${type}`;
+  notification.innerHTML = `
+    <div class="notification-icon"><i class="fas ${icon}"></i></div>
+    <div class="notification-content">
+      <div class="notification-title">${title}</div>
+      <div class="notification-message">${message}</div>
+    </div>
+    <button class="notification-close" onclick="closeNotification('${notificationId}')">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+  
+  container.appendChild(notification);
+  setTimeout(() => notification.classList.add('show'), 100);
+  setTimeout(() => closeNotification(notificationId), 5000);
+}
+
+function closeNotification(notificationId) {
+  const notification = document.getElementById(notificationId);
+  if (notification) {
+    notification.classList.remove('show');
+    setTimeout(() => notification.parentNode && notification.parentNode.removeChild(notification), 300);
+  }
+}
+
+// Notification Panel Functions
+function showNotificationsPanel() {
+  const panel = document.getElementById('notificationsPanel');
+  const isShown = panel.classList.contains('show');
+  
+  if (isShown) {
+    panel.classList.remove('show');
+  } else {
+    panel.classList.add('show');
+    loadNotifications();
+  }
+}
+
+async function loadNotifications() {
+  try {
+    const response = await fetch('/customer/notifications/', {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
     });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const container = document.getElementById('notificationsList');
+      
+      if (data.notifications && data.notifications.length > 0) {
+        container.innerHTML = data.notifications.map(n => `
+          <div class="notification-item ${n.is_read ? '' : 'unread'}" onclick="handleNotificationClick(${n.id})">
+            <div class="flex items-start gap-3">
+              ${!n.is_read ? '<span class="notification-dot"></span>' : ''}
+              <div class="flex-1">
+                <div class="font-semibold text-sm text-gray-800">${n.title}</div>
+                <div class="text-xs text-gray-600 mt-1">${n.message}</div>
+                <div class="text-xs text-gray-400 mt-1">${n.time_ago}</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = `
+          <div class="p-4 text-center text-gray-500">
+            <i class="fas fa-bell-slash text-2xl mb-2"></i>
+            <p>No notifications</p>
+          </div>
+        `;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading notifications:', error);
+    document.getElementById('notificationsList').innerHTML = `
+      <div class="p-4 text-center text-red-500">
+        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+        <p>Failed to load notifications</p>
+      </div>
+    `;
+  }
+}
+
+function handleNotificationClick(notificationId) {
+  fetch(`/notifications/${notificationId}/mark-read/`, {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRFToken': getCSRFToken()
+    }
+  }).then(() => {
+    updateNotificationCount();
+    loadNotifications();
+  });
+}
+
+function markAllNotificationsAsRead() {
+  fetch('/notifications/mark-all-read/', {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRFToken': getCSRFToken()
+    }
+  }).then(() => {
+    updateNotificationCount();
+    loadNotifications();
+    showNotification('All notifications marked as read', 'success');
+  });
+}
+
+async function updateNotificationCount() {
+  try {
+    const response = await fetch('{% url "get_notification_count" %}', {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const badge = document.getElementById('notification-count');
+      
+      if (data.count > 0) {
+        if (badge) {
+          badge.textContent = data.count;
+        } else {
+          const notificationBadge = document.querySelector('.notification-badge');
+          if (notificationBadge) {
+            const newBadge = document.createElement('span');
+            newBadge.className = 'badge';
+            newBadge.id = 'notification-count';
+            newBadge.textContent = data.count;
+            notificationBadge.appendChild(newBadge);
+          }
+        }
+      } else {
+        if (badge) badge.remove();
+      }
+    }
+  } catch (error) {
+    console.error('Error updating notification count:', error);
+  }
+}
+
+// Close panel when clicking outside
+document.addEventListener('click', function(event) {
+  const panel = document.getElementById('notificationsPanel');
+  if (!panel) return;
+  
+  const badge = document.querySelector('.notification-badge') || 
+                document.querySelector('[onclick*="showNotificationsPanel"]') ||
+                document.getElementById('notificationBadge');
+  
+  if (panel.classList.contains('show') && 
+      !panel.contains(event.target) && 
+      (!badge || !badge.contains(event.target))) {
+    panel.classList.remove('show');
+  }
+});
+
+// Delete Review Function
+window.deleteReview = function(reviewId, workerName) {
+  if (!confirm(`Are you sure you want to delete your review for ${workerName}? This action cannot be undone.`)) {
+    return;
+  }
+  
+  const loadingSpinner = document.getElementById('loadingSpinner');
+  if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+  
+  const csrfToken = getCSRFToken();
+  if (!csrfToken) {
+    showNotification('Security error: Please refresh the page and try again.', 'error');
+    if (loadingSpinner) loadingSpinner.classList.add('hidden');
+    return;
+  }
+  
+  fetch('/delete-worker-review/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken,
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ review_id: reviewId })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return response.json();
+  })
+  .then(data => {
+    if (data.success) {
+      const reviewElement = document.getElementById(`review-${reviewId}`);
+      if (reviewElement) {
+        reviewElement.style.opacity = '0';
+        reviewElement.style.transform = 'translateX(-100px)';
+        reviewElement.style.transition = 'all 0.3s ease';
+        
+        setTimeout(() => {
+          reviewElement.remove();
+          showNotification('Review deleted successfully!', 'success');
+          
+          const remainingReviews = document.querySelectorAll('[id^="review-"]');
+          if (remainingReviews.length === 0) {
+            setTimeout(() => window.location.reload(), 1500);
+          }
+        }, 300);
+      } else {
+        showNotification('Review deleted successfully!', 'success');
+        setTimeout(() => window.location.reload(), 1000);
+      }
+    } else {
+      throw new Error(data.error || 'Delete failed on server');
+    }
+  })
+  .catch(error => {
+    console.error('Delete error:', error);
+    showNotification('Failed to delete review: ' + error.message, 'error');
+  })
+  .finally(() => {
+    if (loadingSpinner) loadingSpinner.classList.add('hidden');
+  });
 };
 
-// CSRF token function
 function getCSRFToken() {
-    const name = 'csrftoken';
-    let cookieValue = null;
-    
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
+  const name = 'csrftoken';
+  let cookieValue = null;
+  
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
     }
-    
-    return cookieValue;
+  }
+  return cookieValue;
 }
 
-// Simple button setup to ensure onclick works
-function setupDeleteButtons() {
-    const buttons = document.querySelectorAll('.delete-review-btn');
-    
-    buttons.forEach((button) => {
-        const reviewId = button.getAttribute('data-review-id');
-        const workerName = button.getAttribute('data-worker-name');
-        
-        // Ensure onclick attribute is set
-        button.setAttribute('onclick', `deleteReview('${reviewId}', '${workerName}')`);
-    });
-}
-
-// Initialize when DOM is ready
+// Setup on page load
 document.addEventListener('DOMContentLoaded', function() {
-    setupDeleteButtons();
+  console.log('Setting up notification badge...');
+  updateNotificationCount();
+  
+  // Find and setup the notification badge
+  function setupNotificationBadge() {
+    const selectors = [
+      '.notification-badge',
+      '#notificationBadge',
+      '[class*="notification-badge"]',
+      'div[onclick*="showNotificationsPanel"]',
+      'i.fa-bell'
+    ];
+    
+    for (const selector of selectors) {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(element => {
+        const clickable = element.closest('div') || element;
+        clickable.removeAttribute('onclick');
+        clickable.style.cursor = 'pointer';
+        clickable.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          showNotificationsPanel();
+        });
+        console.log('Badge setup complete for:', selector);
+      });
+      if (elements.length > 0) break;
+    }
+  }
+  
+  setupNotificationBadge();
+  setTimeout(setupNotificationBadge, 500);
+  
+  {% if messages %}
+    {% for message in messages %}
+      showNotification('{{ message }}', '{{ message.tags }}');
+    {% endfor %}
+  {% endif %}
 });
 </script>
 {% endblock %}

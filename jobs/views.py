@@ -1433,8 +1433,6 @@ def request_new_worker(request, appointment_id):
     
     messages.info(request, "You can now request a new worker.")
     return redirect('worker-list')
-
-# NEW: Worker Dashboard View
 @login_required
 def worker_dashboard(request):
     """
@@ -1447,7 +1445,6 @@ def worker_dashboard(request):
         return redirect('worker-list')
     
     # Get all appointments for this worker with explicit field selection
-    # This prevents Django from trying to access non-existent fields like 'uuid'
     appointments = Appointment.objects.filter(worker=worker).select_related(
         'customer', 'service_subtask', 'service_subtask__subtask'
     ).only(
@@ -1462,6 +1459,12 @@ def worker_dashboard(request):
     completed_appointments = appointments.filter(status='completed')
     rejected_appointments = appointments.filter(status='rejected')
     
+    # ✅ FIXED: Calculate customer completed appointments properly
+    customer_completed_appointments = accepted_appointments.filter(
+        customer_completed=True, 
+        worker_completed=False
+    )
+    
     context = {
         'worker': worker,
         'appointments': appointments,
@@ -1469,6 +1472,7 @@ def worker_dashboard(request):
         'accepted_appointments': accepted_appointments,
         'completed_appointments': completed_appointments,
         'rejected_appointments': rejected_appointments,
+        'customer_completed_appointments': customer_completed_appointments,  
         'today': timezone.now().date(),
     }
     
@@ -1669,9 +1673,9 @@ def rate_worker(request, appointment_id):
     }
     
     return render(request, 'jobs/rate_worker.html', context)
-
 @login_required
 def mark_customer_completed(request, pk):
+    """Enhanced version that creates notifications when customer marks as completed"""
     appointment = get_object_or_404(Appointment, pk=pk)
 
     # Ensure the logged-in user is the customer who booked the appointment
@@ -1683,11 +1687,31 @@ def mark_customer_completed(request, pk):
         messages.error(request, "You can only mark appointments as completed after they are accepted.")
         return redirect('customer_appointments')
 
+    # Store previous state to check if we're changing from False to True
+    was_completed = appointment.customer_completed
+    
     # Mark as completed by customer
     appointment.customer_completed = True
     appointment.save()
 
-    messages.success(request, "You marked the appointment as completed. Now the worker must confirm.")
+    # ✅ NEW: Create notification for worker (only if it was just marked as completed)
+    if not was_completed:
+        Notification.objects.create(
+            worker=appointment.worker,
+            notification_type='customer_completed',
+            title='Customer Marked Work as Completed',
+            message=f'{appointment.customer.name} has marked the appointment as completed. Please confirm completion.',
+            appointment=appointment
+        )
+        
+        # Also send email notification to worker
+        try:
+            send_customer_completion_email(appointment)
+            logger.info(f"Customer completion email sent for appointment {appointment.id}")
+        except Exception as email_error:
+            logger.error(f"Failed to send customer completion email for appointment {appointment.id}: {email_error}")
+
+    messages.success(request, "You marked the appointment as completed. The worker has been notified to confirm.")
     return redirect('customer_appointments')
 
 @login_required
@@ -2105,41 +2129,62 @@ def worker_notifications(request):
     # Get notifications from the last 7 days
     seven_days_ago = timezone.now() - timedelta(days=7)
     
-    # Get pending appointments (new requests)
+    # Get database notifications
+    db_notifications = Notification.objects.filter(
+        worker=worker,
+        created_at__gte=seven_days_ago
+    ).select_related('appointment', 'appointment__customer').order_by('-created_at')
+    
+    # Format notifications
+    notifications = []
+    
+    for notification in db_notifications:
+        notifications.append({
+            'id': f'db-{notification.id}',
+            'type': notification.notification_type,
+            'title': notification.title,
+            'message': notification.message,
+            'is_read': notification.is_read,
+            'created_at': notification.created_at.isoformat(),
+            'time_ago': get_time_ago(notification.created_at),
+            'appointment_id': notification.appointment.id if notification.appointment else None,
+            'customer_name': notification.appointment.customer.name if notification.appointment else None
+        })
+    
+    # Also include real-time notifications for pending appointments and customer completions
     pending_appointments = Appointment.objects.filter(
         worker=worker, 
         status='pending',
         created_at__gte=seven_days_ago
     ).select_related('customer').order_by('-created_at')
     
-    # Get appointments marked as completed by customer
-    completed_by_customer = Appointment.objects.filter(
+    for appointment in pending_appointments:
+        notifications.append({
+            'id': f'appointment-pending-{appointment.id}',
+            'type': 'appointment_request',
+            'title': 'New Appointment Request',
+            'message': f'New appointment request from {appointment.customer.name}',
+            'customer_name': appointment.customer.name,
+            'appointment_id': appointment.id,
+            'is_read': False,
+            'created_at': appointment.created_at.isoformat(),
+            'time_ago': get_time_ago(appointment.created_at)
+        })
+    
+    # ✅ NEW: Include customer completion notifications
+    customer_completed_appointments = Appointment.objects.filter(
         worker=worker,
         customer_completed=True,
         worker_completed=False,
         updated_at__gte=seven_days_ago
     ).select_related('customer').order_by('-updated_at')
     
-    # Format notifications
-    notifications = []
-    
-    for appointment in pending_appointments:
+    for appointment in customer_completed_appointments:
         notifications.append({
-            'id': f'appointment-pending-{appointment.id}',
-            'type': 'appointment',
-            'message': f'New appointment request from {appointment.customer.name}',
-            'customer_name': appointment.customer.name,
-            'appointment_id': appointment.id,
-            'is_read': False,  # You might want to implement a read status system
-            'created_at': appointment.created_at.isoformat(),
-            'time_ago': get_time_ago(appointment.created_at)
-        })
-    
-    for appointment in completed_by_customer:
-        notifications.append({
-            'id': f'appointment-completed-{appointment.id}',
-            'type': 'completion',
-            'message': f'{appointment.customer.name} marked the appointment as completed',
+            'id': f'customer-completed-{appointment.id}',
+            'type': 'customer_completed',
+            'title': 'Customer Marked Work as Completed',
+            'message': f'{appointment.customer.name} marked the appointment as completed. Please confirm completion.',
             'customer_name': appointment.customer.name,
             'appointment_id': appointment.id,
             'is_read': False,
@@ -2147,13 +2192,17 @@ def worker_notifications(request):
             'time_ago': get_time_ago(appointment.updated_at)
         })
     
-    # Count unread notifications (simplified - all are unread in this implementation)
+    # Count unread notifications
     unread_count = len([n for n in notifications if not n['is_read']])
+    
+    # Sort all notifications by creation date (newest first)
+    notifications.sort(key=lambda x: x['created_at'], reverse=True)
     
     return JsonResponse({
         'notifications': notifications,
         'unread_count': unread_count
     })
+
 
 @require_POST
 @login_required
@@ -3104,3 +3153,92 @@ def get_notification_count(request):
             return JsonResponse({'count': 0})
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+def send_customer_completion_email(appointment):
+    """Send email notification to worker when customer marks work as completed"""
+    try:
+        worker = appointment.worker
+        customer = appointment.customer
+        
+        subject = f"Customer Marked Work as Completed - {customer.name}"
+        
+        html_message = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #2c3e50;">Work Marked as Completed by Customer</h2>
+                
+                <div style="background: #28a745; color: white; padding: 15px; 
+                           border-radius: 8px; text-align: center; margin: 20px 0;">
+                    <h3 style="margin: 0;">Customer Confirmed Completion</h3>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #007bff; margin-top: 0;">Appointment Details</h3>
+                    <p><strong>Customer:</strong> {customer.name}</p>
+                    <p><strong>Service:</strong> {appointment.service_subtask.subtask.name if appointment.service_subtask else 'General Service'}</p>
+                    <p><strong>Date:</strong> {appointment.appointment_date.strftime('%B %d, %Y') if appointment.appointment_date else 'Not specified'}</p>
+                    <p><strong>Location:</strong> {appointment.location or 'Not specified'}</p>
+                </div>
+                
+                <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <h4 style="color: #17a2b8; margin-top: 0;">Action Required</h4>
+                    <p>Please log in to your dashboard to confirm the completion and finalize the appointment.</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{settings.SITE_URL}/worker/dashboard/" 
+                       style="background: #007bff; color: white; padding: 12px 30px; 
+                              text-decoration: none; border-radius: 5px; display: inline-block;">
+                        Confirm Completion
+                    </a>
+                </div>
+                
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                <p style="color: #666; font-size: 12px;">
+                    This is an automated message from BlueCaller. 
+                    Please do not reply to this email directly.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text version
+        plain_message = f"""
+Work Marked as Completed by Customer
+
+Dear {worker.name},
+
+{customer.name} has marked your appointment as completed.
+
+Appointment Details:
+- Customer: {customer.name}
+- Service: {appointment.service_subtask.subtask.name if appointment.service_subtask else 'General Service'}
+- Date: {appointment.appointment_date.strftime('%B %d, %Y') if appointment.appointment_date else 'Not specified'}
+- Location: {appointment.location or 'Not specified'}
+
+Please log in to your dashboard to confirm the completion: {settings.SITE_URL}/worker/dashboard/
+
+Best regards,
+BlueCaller Team
+        """
+        
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
+        recipients = [worker.owner.email]
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=from_email,
+            recipient_list=recipients,
+            html_message=html_message,
+            fail_silently=False
+        )
+        
+        logger.info(f"Customer completion email sent to worker {worker.name} ({worker.owner.email})")
+        
+    except Exception as e:
+        logger.error(f"Failed to send customer completion email to worker {worker.name}: {str(e)}")
+        # Don't raise exception to avoid breaking the main functionality

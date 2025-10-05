@@ -577,6 +577,108 @@
     .tab-content.active {
       display: block;
     }
+
+    /* Notification Dropdown */
+    .notification-dropdown {
+      position: absolute;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      width: 400px;
+      max-height: 500px;
+      overflow-y: auto;
+      z-index: 1000;
+      padding: 1rem;
+      right: 0;
+      top: 60px;
+    }
+
+    .notification-item {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      border-left: 4px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .notification-item.unread {
+      background: #f0f9ff;
+      border-left-color: #3b82f6;
+    }
+
+    .notification-item.read {
+      background: #f8fafc;
+      opacity: 0.8;
+    }
+
+    .notification-item.customer-completed {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border-left-color: #10b981;
+    }
+
+    .notification-item.appointment-request {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border-left-color: #f59e0b;
+    }
+
+    .notification-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .notification-icon.customer-completed {
+      background: #10b981;
+      color: white;
+    }
+
+    .notification-icon.appointment-request {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .notification-icon.rating {
+      background: #8b5cf6;
+      color: white;
+    }
+
+    /* Toast Notifications */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      color: white;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .toast.success {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .toast.info {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+
+    .toast.warning {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .toast.error {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
   </style>
 </head>
 <body>
@@ -659,9 +761,9 @@
           <p class="text-gray-600 text-lg">Here's what's happening with your work today</p>
         </div>
         <div class="flex items-center space-x-4">
-          <div class="notification-badge">
+          <div class="notification-badge" id="notificationBadge">
             <i class="fas fa-bell text-gray-600 text-xl"></i>
-            <span class="notification-count">3</span>
+            <span class="notification-count" id="notificationCount">0</span>
           </div>
           <div class="text-right bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-3 rounded-xl">
             <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Today</p>
@@ -702,12 +804,12 @@
       <div class="stat-card fade-in-up" style="animation-delay: 0.3s">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Accepted</p>
-            <p class="text-4xl font-bold text-green-600">{{ accepted_appointments.count }}</p>
-            <p class="text-xs text-gray-500 mt-2">✓ Confirmed jobs</p>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Customer Completed</p>
+            <p class="text-4xl font-bold text-green-600">{{ customer_completed_appointments.count }}</p>
+            <p class="text-xs text-gray-500 mt-2">✓ Waiting for your confirmation</p>
           </div>
           <div class="stat-icon" style="--color-start: #10b981; --color-end: #059669; --color-shadow: rgba(16, 185, 129, 0.3);">
-            <i class="fas fa-check-circle text-white"></i>
+            <i class="fas fa-user-check text-white"></i>
           </div>
         </div>
       </div>
@@ -755,6 +857,9 @@
             <button class="tab-button" onclick="showTab('pending')">
               Pending <span class="ml-1 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs">{{ pending_appointments.count }}</span>
             </button>
+            <button class="tab-button" onclick="showTab('customer-completed')">
+              Customer Completed <span class="ml-1 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs">{{ customer_completed_appointments.count }}</span>
+            </button>
             <button class="tab-button" onclick="showTab('accepted')">
               Accepted <span class="ml-1 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs">{{ accepted_appointments.count }}</span>
             </button>
@@ -771,7 +876,7 @@
           {% if appointments %}
           <div class="space-y-4">
             {% for appointment in appointments %}
-            <div class="appointment-card {{ appointment.status }}">
+            <div class="appointment-card {{ appointment.status }} {% if appointment.customer_completed and not appointment.worker_completed %}border-2 border-green-500{% endif %}">
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div class="flex items-center space-x-4 flex-1">
                   <div class="customer-avatar">
@@ -783,6 +888,14 @@
                   </div>
                   <div class="flex-1 min-w-0">
                     <h3 class="font-bold text-gray-900 text-lg truncate">{{ appointment.customer.name }}</h3>
+                    
+                    <!-- Customer Completion Badge -->
+                    {% if appointment.customer_completed and not appointment.worker_completed %}
+                    <div class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium mb-2">
+                      <i class="fas fa-user-check mr-1"></i>
+                      Customer Marked as Completed - Waiting for Your Confirmation
+                    </div>
+                    {% endif %}
                     
                     <!-- Service and Price Information -->
                     <div class="flex flex-wrap items-center gap-3 mt-2 mb-3">
@@ -909,7 +1022,7 @@
                       <form action="{% url 'appointment-worker-complete' appointment.id %}" method="post">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-primary text-sm">
-                          <i class="fas fa-check-double"></i> Complete
+                          <i class="fas fa-check-double"></i> Confirm Completion
                         </button>
                       </form>
                       {% endif %}
@@ -1095,12 +1208,12 @@
           {% endif %}
         </div>
 
-        <!-- Accepted Tab -->
-        <div id="accepted-tab" class="tab-content">
-          {% if accepted_appointments %}
+        <!-- Customer Completed Tab -->
+        <div id="customer-completed-tab" class="tab-content">
+          {% if customer_completed_appointments %}
           <div class="space-y-4">
-            {% for appointment in accepted_appointments %}
-            <div class="appointment-card accepted">
+            {% for appointment in customer_completed_appointments %}
+            <div class="appointment-card accepted border-2 border-green-500">
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div class="flex items-center space-x-4 flex-1">
                   <div class="customer-avatar">
@@ -1112,6 +1225,127 @@
                   </div>
                   <div class="flex-1 min-w-0">
                     <h3 class="font-bold text-gray-900 text-lg truncate">{{ appointment.customer.name }}</h3>
+                    
+                    <!-- Customer Completion Alert -->
+                    <div class="inline-flex items-center px-3 py-2 rounded-lg bg-green-100 text-green-800 text-sm font-medium mb-3">
+                      <i class="fas fa-user-check mr-2"></i>
+                      Customer marked this work as completed. Please confirm to finalize.
+                    </div>
+                    
+                    <!-- Service and Price Information -->
+                    <div class="flex flex-wrap items-center gap-3 mt-2 mb-3">
+                      {% if appointment.service_subtask %}
+                      <span class="service-badge">
+                        <i class="fas fa-tools mr-1"></i>
+                        {{ appointment.service_subtask.subtask.name }}
+                      </span>
+                      <span class="price-badge">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        ₹{{ appointment.service_subtask.price }}
+                      </span>
+                      {% else %}
+                      <span class="service-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        General Service
+                      </span>
+                      <span class="price-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        Contact for pricing
+                      </span>
+                      {% endif %}
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                      <span class="flex items-center gap-2">
+                        <i class="fas fa-phone-alt text-blue-500"></i>
+                        {{ appointment.customer.phone_number }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-calendar text-purple-500"></i>
+                        {{ appointment.appointment_date|date:"M j, Y" }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-clock text-green-500"></i>
+                        {{ appointment.appointment_date|time:"g:i A" }}
+                      </span>
+                      {% if appointment.location %}
+                      <span class="flex items-center gap-2">
+                        <i class="fas fa-map-marker-alt text-red-500"></i>
+                        <span class="max-w-xs truncate">{{ appointment.location }}</span>
+                      </span>
+                      {% endif %}
+                    </div>
+
+                    {% if appointment.special_instructions %}
+                    <div class="mt-2 p-2 bg-gray-50 rounded-lg">
+                      <p class="text-sm text-gray-600">
+                        <i class="fas fa-sticky-note text-gray-400 mr-1"></i>
+                        <strong>Instructions:</strong> {{ appointment.special_instructions }}
+                      </p>
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                  <span class="status-badge status-accepted">
+                    <i class="fas fa-circle text-xs"></i>
+                    Accepted
+                  </span>
+                  
+                  <div class="flex space-x-2">
+                    <form action="{% url 'appointment-worker-complete' appointment.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-primary text-sm">
+                        <i class="fas fa-check-double"></i> Confirm Completion
+                      </button>
+                    </form>
+                    <form action="{% url 'delete_appointment' appointment.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-secondary text-sm" onclick="return confirm('Are you sure?')">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-user-check"></i>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">No Customer Completed Appointments</h3>
+            <p class="text-gray-600 text-lg">No appointments waiting for your completion confirmation.</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Accepted Tab -->
+        <div id="accepted-tab" class="tab-content">
+          {% if accepted_appointments %}
+          <div class="space-y-4">
+            {% for appointment in accepted_appointments %}
+            <div class="appointment-card accepted {% if appointment.customer_completed and not appointment.worker_completed %}border-2 border-green-500{% endif %}">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="flex items-center space-x-4 flex-1">
+                  <div class="customer-avatar">
+                    {% if appointment.customer.profile_pic %}
+                      <img src="{{ appointment.customer.profile_pic.url }}" alt="{{ appointment.customer.name }}" class="w-full h-full rounded-full object-cover">
+                    {% else %}
+                      {{ appointment.customer.name|first }}
+                    {% endif %}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-gray-900 text-lg truncate">{{ appointment.customer.name }}</h3>
+                    
+                    <!-- Customer Completion Badge -->
+                    {% if appointment.customer_completed and not appointment.worker_completed %}
+                    <div class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium mb-2">
+                      <i class="fas fa-user-check mr-1"></i>
+                      Customer Marked as Completed
+                    </div>
+                    {% endif %}
                     
                     <!-- Service and Price Information -->
                     <div class="flex flex-wrap items-center gap-3 mt-2 mb-3">
@@ -1224,7 +1458,7 @@
                     <form action="{% url 'appointment-worker-complete' appointment.id %}" method="post">
                       {% csrf_token %}
                       <button type="submit" class="btn btn-primary text-sm">
-                        <i class="fas fa-check-double"></i> Complete
+                        <i class="fas fa-check-double"></i> Confirm Completion
                       </button>
                     </form>
                     {% endif %}
@@ -1409,16 +1643,16 @@
           {% if appointments %}
             {% for appointment in appointments|slice:":3" %}
             <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <i class="fas fa-calendar-check text-blue-600"></i>
+              <div class="w-10 h-10 rounded-full {% if appointment.customer_completed and not appointment.worker_completed %}bg-green-100{% else %}bg-blue-100{% endif %} flex items-center justify-center">
+                <i class="{% if appointment.customer_completed and not appointment.worker_completed %}fas fa-user-check text-green-600{% else %}fas fa-calendar-check text-blue-600{% endif %}"></i>
               </div>
               <div class="flex-1">
                 <p class="text-sm font-medium text-gray-900">
-                  {{ appointment.customer.name }} booked 
-                  {% if appointment.service_subtask %}
-                    {{ appointment.service_subtask.subtask.name }} - ₹{{ appointment.service_subtask.price }}
+                  {{ appointment.customer.name }} 
+                  {% if appointment.customer_completed and not appointment.worker_completed %}
+                    <span class="text-green-600">marked work as completed</span>
                   {% else %}
-                    a service
+                    booked {{ appointment.service_subtask.subtask.name|default:"a service" }}
                   {% endif %}
                 </p>
                 <p class="text-xs text-gray-500">{{ appointment.appointment_date|timesince }} ago</p>
@@ -1480,10 +1714,34 @@
     </div>
   </div>
 
-<script>
-// Real-time notification functionality
-let notificationCheckInterval;
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
+<script>
+// Enhanced notification functionality with customer completion support
+let notificationCheckInterval;
+let currentNotifications = [];
+
+// Tab functionality
+function showTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Show selected tab content
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    // Activate selected tab button
+    event.target.classList.add('active');
+}
+
+// Real-time notification functionality
 function updateNotificationBadge() {
     fetch('{% url "worker_notifications" %}', {
         headers: {
@@ -1492,31 +1750,77 @@ function updateNotificationBadge() {
     })
     .then(response => response.json())
     .then(data => {
-        const badge = document.querySelector('.notification-count');
+        const badge = document.getElementById('notificationCount');
         const unreadCount = data.unread_count;
         
+        // Update badge count
         if (unreadCount > 0) {
             if (badge) {
                 badge.textContent = unreadCount;
+                badge.style.display = 'flex';
             } else {
                 // Create badge if it doesn't exist
-                const notificationBadge = document.querySelector('.notification-badge');
+                const notificationBadge = document.getElementById('notificationBadge');
                 const newBadge = document.createElement('span');
+                newBadge.id = 'notificationCount';
                 newBadge.className = 'notification-count';
                 newBadge.textContent = unreadCount;
                 notificationBadge.appendChild(newBadge);
             }
+            
+            // Pulse animation for new notifications
+            badge.style.animation = 'pulse 2s infinite';
         } else {
-            // Remove badge if no unread notifications
+            // Hide badge if no unread notifications
             if (badge) {
-                badge.remove();
+                badge.style.display = 'none';
             }
         }
+        
+        // Store current notifications
+        currentNotifications = data.notifications;
+        
+        // Check for customer completion notifications to show toast
+        checkForNewCustomerCompletionNotifications(data.notifications);
     })
     .catch(error => console.error('Error updating notification count:', error));
 }
 
+function checkForNewCustomerCompletionNotifications(notifications) {
+    // Look for unread customer completion notifications
+    const customerCompletionNotifications = notifications.filter(notification => 
+        notification.type === 'customer_completed' && !notification.is_read
+    );
+    
+    // Show toast for each new customer completion notification
+    customerCompletionNotifications.forEach(notification => {
+        if (!isNotificationShown(notification.id)) {
+            showToastNotification(
+                notification.title,
+                notification.message,
+                'info',
+                notification.appointment_id
+            );
+            markNotificationAsShown(notification.id);
+        }
+    });
+}
+
+function isNotificationShown(notificationId) {
+    const shownNotifications = JSON.parse(localStorage.getItem('shownNotifications') || '[]');
+    return shownNotifications.includes(notificationId);
+}
+
+function markNotificationAsShown(notificationId) {
+    const shownNotifications = JSON.parse(localStorage.getItem('shownNotifications') || '[]');
+    shownNotifications.push(notificationId);
+    localStorage.setItem('shownNotifications', JSON.stringify(shownNotifications));
+}
+
 function showNotificationDropdown() {
+    // Close any existing dropdown
+    closeNotificationDropdown();
+    
     // Fetch and display notifications
     fetch('{% url "worker_notifications" %}', {
         headers: {
@@ -1529,7 +1833,7 @@ function showNotificationDropdown() {
         document.body.appendChild(dropdown);
         
         // Position dropdown near notification badge
-        const badge = document.querySelector('.notification-badge');
+        const badge = document.getElementById('notificationBadge');
         const rect = badge.getBoundingClientRect();
         dropdown.style.top = `${rect.bottom + window.scrollY + 10}px`;
         dropdown.style.right = `${window.innerWidth - rect.right - 10}px`;
@@ -1577,23 +1881,66 @@ function createNotificationDropdown(notifications) {
     `;
     
     notifications.forEach(notification => {
-        const readClass = notification.is_read ? 'opacity-70' : 'bg-blue-50 border-l-4 border-blue-500';
+        const readClass = notification.is_read ? 'read' : 'unread';
+        const typeClass = `notification-${notification.type.replace('_', '-')}`;
+        
+        // Get appropriate icon and color based on notification type
+        let icon = 'fas fa-bell';
+        let iconClass = 'notification-icon';
+        
+        if (notification.type === 'customer_completed') {
+            icon = 'fas fa-user-check';
+            iconClass += ' customer-completed';
+        } else if (notification.type === 'appointment_request') {
+            icon = 'fas fa-calendar-plus';
+            iconClass += ' appointment-request';
+        } else if (notification.type === 'rating_received') {
+            icon = 'fas fa-star';
+            iconClass += ' rating';
+        }
+        
         notificationsHTML += `
-            <div class="notification-item p-3 rounded-lg border ${readClass}" data-id="${notification.id}">
+            <div class="notification-item ${readClass} ${typeClass}" data-id="${notification.id}">
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
+                        <div class="${iconClass}">
+                            <i class="${icon}"></i>
+                        </div>
                         <h4 class="font-semibold text-gray-900 text-sm">${notification.title}</h4>
                         <p class="text-gray-600 text-sm mt-1">${notification.message}</p>
                         <p class="text-xs text-gray-500 mt-2">${notification.time_ago}</p>
                     </div>
                     ${!notification.is_read ? `
-                        <button onclick="markNotificationRead(${notification.id})" 
+                        <button onclick="markNotificationRead('${notification.id}')" 
                                 class="ml-2 text-gray-400 hover:text-blue-600 transition-colors"
                                 title="Mark as read">
                             <i class="fas fa-check-circle"></i>
                         </button>
                     ` : ''}
                 </div>
+                
+                <!-- Show action buttons for customer completion notifications -->
+                ${notification.type === 'customer_completed' && notification.appointment_id ? `
+                    <div class="mt-3 flex space-x-2">
+                        <a href="{% url 'appointment-worker-complete' 0 %}".replace('0', notification.appointment_id)
+                           class="btn btn-success text-xs py-1 px-2">
+                            <i class="fas fa-check mr-1"></i>Confirm Completion
+                        </a>
+                        <a href="{% url 'worker_dashboard' %}" 
+                           class="btn btn-secondary text-xs py-1 px-2">
+                            <i class="fas fa-eye mr-1"></i>View Details
+                        </a>
+                    </div>
+                ` : ''}
+                
+                ${notification.type === 'appointment_request' && notification.appointment_id ? `
+                    <div class="mt-3 flex space-x-2">
+                        <a href="{% url 'worker_dashboard' %}" 
+                           class="btn btn-primary text-xs py-1 px-2">
+                            <i class="fas fa-eye mr-1"></i>View Request
+                        </a>
+                    </div>
+                ` : ''}
             </div>
         `;
     });
@@ -1622,9 +1969,10 @@ function markNotificationRead(notificationId) {
             // Update UI
             const notificationItem = document.querySelector(`[data-id="${notificationId}"]`);
             if (notificationItem) {
-                notificationItem.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-500');
-                notificationItem.classList.add('opacity-70');
-                notificationItem.querySelector('button').remove();
+                notificationItem.classList.remove('unread');
+                notificationItem.classList.add('read');
+                const button = notificationItem.querySelector('button');
+                if (button) button.remove();
             }
             updateNotificationBadge();
         }
@@ -1646,8 +1994,8 @@ function markAllNotificationsRead() {
         if (data.success) {
             // Update UI
             document.querySelectorAll('.notification-item').forEach(item => {
-                item.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-500');
-                item.classList.add('opacity-70');
+                item.classList.remove('unread');
+                item.classList.add('read');
                 const button = item.querySelector('button');
                 if (button) button.remove();
             });
@@ -1657,14 +2005,109 @@ function markAllNotificationsRead() {
     .catch(error => console.error('Error marking all notifications as read:', error));
 }
 
-function closeDropdownOnClickOutside(event) {
+function closeNotificationDropdown() {
     const dropdown = document.querySelector('.notification-dropdown');
-    const badge = document.querySelector('.notification-badge');
-    
-    if (dropdown && !dropdown.contains(event.target) && !badge.contains(event.target)) {
+    if (dropdown) {
         dropdown.remove();
         document.removeEventListener('click', closeDropdownOnClickOutside);
     }
+}
+
+function closeDropdownOnClickOutside(event) {
+    const dropdown = document.querySelector('.notification-dropdown');
+    const badge = document.getElementById('notificationBadge');
+    
+    if (dropdown && !dropdown.contains(event.target) && !badge.contains(event.target)) {
+        closeNotificationDropdown();
+    }
+}
+
+// Toast notification system
+function showToastNotification(title, message, type = 'info', appointmentId = null) {
+    const toastContainer = document.getElementById('toastContainer');
+    const toastId = 'toast-' + Date.now();
+    
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `toast ${type} show`;
+    toast.innerHTML = `
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <i class="fas ${getToastIcon(type)} text-lg mr-3"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="font-semibold">${title}</h4>
+                <p class="text-sm opacity-90 mt-1">${message}</p>
+                ${appointmentId ? `
+                    <div class="mt-2 flex space-x-2">
+                        <a href="{% url 'appointment-worker-complete' 0 %}".replace('0', appointmentId)
+                           class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-xs font-medium transition-colors">
+                            Confirm Completion
+                        </a>
+                        <button onclick="dismissToast('${toastId}')" 
+                                class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-xs font-medium transition-colors">
+                            Dismiss
+                        </button>
+                    </div>
+                ` : `
+                    <button onclick="dismissToast('${toastId}')" 
+                            class="mt-2 bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-xs font-medium transition-colors">
+                        Dismiss
+                    </button>
+                `}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto dismiss after 8 seconds
+    setTimeout(() => {
+        dismissToast(toastId);
+    }, 8000);
+}
+
+function getToastIcon(type) {
+    const icons = {
+        'success': 'fa-check-circle',
+        'info': 'fa-info-circle',
+        'warning': 'fa-exclamation-triangle',
+        'error': 'fa-exclamation-circle'
+    };
+    return icons[type] || 'fa-bell';
+}
+
+function dismissToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.classList.remove('show');
+        toast.classList.add('hide');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }
+}
+
+// Handle customer completion notification specifically
+function handleCustomerCompletionNotification(notification) {
+    console.log('Customer completion notification received:', notification);
+    
+    // Show toast notification
+    showToastNotification(
+        notification.title,
+        notification.message,
+        'info',
+        notification.appointment_id
+    );
+    
+    // Update the appointments list to highlight the completed appointment
+    updateAppointmentsList();
+}
+
+function updateAppointmentsList() {
+    // This function would refresh or update the appointments list
+    // For now, we'll just log it
+    console.log('Updating appointments list for customer completions');
 }
 
 // Initialize notification system
@@ -1673,19 +2116,30 @@ document.addEventListener('DOMContentLoaded', function() {
     updateNotificationBadge();
     
     // Set up click handler for notification badge
-    const notificationBadge = document.querySelector('.notification-badge');
+    const notificationBadge = document.getElementById('notificationBadge');
     if (notificationBadge) {
         notificationBadge.addEventListener('click', showNotificationDropdown);
     }
     
     // Update notifications every 30 seconds
     notificationCheckInterval = setInterval(updateNotificationBadge, 30000);
+    
+    // Clear shown notifications from localStorage on page load (optional)
+    // localStorage.removeItem('shownNotifications');
 });
 
 // Clean up when leaving page
 window.addEventListener('beforeunload', function() {
     if (notificationCheckInterval) {
         clearInterval(notificationCheckInterval);
+    }
+});
+
+// Handle page visibility changes for real-time updates
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        // Page became visible, update notifications
+        updateNotificationBadge();
     }
 });
 </script>
