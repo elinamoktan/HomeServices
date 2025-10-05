@@ -1518,6 +1518,15 @@ def accept_appointment(request, appointment_id):
             appointment.status = 'accepted'
             appointment.save()
             
+            # ✅ FIXED: Create notification for customer
+            Notification.objects.create(
+                customer=appointment.customer,
+                notification_type='appointment_accepted',
+                title='Appointment Accepted!',
+                message=f'{appointment.worker.name} has accepted your appointment request for {appointment.service_subtask.subtask.name if appointment.service_subtask else "service"}.',
+                appointment=appointment
+            )
+            
             # Send email notification to customer
             try:
                 send_appointment_status_email(appointment, 'accepted')
@@ -1525,7 +1534,6 @@ def accept_appointment(request, appointment_id):
             except Exception as email_error:
                 logger.error(f"Failed to send acceptance email for appointment {appointment.id}: {email_error}")
                 # Continue without failing - appointment is still accepted
-                messages.warning(request, "Appointment accepted but email notification may have failed.")
             
             messages.success(request, "Appointment accepted successfully.")
         else:
@@ -1547,6 +1555,15 @@ def reject_appointment(request, appointment_id):
             appointment.status = 'rejected'
             appointment.save()
             
+            # ✅ FIXED: Create notification for customer
+            Notification.objects.create(
+                customer=appointment.customer,
+                notification_type='appointment_rejected',
+                title='Appointment Declined',
+                message=f'{appointment.worker.name} was unable to accept your appointment request.',
+                appointment=appointment
+            )
+            
             # Send email notification to customer
             try:
                 send_appointment_status_email(appointment, 'rejected')
@@ -1554,7 +1571,6 @@ def reject_appointment(request, appointment_id):
             except Exception as email_error:
                 logger.error(f"Failed to send rejection email for appointment {appointment.id}: {email_error}")
                 # Continue without failing
-                messages.warning(request, "Appointment rejected but email notification may have failed.")
             
             messages.info(request, "Appointment rejected.")
         else:
@@ -1592,6 +1608,15 @@ def complete_appointment(request, appointment_id):
             appointment.status = 'completed'
             appointment.save()
             
+            # ✅ FIXED: Create notification for customer when worker marks as completed
+            Notification.objects.create(
+                customer=appointment.customer,
+                notification_type='appointment_completed',
+                title='Appointment Completed',
+                message=f'{appointment.worker.name} has marked your appointment as completed. Thank you for your business!',
+                appointment=appointment
+            )
+            
             # Send completion email to customer
             try:
                 send_appointment_completion_email(appointment)
@@ -1599,13 +1624,103 @@ def complete_appointment(request, appointment_id):
             except Exception as email_error:
                 logger.error(f"Failed to send completion email for appointment {appointment.id}: {email_error}")
                 # Continue without failing
-                messages.warning(request, "Appointment completed but email notification may have failed.")
             
             messages.success(request, "Appointment marked as completed.")
         else:
             messages.warning(request, "This appointment cannot be marked as completed (status not accepted).")
 
     return redirect('worker_dashboard')
+
+@login_required
+def customer_notifications(request):
+    """API endpoint to get customer notifications"""
+    customer = get_object_or_404(Customer, owner=request.user)
+    
+    # Get notifications from the last 30 days
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    
+    notifications = Notification.objects.filter(
+        customer=customer,
+        created_at__gte=thirty_days_ago
+    ).select_related('appointment', 'appointment__worker').order_by('-created_at')
+    
+    notifications_data = []
+    for notification in notifications:
+        notifications_data.append({
+            'id': notification.id,
+            'title': notification.title,
+            'message': notification.message,
+            'is_read': notification.is_read,
+            'time_ago': get_time_ago(notification.created_at),
+            'notification_type': notification.notification_type,
+            'appointment_id': notification.appointment.id if notification.appointment else None,
+            'worker_name': notification.appointment.worker.name if notification.appointment else None,
+            'created_at': notification.created_at.isoformat(),
+        })
+    
+    # Also include real-time appointment status updates as notifications
+    recent_appointments = Appointment.objects.filter(
+        customer=customer,
+        updated_at__gte=thirty_days_ago
+    ).select_related('worker').order_by('-updated_at')
+    
+    for appointment in recent_appointments:
+        if appointment.status in ['accepted', 'rejected', 'completed']:
+            # Check if we already have a notification for this status change
+            existing_notification = any(
+                n.get('appointment_id') == appointment.id and 
+                n.get('notification_type') == f'appointment_{appointment.status}'
+                for n in notifications_data
+            )
+            
+            if not existing_notification:
+                if appointment.status == 'accepted':
+                    notifications_data.append({
+                        'id': f'appointment-{appointment.id}-accepted',
+                        'title': 'Appointment Accepted!',
+                        'message': f'{appointment.worker.name} has accepted your appointment request.',
+                        'is_read': False,
+                        'time_ago': get_time_ago(appointment.updated_at),
+                        'notification_type': 'appointment_accepted',
+                        'appointment_id': appointment.id,
+                        'worker_name': appointment.worker.name,
+                        'created_at': appointment.updated_at.isoformat(),
+                    })
+                elif appointment.status == 'rejected':
+                    notifications_data.append({
+                        'id': f'appointment-{appointment.id}-rejected',
+                        'title': 'Appointment Declined',
+                        'message': f'{appointment.worker.name} was unable to accept your appointment request.',
+                        'is_read': False,
+                        'time_ago': get_time_ago(appointment.updated_at),
+                        'notification_type': 'appointment_rejected',
+                        'appointment_id': appointment.id,
+                        'worker_name': appointment.worker.name,
+                        'created_at': appointment.updated_at.isoformat(),
+                    })
+                elif appointment.status == 'completed':
+                    notifications_data.append({
+                        'id': f'appointment-{appointment.id}-completed',
+                        'title': 'Appointment Completed',
+                        'message': f'Your appointment with {appointment.worker.name} has been completed.',
+                        'is_read': False,
+                        'time_ago': get_time_ago(appointment.updated_at),
+                        'notification_type': 'appointment_completed',
+                        'appointment_id': appointment.id,
+                        'worker_name': appointment.worker.name,
+                        'created_at': appointment.updated_at.isoformat(),
+                    })
+    
+    # Sort all notifications by creation date (newest first)
+    notifications_data.sort(key=lambda x: x['created_at'], reverse=True)
+    
+    # Count unread notifications
+    unread_count = len([n for n in notifications_data if not n['is_read']])
+    
+    return JsonResponse({
+        'notifications': notifications_data[:20],  # Limit to 20 most recent
+        'unread_count': unread_count
+    })
 
 @login_required
 def rate_worker(request, appointment_id):
@@ -1716,6 +1831,7 @@ def mark_customer_completed(request, pk):
 
 @login_required
 def mark_worker_completed(request, pk):
+    """Enhanced version that sends notification to customer when worker confirms completion"""
     appointment = get_object_or_404(Appointment, pk=pk)
 
     # Ensure the logged-in user is the assigned worker
@@ -1727,20 +1843,34 @@ def mark_worker_completed(request, pk):
         messages.error(request, "The customer must mark the appointment as completed first.")
         return redirect('worker_dashboard')
 
-    # Worker can now confirm completion
+    # Store previous state
+    was_completed = appointment.worker_completed
+    
+    # Worker confirms completion
     appointment.status = 'completed'
     appointment.worker_completed = True
     appointment.save()
     
-    # Send completion email to customer
-    try:
-        send_appointment_completion_email(appointment)
-        logger.info(f"Appointment completion email sent for appointment {appointment.id}")
-    except Exception as email_error:
-        logger.error(f"Failed to send completion email for appointment {appointment.id}: {email_error}")
-        messages.warning(request, "Appointment completed but email notification may have failed.")
+    # ✅ NEW: Create notification for customer
+    if not was_completed:
+        Notification.objects.create(
+            customer=appointment.customer,
+            notification_type='worker_completed',
+            title='Worker Confirmed Completion',
+            message=f'{appointment.worker.name} has confirmed the appointment completion. Thank you for your business!',
+            appointment=appointment
+        )
+        
+        # Send email notification to customer
+        try:
+            send_worker_completion_email(appointment)
+            logger.info(f"Worker completion email sent for appointment {appointment.id}")
+        except Exception as email_error:
+            logger.error(f"Failed to send worker completion email for appointment {appointment.id}: {email_error}")
+            # Continue without failing
+            messages.warning(request, "Completion confirmed but email notification may have failed.")
 
-    messages.success(request, "You confirmed the appointment as completed.")
+    messages.success(request, "You confirmed the appointment as completed. The customer has been notified.")
     return redirect('worker_dashboard')
 
 # endpoint to update worker location (POST)
@@ -1915,57 +2045,27 @@ def customer_dashboard(request):
         status='pending'
     ).select_related('worker', 'service_subtask', 'service_subtask__subtask').order_by('-created_at')
     
-    # NEW: Ratings and Reviews Data - USING YOUR EXISTING BAYESIAN FUNCTION
+    # ✅ NEW: Get unread notification count for the template
+    unread_notification_count = Notification.objects.filter(
+        customer=customer,
+        is_read=False
+    ).count()
+    
+    # Ratings and Reviews Data
     customer_ratings = WorkerRating.objects.filter(customer=customer).select_related(
         'worker', 'appointment', 'appointment__service_subtask__subtask'
     ).order_by('-created_at')
     
     total_reviews = customer_ratings.count()
     
-    # Calculate average rating for CUSTOMER'S reviews (simple average since it's the customer's own ratings)
+    # Calculate average rating
     if total_reviews > 0:
-        # For customer's own rating summary, use simple average of their ratings
         ratings_list = [rating.rating for rating in customer_ratings]
         average_rating = sum(ratings_list) / len(ratings_list)
         average_rating_int = int(average_rating)
-        
-        # Also get Bayesian averages for each worker the customer rated (for display if needed)
-        worker_bayesian_ratings = {}
-        for rating in customer_ratings:
-            worker = rating.worker
-            worker_bayesian_ratings[worker.id] = worker.bayesian_average_rating()
     else:
         average_rating = 0.0
         average_rating_int = 0
-        worker_bayesian_ratings = {}
-    
-    # Calculate rating distribution for CUSTOMER'S reviews
-    rating_distribution = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
-    for rating in customer_ratings:
-        if 1 <= rating.rating <= 5:
-            rating_distribution[rating.rating] += 1
-    
-    # Convert to percentages for display
-    rating_distribution_percent = {}
-    if total_reviews > 0:
-        for star in [5, 4, 3, 2, 1]:
-            rating_distribution_percent[star] = round((rating_distribution[star] / total_reviews) * 100)
-    else:
-        rating_distribution_percent = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
-    
-    # Get recent reviews (last 5)
-    recent_reviews = customer_ratings[:5]
-    
-    # Get pending reviews (completed appointments without ratings)
-    pending_reviews = completed_appointments.filter(
-        customer_completed=True,
-        worker_completed=True
-    ).exclude(
-        id__in=WorkerRating.objects.filter(customer=customer).values('appointment_id')
-    )[:5]
-    
-    # Calculate total reviews given (you already have this as total_reviews)
-    total_reviews_given = total_reviews
     
     context = {
         'customer': customer,
@@ -1981,18 +2081,14 @@ def customer_dashboard(request):
         'completed_count': completed_appointments.count(),
         'current_page': 'dashboard',
         # NEW: Ratings context
-        'total_reviews': total_reviews_given,  # This goes in your stats grid
+        'total_reviews': total_reviews,
         'average_rating': round(average_rating, 1),
         'average_rating_int': average_rating_int,
-        'rating_distribution': rating_distribution_percent,
-        'recent_reviews': recent_reviews,
-        'pending_reviews': pending_reviews,
-        'customer_ratings': customer_ratings,  # All ratings given by this customer
+        # ✅ NEW: Notification context
+        'unread_notification_count': unread_notification_count,
     }
     
     return render(request, 'jobs/customer_dashboard.html', context)
-
-
 def custom_logout(request):
     if request.method == 'POST':
         logout(request)
@@ -2221,12 +2317,46 @@ def mark_notification_read(request):
 @require_POST
 @login_required
 def mark_all_notifications_read(request):
-    """API endpoint to mark all notifications as read"""
+    """API endpoint to mark all notifications as read for the current user"""
     try:
-        # In a real implementation, you would update all notifications for this user
-        return JsonResponse({'success': True})
+        # Handle both worker and customer notifications
+        if hasattr(request.user, 'worker'):
+            # Mark all worker notifications as read
+            updated_count = Notification.objects.filter(
+                worker=request.user.worker, 
+                is_read=False
+            ).update(is_read=True)
+            
+            # Also mark any appointment-based notifications
+            worker_appointments = Appointment.objects.filter(worker=request.user.worker)
+            for appointment in worker_appointments:
+                # Mark customer completion notifications as read
+                Notification.objects.filter(
+                    appointment=appointment,
+                    notification_type='customer_completed',
+                    is_read=False
+                ).update(is_read=True)
+                
+        elif hasattr(request.user, 'customer'):
+            # Mark all customer notifications as read
+            updated_count = Notification.objects.filter(
+                customer=request.user.customer, 
+                is_read=False
+            ).update(is_read=True)
+        else:
+            return JsonResponse({'success': False, 'error': 'User profile not found'}, status=400)
+        
+        return JsonResponse({
+            'success': True,
+            'marked_read': updated_count
+        })
+        
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        logger.error(f"Error marking all notifications as read: {str(e)}")
+        return JsonResponse({
+            'success': False, 
+            'error': f'An error occurred: {str(e)}'
+        }, status=500)
 
 def get_time_ago(dt):
     """Helper function to get a human-readable time ago string"""
@@ -3125,17 +3255,48 @@ def mark_notification_read(request, notification_id):
 @require_POST
 @login_required
 def mark_all_notifications_read(request):
-    """Mark all notifications as read for the current customer"""
-    customer = get_object_or_404(Customer, owner=request.user)
-    updated_count = Notification.objects.filter(
-        customer=customer, 
-        is_read=False
-    ).update(is_read=True)
-    
-    return JsonResponse({
-        'success': True,
-        'marked_read': updated_count
-    })
+    """API endpoint to mark all notifications as read for the current user"""
+    try:
+        updated_count = 0
+        
+        # Handle both worker and customer notifications
+        if hasattr(request.user, 'worker'):
+            # Mark all worker notifications as read
+            updated_count = Notification.objects.filter(
+                worker=request.user.worker, 
+                is_read=False
+            ).update(is_read=True)
+            
+            logger.info(f"Marked {updated_count} worker notifications as read for {request.user.username}")
+            
+        elif hasattr(request.user, 'customer'):
+            # Mark all customer notifications as read
+            updated_count = Notification.objects.filter(
+                customer=request.user.customer, 
+                is_read=False
+            ).update(is_read=True)
+            
+            logger.info(f"Marked {updated_count} customer notifications as read for {request.user.username}")
+        else:
+            logger.warning(f"User {request.user.username} has no worker or customer profile")
+            return JsonResponse({
+                'success': False, 
+                'error': 'User profile not found'
+            }, status=400)
+        
+        return JsonResponse({
+            'success': True,
+            'marked_read': updated_count
+        })
+        
+    except Exception as e:
+        logger.error(f"Error marking all notifications as read: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False, 
+            'error': f'An error occurred: {str(e)}'
+        }, status=500)
 
 @login_required
 def get_notification_count(request):
@@ -3153,7 +3314,6 @@ def get_notification_count(request):
             return JsonResponse({'count': 0})
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
-
 
 def send_customer_completion_email(appointment):
     """Send email notification to worker when customer marks work as completed"""
@@ -3241,4 +3401,103 @@ BlueCaller Team
         
     except Exception as e:
         logger.error(f"Failed to send customer completion email to worker {worker.name}: {str(e)}")
+        # Don't raise exception to avoid breaking the main functionality
+
+def send_worker_confirmation_email(appointment):
+    """Send email notification to customer when worker confirms completion"""
+    try:
+        worker = appointment.worker
+        customer = appointment.customer
+        
+        subject = f"Appointment Completed - {worker.name}"
+        
+        html_message = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #2c3e50;">Appointment Confirmed as Completed</h2>
+                
+                <div style="background: #28a745; color: white; padding: 15px; 
+                           border-radius: 8px; text-align: center; margin: 20px 0;">
+                    <h3 style="margin: 0;">✓ Work Completed Successfully</h3>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #007bff; margin-top: 0;">Appointment Details</h3>
+                    <p><strong>Worker:</strong> {worker.name}</p>
+                    <p><strong>Service:</strong> {appointment.service_subtask.subtask.name if appointment.service_subtask else 'General Service'}</p>
+                    <p><strong>Date:</strong> {appointment.appointment_date.strftime('%B %d, %Y') if appointment.appointment_date else 'Not specified'}</p>
+                    <p><strong>Location:</strong> {appointment.location or 'Not specified'}</p>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                    <h4 style="color: #856404; margin-top: 0;">Please Rate Your Experience</h4>
+                    <p style="color: #856404;">
+                        Your feedback helps us maintain quality service. Please take a moment to rate your experience with {worker.name}.
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{settings.SITE_URL}/rate-worker/{appointment.id}/" 
+                       style="background: #ffc107; color: #333; padding: 12px 30px; 
+                              text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                        ⭐ Rate & Review
+                    </a>
+                    <br><br>
+                    <a href="{settings.SITE_URL}/customer/dashboard/" 
+                       style="background: #007bff; color: white; padding: 12px 30px; 
+                              text-decoration: none; border-radius: 5px; display: inline-block;">
+                        View Dashboard
+                    </a>
+                </div>
+                
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                <p style="color: #666; font-size: 12px;">
+                    This is an automated message from BlueCaller. 
+                    Please do not reply to this email directly.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text version
+        plain_message = f"""
+Appointment Confirmed as Completed
+
+Dear {customer.name},
+
+{worker.name} has confirmed that your appointment has been completed successfully.
+
+Appointment Details:
+- Worker: {worker.name}
+- Service: {appointment.service_subtask.subtask.name if appointment.service_subtask else 'General Service'}
+- Date: {appointment.appointment_date.strftime('%B %d, %Y') if appointment.appointment_date else 'Not specified'}
+- Location: {appointment.location or 'Not specified'}
+
+Please rate your experience: {settings.SITE_URL}/rate-worker/{appointment.id}/
+View dashboard: {settings.SITE_URL}/customer/dashboard/
+
+Thank you for using BlueCaller!
+
+Best regards,
+BlueCaller Team
+        """
+        
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
+        recipients = [customer.owner.email]
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=from_email,
+            recipient_list=recipients,
+            html_message=html_message,
+            fail_silently=False
+        )
+        
+        logger.info(f"Worker confirmation email sent to customer {customer.name} ({customer.owner.email})")
+        
+    except Exception as e:
+        logger.error(f"Failed to send worker confirmation email to customer {customer.name}: {str(e)}")
         # Don't raise exception to avoid breaking the main functionality

@@ -763,7 +763,7 @@
         <div class="flex items-center space-x-4">
           <div class="notification-badge" id="notificationBadge">
             <i class="fas fa-bell text-gray-600 text-xl"></i>
-            <span class="notification-count" id="notificationCount">0</span>
+            <span class="notification-count" id="notificationCount" style="display: none;">0</span>
           </div>
           <div class="text-right bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-3 rounded-xl">
             <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Today</p>
@@ -1765,6 +1765,7 @@ function updateNotificationBadge() {
                 newBadge.id = 'notificationCount';
                 newBadge.className = 'notification-count';
                 newBadge.textContent = unreadCount;
+                newBadge.style.display = 'flex';
                 notificationBadge.appendChild(newBadge);
             }
             
@@ -1774,6 +1775,7 @@ function updateNotificationBadge() {
             // Hide badge if no unread notifications
             if (badge) {
                 badge.style.display = 'none';
+                badge.style.animation = 'none';
             }
         }
         
@@ -1956,7 +1958,7 @@ function markNotificationRead(notificationId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({
@@ -1981,28 +1983,68 @@ function markNotificationRead(notificationId) {
 }
 
 function markAllNotificationsRead() {
-    fetch('{% url "mark_all_notifications_read" %}', {
+    fetch('{% url "mark_all_notifications_read" %}', {  // This now points to the API endpoint
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            // Update UI
+            // Update UI - mark all notifications as read in the dropdown
             document.querySelectorAll('.notification-item').forEach(item => {
                 item.classList.remove('unread');
                 item.classList.add('read');
                 const button = item.querySelector('button');
                 if (button) button.remove();
             });
-            updateNotificationBadge();
+            
+            // Hide the notification badge completely
+            const badge = document.getElementById('notificationCount');
+            if (badge) {
+                badge.style.display = 'none';
+                badge.style.animation = 'none';
+            }
+            
+            // Show success message
+            showToastNotification(
+                'All Notifications Marked as Read',
+                'All notifications have been marked as read and the badge has been cleared.',
+                'success'
+            );
+            
+            // Clear any shown notifications from localStorage
+            localStorage.removeItem('shownNotifications');
+        } else {
+            showToastNotification(
+                'Error',
+                'Failed to mark all notifications as read. Please try again.',
+                'error'
+            );
         }
     })
-    .catch(error => console.error('Error marking all notifications as read:', error));
+    .catch(error => {
+        console.error('Error marking all notifications as read:', error);
+        showToastNotification(
+            'Error',
+            'Failed to mark all notifications as read. Please try again.',
+            'error'
+        );
+    });
+}
+
+// Helper function to get CSRF token
+function getCSRFToken() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    return csrfToken ? csrfToken.value : '';
 }
 
 function closeNotificationDropdown() {
@@ -2123,9 +2165,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update notifications every 30 seconds
     notificationCheckInterval = setInterval(updateNotificationBadge, 30000);
-    
-    // Clear shown notifications from localStorage on page load (optional)
-    // localStorage.removeItem('shownNotifications');
 });
 
 // Clean up when leaving page
