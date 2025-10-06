@@ -1,0 +1,272 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Worker Management - BlueCollar Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Worker Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/super-admin/jobs/worker/add/" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i> Add Worker
+        </a>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Workers
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_workers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-briefcase fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Verified Workers
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ verified_workers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pending Verification
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ unverified_workers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Active Workers
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ available_workers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="btn-group">
+                    <a href="?" class="btn btn-outline-secondary {% if not current_filter %}active{% endif %}">All Workers</a>
+                    <a href="?status=verified" class="btn btn-outline-success {% if current_filter == 'verified' %}active{% endif %}">Verified</a>
+                    <a href="?status=unverified" class="btn btn-outline-warning {% if current_filter == 'unverified' %}active{% endif %}">Unverified</a>
+                    <a href="?status=available" class="btn btn-outline-info {% if current_filter == 'available' %}active{% endif %}">Available</a>
+                    <a href="?status=unavailable" class="btn btn-outline-danger {% if current_filter == 'unavailable' %}active{% endif %}">Unavailable</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Workers Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>All Workers</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="50">#</th>
+                        <th>Worker Details</th>
+                        <th>Contact & Location</th>
+                        <th>Performance</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th width="120">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for worker in workers %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if worker.profile_pic %}
+                                <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="rounded-circle me-3" width="50" height="50">
+                                {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong class="d-block">{{ worker.name }}</strong>
+                                    <small class="text-muted">{{ worker.tagline|default:"No tagline" }}</small>
+                                    <div class="mt-1">
+                                        <small class="badge bg-secondary">{{ worker.shift|title }} Shift</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>Phone:</strong> {{ worker.phone_number }}<br>
+                                <strong>Email:</strong> {{ worker.owner.email }}<br>
+                                {% if worker.location_address %}
+                                <strong>Location:</strong> {{ worker.location_address|truncatewords:3 }}
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-center">
+                                <div class="rating mb-2">
+                                    {% with avg_rating=worker.avg_rating|default:0 %}
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= avg_rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endwith %}
+                                    <small class="text-muted">({{ worker.avg_rating|default:"0.0" }})</small>
+                                </div>
+                                <div>
+                                    <span class="badge bg-primary">{{ worker.appointment_count }} Appointments</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="status-badges">
+                                <span class="badge bg-{% if worker.verified %}success{% else %}warning{% endif %} mb-1">
+                                    {{ worker.verified|yesno:"Verified,Pending" }}
+                                </span>
+                                <br>
+                                <span class="badge bg-{% if worker.is_available %}info{% else %}secondary{% endif %}">
+                                    {{ worker.is_available|yesno:"Available,Unavailable" }}
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <small>{{ worker.created_at|date:"M d, Y" }}</small><br>
+                            <small class="text-muted">{{ worker.created_at|timesince }} ago</small>
+                        </td>
+                        <td>
+                            <div class="btn-group-vertical btn-group-sm">
+                                <a href="/super-admin/jobs/worker/{{ worker.id }}/change/" class="btn btn-outline-primary mb-1" title="Edit">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="/super-admin/jobs/worker/{{ worker.id }}/delete/" class="btn btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5>No Workers Found</h5>
+                            <p class="text-muted">No workers have been registered yet.</p>
+                            <a href="/super-admin/jobs/worker/add/" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> Add First Worker
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if workers.has_other_pages %}
+        <nav aria-label="Worker pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if workers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ workers.previous_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for i in workers.paginator.page_range %}
+                <li class="page-item {% if workers.number == i %}active{% endif %}">
+                    <a class="page-link" href="?page={{ i }}{% if current_filter %}&status={{ current_filter }}{% endif %}">{{ i }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if workers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ workers.next_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bulk Actions -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Bulk Actions</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'admin_dashboard:bulk_actions' %}" class="row g-3 align-items-center">
+            {% csrf_token %}
+            <div class="col-auto">
+                <label class="form-label">Select Action:</label>
+            </div>
+            <div class="col-auto">
+                <select name="action" class="form-select">
+                    <option value="">Choose action...</option>
+                    <option value="verify_workers">Verify Selected Workers</option>
+                    <option value="unverify_workers">Unverify Selected Workers</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Apply to Selected</button>
+            </div>
+            <div class="col-auto">
+                <small class="text-muted">Select workers using checkboxes in the table</small>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

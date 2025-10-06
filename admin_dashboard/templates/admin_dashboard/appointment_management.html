@@ -1,0 +1,451 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Appointment Management - BlueCollar Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Appointment Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/super-admin/jobs/appointment/add/" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i> Add Appointment
+        </a>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Appointments
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_appointments }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pending Appointments
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_appointments }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Completed Appointments
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_appointments }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Total Revenue
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ total_revenue }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <form method="get" class="d-flex">
+                            <input type="text" name="search" class="form-control me-2" placeholder="Search appointments..." value="{{ request.GET.search }}">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="btn-group float-end">
+                            <a href="?" class="btn btn-outline-secondary {% if not current_filter %}active{% endif %}">All</a>
+                            <a href="?status=pending" class="btn btn-outline-warning {% if current_filter == 'pending' %}active{% endif %}">Pending</a>
+                            <a href="?status=accepted" class="btn btn-outline-info {% if current_filter == 'accepted' %}active{% endif %}">Accepted</a>
+                            <a href="?status=completed" class="btn btn-outline-success {% if current_filter == 'completed' %}active{% endif %}">Completed</a>
+                            <a href="?status=rejected" class="btn btn-outline-danger {% if current_filter == 'rejected' %}active{% endif %}">Rejected</a>
+                            <a href="?status=cancelled" class="btn btn-outline-dark {% if current_filter == 'cancelled' %}active{% endif %}">Cancelled</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Appointments Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>All Appointments</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="60">ID</th>
+                        <th>Appointment Details</th>
+                        <th>Customer & Worker</th>
+                        <th>Service & Pricing</th>
+                        <th>Date & Time</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                        <th width="140">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td>
+                            <strong>#{{ appointment.id }}</strong>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>Service:</strong> 
+                                {% if appointment.service_subtask %}
+                                    {{ appointment.service_subtask.subtask.name }}
+                                {% else %}
+                                    <span class="text-muted">General Service</span>
+                                {% endif %}
+                                <br>
+                                {% if appointment.location %}
+                                <small class="text-muted">
+                                    <i class="fas fa-map-marker-alt"></i> {{ appointment.location|truncatewords:3 }}
+                                </small>
+                                {% endif %}
+                                {% if appointment.special_instructions %}
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-sticky-note"></i> {{ appointment.special_instructions|truncatewords:5 }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center mb-2">
+                                {% if appointment.customer.profile_pic %}
+                                <img src="{{ appointment.customer.profile_pic.url }}" alt="{{ appointment.customer.name }}" class="rounded-circle me-2" width="30" height="30">
+                                {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                    <i class="fas fa-user text-white" style="font-size: 12px;"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ appointment.customer.name }}</strong>
+                                    <small class="text-muted d-block">Customer</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                {% if appointment.worker.profile_pic %}
+                                <img src="{{ appointment.worker.profile_pic.url }}" alt="{{ appointment.worker.name }}" class="rounded-circle me-2" width="30" height="30">
+                                {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                    <i class="fas fa-user text-white" style="font-size: 12px;"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ appointment.worker.name }}</strong>
+                                    <small class="text-muted d-block">Worker</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if appointment.service_subtask %}
+                            <div>
+                                <strong>Type:</strong> {{ appointment.service_subtask.pricing_type|title }}<br>
+                                <strong>Experience:</strong> 
+                                <span class="badge bg-secondary">
+                                    {{ appointment.service_subtask.experience_level|default:"Standard" }}
+                                </span>
+                                {% if appointment.is_night_shift %}
+                                <br>
+                                <small class="badge bg-dark">Night Shift</small>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">No service details</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if appointment.appointment_date %}
+                            <strong>{{ appointment.appointment_date|date:"M d, Y" }}</strong><br>
+                            <small class="text-muted">{{ appointment.appointment_date|time:"H:i" }}</small><br>
+                            <small class="text-muted">{{ appointment.appointment_date|timesince }} ago</small>
+                            {% else %}
+                            <span class="text-muted">Not scheduled</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if appointment.status == 'completed' %}success{% elif appointment.status == 'pending' %}warning{% elif appointment.status == 'accepted' %}info{% elif appointment.status == 'rejected' %}danger{% else %}secondary{% endif %} p-2">
+                                {{ appointment.status|title }}
+                            </span>
+                            {% if appointment.customer_completed and appointment.worker_completed %}
+                            <br>
+                            <small class="badge bg-success mt-1">Both Completed</small>
+                            {% elif appointment.customer_completed %}
+                            <br>
+                            <small class="badge bg-info mt-1">Customer Completed</small>
+                            {% elif appointment.worker_completed %}
+                            <br>
+                            <small class="badge bg-warning mt-1">Worker Completed</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong class="text-success">₹{{ appointment.total_price|default:"0" }}</strong>
+                            {% if appointment.quantity > 1 %}
+                            <br>
+                            <small class="text-muted">Qty: {{ appointment.quantity }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group-vertical btn-group-sm">
+                                <a href="/super-admin/jobs/appointment/{{ appointment.id }}/change/" class="btn btn-outline-primary mb-1" title="Edit Appointment">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="/super-admin/jobs/appointment/{{ appointment.id }}/delete/" class="btn btn-outline-danger" title="Delete Appointment">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                                {% if appointment.status == 'pending' %}
+                                <a href="/super-admin/jobs/appointment/{{ appointment.id }}/change/?status=accepted" class="btn btn-outline-success mt-1" title="Accept Appointment">
+                                    <i class="fas fa-check"></i> Accept
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h5>No Appointments Found</h5>
+                            <p class="text-muted">
+                                {% if request.GET.search or current_filter %}
+                                Try adjusting your search criteria
+                                {% else %}
+                                No appointments have been created yet.
+                                {% endif %}
+                            </p>
+                            {% if not request.GET.search and not current_filter %}
+                            <a href="/super-admin/jobs/appointment/add/" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> Create First Appointment
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Appointment Insights -->
+        {% if appointments %}
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Appointment Status Distribution</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <div class="border-end">
+                                    <h4 class="text-warning">{{ pending_appointments }}</h4>
+                                    <small class="text-muted">Pending</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border-end">
+                                    <h4 class="text-info">{{ accepted_appointments }}</h4>
+                                    <small class="text-muted">Accepted</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border-end">
+                                    <h4 class="text-success">{{ completed_appointments }}</h4>
+                                    <small class="text-muted">Completed</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div>
+                                    <h4 class="text-danger">{{ rejected_cancelled_appointments }}</h4>
+                                    <small class="text-muted">Rejected/Cancelled</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-fire me-2"></i>Recent Activity</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            {% for recent_app in recent_appointments %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>#{{ recent_app.id }}</strong>
+                                    <small class="text-muted d-block">{{ recent_app.customer.name }} → {{ recent_app.worker.name }}</small>
+                                </div>
+                                <span class="badge bg-{% if recent_app.status == 'completed' %}success{% elif recent_app.status == 'pending' %}warning{% else %}info{% endif %} rounded-pill">
+                                    {{ recent_app.status|title }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Pagination -->
+        {% if appointments.has_other_pages %}
+        <nav aria-label="Appointment pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if appointments.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ appointments.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if current_filter %}&status={{ current_filter }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for i in appointments.paginator.page_range %}
+                <li class="page-item {% if appointments.number == i %}active{% endif %}">
+                    <a class="page-link" href="?page={{ i }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if current_filter %}&status={{ current_filter }}{% endif %}">{{ i }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if appointments.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ appointments.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if current_filter %}&status={{ current_filter }}{% endif %}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-download me-2"></i>Export Appointments</h5>
+    </div>
+    <div class="card-body">
+        <div class="btn-group">
+            <a href="{% url 'admin_dashboard:export_data' 'appointments' %}?format=csv" class="btn btn-outline-success">
+                <i class="fas fa-file-csv me-1"></i> Export as CSV
+            </a>
+            <a href="{% url 'admin_dashboard:export_data' 'appointments' %}?format=json" class="btn btn-outline-primary">
+                <i class="fas fa-file-code me-1"></i> Export as JSON
+            </a>
+        </div>
+        <small class="text-muted d-block mt-2">Export appointment data for analysis or reporting purposes.</small>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add search functionality
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.form.submit();
+                }
+            });
+        }
+        
+        // Add status quick actions
+        const statusButtons = document.querySelectorAll('.status-action');
+        statusButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const appointmentId = this.dataset.appointmentId;
+                const newStatus = this.dataset.status;
+                
+                if (confirm('Are you sure you want to change the status of this appointment?')) {
+                    window.location.href = `/super-admin/jobs/appointment/${appointmentId}/change/?status=${newStatus}`;
+                }
+            });
+        });
+        
+        // Add row highlighting
+        const appointmentRows = document.querySelectorAll('tbody tr');
+        appointmentRows.forEach(row => {
+            row.addEventListener('click', function() {
+                this.classList.toggle('table-active');
+            });
+        });
+    });
+</script>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.075);
+        cursor: pointer;
+    }
+    
+    .table-active {
+        background-color: rgba(0, 123, 255, 0.1) !important;
+    }
+    
+    .status-badge {
+        font-size: 0.8rem;
+        padding: 0.35em 0.65em;
+    }
+    
+    .appointment-avatar {
+        width: 30px;
+        height: 30px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}

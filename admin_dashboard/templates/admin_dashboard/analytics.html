@@ -1,0 +1,145 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Analytics - BlueCollar Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Platform Analytics</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <select class="form-select form-select-sm" id="periodSelect">
+                <option value="7" {% if period == '7' %}selected{% endif %}>Last 7 Days</option>
+                <option value="30" {% if period == '30' %}selected{% endif %}>Last 30 Days</option>
+                <option value="90" {% if period == '90' %}selected{% endif %}>Last 90 Days</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">User Registrations</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="registrationsChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Appointment Statistics</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="appointmentStatsChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Revenue Analytics</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.getElementById('periodSelect').addEventListener('change', function() {
+        window.location.href = '?period=' + this.value;
+    });
+
+    // Registrations Chart
+    const regCtx = document.getElementById('registrationsChart').getContext('2d');
+    new Chart(regCtx, {
+        type: 'line',
+        data: {
+            labels: {{ worker_registrations|safe }}.map(item => item.date),
+            datasets: [
+                {
+                    label: 'Workers',
+                    data: {{ worker_registrations|safe }}.map(item => item.count),
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Customers',
+                    data: {{ customer_registrations|safe }}.map(item => item.count),
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'User Registrations Over Time'
+                }
+            }
+        }
+    });
+
+    // Appointment Stats Chart
+    const statsCtx = document.getElementById('appointmentStatsChart').getContext('2d');
+    new Chart(statsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ appointment_stats|safe }}.map(item => item.status.charAt(0).toUpperCase() + item.status.slice(1)),
+            datasets: [{
+                label: 'Appointments',
+                data: {{ appointment_stats|safe }}.map(item => item.count),
+                backgroundColor: [
+                    '#ffc107', '#17a2b8', '#28a745', '#dc3545', '#6c757d'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ revenue_data|safe }}.map(item => item.date),
+            datasets: [{
+                label: 'Daily Revenue (₹)',
+                data: {{ revenue_data|safe }}.map(item => item.revenue || 0),
+                backgroundColor: '#27ae60'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Daily Revenue'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,409 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Customer Management - BlueCollar Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Customer Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/super-admin/jobs/customer/add/" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i> Add Customer
+        </a>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Customers
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_customers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Active Customers
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_customers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Total Revenue
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ total_revenue }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Avg. Appointments
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ avg_appointments }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <form method="get" class="d-flex">
+                            <input type="text" name="search" class="form-control me-2" placeholder="Search customers..." value="{{ request.GET.search }}">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="btn-group float-end">
+                            <a href="?" class="btn btn-outline-secondary {% if not request.GET.filter %}active{% endif %}">All</a>
+                            <a href="?filter=active" class="btn btn-outline-success {% if request.GET.filter == 'active' %}active{% endif %}">Active</a>
+                            <a href="?filter=new" class="btn btn-outline-info {% if request.GET.filter == 'new' %}active{% endif %}">New This Month</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customers Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>All Customers</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="50">#</th>
+                        <th>Customer Details</th>
+                        <th>Contact Information</th>
+                        <th>Appointments & Spending</th>
+                        <th>Location</th>
+                        <th>Member Since</th>
+                        <th width="120">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if customer.profile_pic %}
+                                <img src="{{ customer.profile_pic.url }}" alt="{{ customer.name }}" class="rounded-circle me-3" width="50" height="50">
+                                {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong class="d-block">{{ customer.name }}</strong>
+                                    <small class="text-muted">ID: {{ customer.id }}</small>
+                                    <div class="mt-1">
+                                        {% if customer.appointment_count > 0 %}
+                                        <small class="badge bg-success">Active</small>
+                                        {% else %}
+                                        <small class="badge bg-secondary">New</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <strong><i class="fas fa-phone me-1"></i></strong> {{ customer.phone_number }}<br>
+                                <strong><i class="fas fa-envelope me-1"></i></strong> {{ customer.owner.email }}<br>
+                                <strong><i class="fas fa-user me-1"></i></strong> {{ customer.owner.username }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-center">
+                                <div class="mb-2">
+                                    <span class="badge bg-primary fs-6">{{ customer.appointment_count }}</span>
+                                    <small class="text-muted d-block">appointments</small>
+                                </div>
+                                <div>
+                                    <strong class="text-success">₹{{ customer.total_spent|default:0 }}</strong>
+                                    <small class="text-muted d-block">total spent</small>
+                                </div>
+                                {% if customer.appointment_count > 0 %}
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        ₹{{ customer.avg_spending|default:0 }} avg
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if customer.location_address %}
+                            <small>{{ customer.location_address|truncatewords:4 }}</small>
+                            {% if customer.latitude and customer.longitude %}
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt"></i> 
+                                {{ customer.latitude|floatformat:4 }}, {{ customer.longitude|floatformat:4 }}
+                            </small>
+                            {% endif %}
+                            {% else %}
+                            <small class="text-muted">No location data</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="text-center">
+                                <strong>{{ customer.created_at|date:"M d, Y" }}</strong><br>
+                                <small class="text-muted">{{ customer.created_at|timesince }} ago</small>
+                                {% if customer.is_new_this_month %}
+                                <br>
+                                <span class="badge bg-info mt-1">New</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="btn-group-vertical btn-group-sm">
+                                <a href="/super-admin/jobs/customer/{{ customer.id }}/change/" class="btn btn-outline-primary mb-1" title="Edit Customer">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="/super-admin/jobs/customer/{{ customer.id }}/delete/" class="btn btn-outline-danger" title="Delete Customer">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                                <a href="/super-admin/jobs/appointment/?customer__id__exact={{ customer.id }}" class="btn btn-outline-info mt-1" title="View Appointments">
+                                    <i class="fas fa-calendar"></i> Appointments
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5>No Customers Found</h5>
+                            <p class="text-muted">
+                                {% if request.GET.search or request.GET.filter %}
+                                Try adjusting your search criteria
+                                {% else %}
+                                No customers have registered yet.
+                                {% endif %}
+                            </p>
+                            {% if not request.GET.search and not request.GET.filter %}
+                            <a href="/super-admin/jobs/customer/add/" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> Add First Customer
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Customer Insights -->
+        {% if customers %}
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Customer Insights</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="border-end">
+                                    <h4 class="text-primary">{{ high_value_customers }}</h4>
+                                    <small class="text-muted">High Value</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="border-end">
+                                    <h4 class="text-success">{{ repeat_customers }}</h4>
+                                    <small class="text-muted">Repeat</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div>
+                                    <h4 class="text-info">{{ new_customers_this_month }}</h4>
+                                    <small class="text-muted">New This Month</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-trophy me-2"></i>Top Spenders</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            {% for top_customer in top_spenders %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ top_customer.name }}</strong>
+                                    <small class="text-muted d-block">{{ top_customer.appointment_count }} appointments</small>
+                                </div>
+                                <span class="badge bg-success rounded-pill">₹{{ top_customer.total_spent }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Pagination -->
+        {% if customers.has_other_pages %}
+        <nav aria-label="Customer pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if customers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ customers.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for i in customers.paginator.page_range %}
+                <li class="page-item {% if customers.number == i %}active{% endif %}">
+                    <a class="page-link" href="?page={{ i }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}">{{ i }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if customers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ customers.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-download me-2"></i>Export Data</h5>
+    </div>
+    <div class="card-body">
+        <div class="btn-group">
+            <a href="{% url 'admin_dashboard:export_data' 'customers' %}?format=csv" class="btn btn-outline-success">
+                <i class="fas fa-file-csv me-1"></i> Export as CSV
+            </a>
+            <a href="{% url 'admin_dashboard:export_data' 'customers' %}?format=json" class="btn btn-outline-primary">
+                <i class="fas fa-file-code me-1"></i> Export as JSON
+            </a>
+        </div>
+        <small class="text-muted d-block mt-2">Export customer data for analysis or backup purposes.</small>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add search functionality
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.form.submit();
+                }
+            });
+        }
+        
+        // Add customer row highlighting
+        const customerRows = document.querySelectorAll('tbody tr');
+        customerRows.forEach(row => {
+            row.addEventListener('click', function() {
+                this.classList.toggle('table-active');
+            });
+        });
+        
+        // Add quick view modal functionality
+        const quickViewButtons = document.querySelectorAll('.quick-view');
+        quickViewButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const customerId = this.dataset.customerId;
+                // Implement quick view modal here
+                console.log('Quick view for customer:', customerId);
+            });
+        });
+    });
+</script>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.075);
+        cursor: pointer;
+    }
+    
+    .table-active {
+        background-color: rgba(0, 123, 255, 0.1) !important;
+    }
+    
+    .customer-avatar {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+    }
+    
+    .stats-card {
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}

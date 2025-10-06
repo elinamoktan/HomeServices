@@ -1,0 +1,157 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Reports - BlueCollar Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Platform Reports</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-outline-primary me-2">
+            <i class="fas fa-download me-1"></i> Export PDF
+        </button>
+        <button class="btn btn-sm btn-outline-success">
+            <i class="fas fa-file-excel me-1"></i> Export Excel
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Top Workers -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-trophy me-2"></i>Top Performing Workers</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Worker</th>
+                                <th>Appointments</th>
+                                <th>Rating</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for worker in top_workers %}
+                            <tr>
+                                <td>
+                                    <strong>{{ worker.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ worker.tagline|default:"No tagline" }}</small>
+                                </td>
+                                <td>{{ worker.total_appointments }}</td>
+                                <td>
+                                    <span class="badge bg-warning text-dark">
+                                        {{ worker.avg_rating|default:"0.0" }}/5.0
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if worker.verified %}success{% else %}warning{% endif %}">
+                                        {{ worker.verified|yesno:"Verified,Pending" }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popular Services -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Most Popular Services</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Category</th>
+                                <th>Appointments</th>
+                                <th>Pricing Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in popular_services %}
+                            <tr>
+                                <td>
+                                    <strong>{{ service.name }}</strong>
+                                </td>
+                                <td>{{ service.category.name }}</td>
+                                <td>{{ service.appointment_count }}</td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ service.base_pricing_type|title }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Customers -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-users me-2"></i>Most Active Customers</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Total Appointments</th>
+                                <th>Member Since</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in active_customers %}
+                            <tr>
+                                <td>
+                                    <strong>{{ customer.name }}</strong>
+                                </td>
+                                <td>{{ customer.phone_number }}</td>
+                                <td>{{ customer.appointment_count }}</td>
+                                <td>{{ customer.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge bg-success">Active</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
