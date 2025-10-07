@@ -12,7 +12,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
-    /* Include all your existing dashboard styles here */
     :root {
       --primary: #3b82f6;
       --primary-dark: #2563eb;
@@ -109,6 +108,17 @@
     .pending { border-left-color: #f59e0b; }
     .completed { border-left-color: #3b82f6; }
 
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--color-start), var(--color-end));
+      box-shadow: 0 8px 20px var(--color-shadow);
+    }
+
     @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-100%);
@@ -138,42 +148,42 @@
 
     <nav class="p-4 flex-1 overflow-y-auto">
       <a href="{% url 'worker_dashboard' %}" class="nav-item">
-        <i class="fas fa-home"></i>
+        <i class="fas fa-home mr-3"></i>
         Dashboard
       </a>
       <a href="{% url 'worker_service_details' worker.id %}" class="nav-item">
-        <i class="fas fa-concierge-bell"></i>
+        <i class="fas fa-concierge-bell mr-3"></i>
         My Services
       </a>
       <a href="{% url 'worker_calendar' %}" class="nav-item">
-        <i class="fas fa-calendar-alt"></i>
+        <i class="fas fa-calendar-alt mr-3"></i>
         Calendar
       </a>
       <a href="{% url 'worker_reviews' %}" class="nav-item">
-        <i class="fas fa-star"></i>
+        <i class="fas fa-star mr-3"></i>
         Reviews
       </a>
       <a href="{% url 'worker_analytics' %}" class="nav-item">
-        <i class="fas fa-chart-line"></i>
+        <i class="fas fa-chart-line mr-3"></i>
         Analytics
       </a>
       <a href="{% url 'worker_earnings' %}" class="nav-item active">
-        <i class="fas fa-wallet"></i>
+        <i class="fas fa-wallet mr-3"></i>
         Earnings
       </a>
       <a href="{% url 'worker_settings' %}" class="nav-item">
-        <i class="fas fa-cog"></i>
+        <i class="fas fa-cog mr-3"></i>
         Settings
       </a>
     </nav>
 
     <div class="absolute bottom-0 w-full p-4 border-t border-white border-opacity-20 bg-black bg-opacity-10">
       <div class="flex items-center space-x-3 mb-4">
-        <div class="customer-avatar bg-white">
+        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden">
           {% if worker.profile_pic %}
-            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="w-full h-full rounded-full object-cover">
+            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="w-full h-full object-cover">
           {% else %}
-            <span class="text-blue-600">{{ worker.name|first }}</span>
+            <span class="text-blue-600 font-bold">{{ worker.name|first }}</span>
           {% endif %}
         </div>
         <div class="flex-1 min-w-0">
@@ -183,8 +193,8 @@
       </div>
       <form action="{% url 'logout' %}" method="post">
         {% csrf_token %}
-        <button type="submit" class="w-full btn btn-secondary">
-          <i class="fas fa-sign-out-alt"></i>
+        <button type="submit" class="w-full bg-white bg-opacity-20 hover:bg-opacity-30 text-white py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
+          <i class="fas fa-sign-out-alt mr-2"></i>
           Logout
         </button>
       </form>
@@ -228,7 +238,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">This Month</p>
-            <p class="text-4xl font-bold text-blue-600">₹{{ monthly_earnings|default:"0" }}</p>
+            <p class="text-4xl font-bold text-blue-600">₹{{ current_month_earnings|default:"0" }}</p>
             <p class="text-xs text-gray-500 mt-2">Current month income</p>
           </div>
           <div class="stat-icon" style="--color-start: #3b82f6; --color-end: #2563eb; --color-shadow: rgba(59, 130, 246, 0.3);">
@@ -254,7 +264,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Completed Jobs</p>
-            <p class="text-4xl font-bold text-purple-600">{{ completed_jobs|default:"0" }}</p>
+            <p class="text-4xl font-bold text-purple-600">{{ completed_appointments_count|default:"0" }}</p>
             <p class="text-xs text-gray-500 mt-2">Total services delivered</p>
           </div>
           <div class="stat-icon" style="--color-start: #8b5cf6; --color-end: #7c3aed; --color-shadow: rgba(139, 92, 246, 0.3);">
@@ -268,7 +278,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       <!-- Earnings Chart -->
       <div class="earning-chart fade-in-up">
-        <h3 class="text-xl font-bold text-gray-900 mb-6">Earnings Trend</h3>
+        <h3 class="text-xl font-bold text-gray-900 mb-6">Earnings Trend (Last 6 Months)</h3>
         <div class="h-80">
           <canvas id="earningsChart"></canvas>
         </div>
@@ -280,22 +290,31 @@
           <h3 class="text-xl font-bold text-gray-900">Recent Transactions</h3>
           <span class="text-sm text-blue-600 font-semibold cursor-pointer hover:underline">View All</span>
         </div>
-        <div class="space-y-4">
+        <div class="space-y-4 max-h-96 overflow-y-auto">
           {% for transaction in recent_transactions %}
-          <div class="transaction-item {{ transaction.status }}">
+          <div class="transaction-item completed">
             <div class="flex justify-between items-center">
               <div>
-                <p class="font-semibold text-gray-900">{{ transaction.customer_name }}</p>
-                <p class="text-sm text-gray-500">{{ transaction.service_name }}</p>
-                <p class="text-xs text-gray-400">{{ transaction.date }}</p>
+                <p class="font-semibold text-gray-900">{{ transaction.customer.name }}</p>
+                <p class="text-sm text-gray-500">
+                  {% if transaction.service_subtask %}
+                    {{ transaction.service_subtask.subtask.name }}
+                  {% else %}
+                    General Service
+                  {% endif %}
+                </p>
+                <p class="text-xs text-gray-400">{{ transaction.appointment_date|date:"M d, Y" }}</p>
               </div>
               <div class="text-right">
-                <p class="font-bold text-gray-900">₹{{ transaction.amount }}</p>
-                <span class="text-xs font-medium px-2 py-1 rounded-full 
-                  {% if transaction.status == 'completed' %}bg-green-100 text-green-800
-                  {% elif transaction.status == 'pending' %}bg-yellow-100 text-yellow-800
-                  {% else %}bg-blue-100 text-blue-800{% endif %}">
-                  {{ transaction.status|title }}
+                <p class="font-bold text-gray-900">
+                  {% if transaction.service_subtask and transaction.service_subtask.price %}
+                    ₹{{ transaction.service_subtask.price }}
+                  {% else %}
+                    ₹0
+                  {% endif %}
+                </p>
+                <span class="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">
+                  Completed
                 </span>
               </div>
             </div>
@@ -303,7 +322,8 @@
           {% empty %}
           <div class="text-center text-gray-500 py-8">
             <i class="fas fa-receipt text-3xl mb-2"></i>
-            <p>No transactions yet</p>
+            <p>No completed transactions yet</p>
+            <p class="text-sm">Your earnings will appear here once you complete appointments</p>
           </div>
           {% endfor %}
         </div>
@@ -314,19 +334,26 @@
     <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 fade-in-up">
       <h3 class="text-xl font-bold text-gray-900 mb-6">Service Performance</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {% for service in top_services %}
+        {% for service in service_stats %}
         <div class="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
           <div class="flex items-center justify-between mb-2">
-            <span class="font-semibold text-gray-900">{{ service.name }}</span>
-            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{{ service.count }} jobs</span>
+            <span class="font-semibold text-gray-900 text-sm truncate">{{ service.service_name }}</span>
+            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{{ service.appointment_count }} jobs</span>
           </div>
-          <p class="text-2xl font-bold text-gray-900">₹{{ service.earnings }}</p>
-          <p class="text-xs text-gray-500 mt-1">Average: ₹{{ service.average_price }}</p>
+          <p class="text-2xl font-bold text-gray-900">₹{{ service.total_earnings }}</p>
+          <p class="text-xs text-gray-500 mt-1">
+            {% if service.appointment_count > 0 %}
+              Avg: ₹{{ service.average_earning }}
+            {% else %}
+              No earnings yet
+            {% endif %}
+          </p>
         </div>
         {% empty %}
         <div class="col-span-4 text-center text-gray-500 py-8">
           <i class="fas fa-chart-pie text-3xl mb-2"></i>
           <p>No service data available</p>
+          <p class="text-sm">Service earnings will appear after completed appointments</p>
         </div>
         {% endfor %}
       </div>
@@ -334,15 +361,19 @@
   </div>
 
   <script>
-    // Earnings Chart
+    // Earnings Chart with real data
     const earningsCtx = document.getElementById('earningsChart').getContext('2d');
+    
+    // Get chart data from template variables (you'll need to pass this from your view)
+    const monthlyEarningsData = {{ monthly_earnings_json|safe }};
+    
     const earningsChart = new Chart(earningsCtx, {
       type: 'line',
       data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        labels: monthlyEarningsData.map(item => item.month),
         datasets: [{
           label: 'Monthly Earnings',
-          data: [12000, 19000, 15000, 25000, 22000, 30000],
+          data: monthlyEarningsData.map(item => item.income),
           borderColor: '#3b82f6',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
           borderWidth: 3,
@@ -356,6 +387,13 @@
         plugins: {
           legend: {
             display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `Earnings: ₹${context.parsed.y}`;
+              }
+            }
           }
         },
         scales: {
@@ -400,6 +438,12 @@
       el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
       observer.observe(el);
     });
+
+    // Auto-refresh data every 30 seconds
+    setInterval(() => {
+      // You can implement AJAX refresh here if needed
+      console.log('Auto-refresh earnings data...');
+    }, 30000);
   </script>
 </body>
 </html>

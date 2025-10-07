@@ -196,6 +196,18 @@
             <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Performance Score</p>
             <p class="font-bold text-gray-900">{{ performance_score }}%</p>
           </div>
+          <!-- Date Range Filter -->
+          <div class="flex items-center space-x-2">
+            <select id="timeRange" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="7">Last 7 Days</option>
+              <option value="30" selected>Last 30 Days</option>
+              <option value="90">Last 3 Months</option>
+              <option value="365">Last Year</option>
+            </select>
+            <button id="refreshData" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -206,8 +218,8 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Completion Rate</p>
-            <p class="text-4xl font-bold text-green-600">{{ completion_rate }}%</p>
-            <p class="text-xs text-gray-500 mt-2">+5.2% from last month</p>
+            <p class="text-4xl font-bold text-green-600" id="completionRate">{{ completion_rate }}%</p>
+            <p class="text-xs text-gray-500 mt-2" id="completionTrend">+5.2% from last period</p>
           </div>
           <div class="stat-icon" style="--color-start: #10b981; --color-end: #059669; --color-shadow: rgba(16, 185, 129, 0.3);">
             <i class="fas fa-check-double text-white"></i>
@@ -218,12 +230,12 @@
       <div class="stat-card fade-in-up" style="animation-delay: 0.2s">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Avg. Response Time</p>
-            <p class="text-4xl font-bold text-blue-600">{{ avg_response_time }}m</p>
-            <p class="text-xs text-gray-500 mt-2">-2.1m faster</p>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Total Earnings</p>
+            <p class="text-4xl font-bold text-blue-600" id="totalEarnings">₹{{ total_earnings }}</p>
+            <p class="text-xs text-gray-500 mt-2" id="earningsTrend">+12.5% from last period</p>
           </div>
           <div class="stat-icon" style="--color-start: #3b82f6; --color-end: #2563eb; --color-shadow: rgba(59, 130, 246, 0.3);">
-            <i class="fas fa-clock text-white"></i>
+            <i class="fas fa-rupee-sign text-white"></i>
           </div>
         </div>
       </div>
@@ -232,8 +244,8 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Customer Satisfaction</p>
-            <p class="text-4xl font-bold text-yellow-600">{{ satisfaction_rate }}%</p>
-            <p class="text-xs text-gray-500 mt-2">Based on reviews</p>
+            <p class="text-4xl font-bold text-yellow-600" id="satisfactionRate">{{ satisfaction_rate }}%</p>
+            <p class="text-xs text-gray-500 mt-2">Based on {{ total_reviews }} reviews</p>
           </div>
           <div class="stat-icon" style="--color-start: #f59e0b; --color-end: #d97706; --color-shadow: rgba(245, 158, 11, 0.3);">
             <i class="fas fa-smile text-white"></i>
@@ -244,12 +256,12 @@
       <div class="stat-card fade-in-up" style="animation-delay: 0.4s">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Repeat Customers</p>
-            <p class="text-4xl font-bold text-purple-600">{{ repeat_customers }}%</p>
-            <p class="text-xs text-gray-500 mt-2">Loyal clients</p>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Total Jobs</p>
+            <p class="text-4xl font-bold text-purple-600" id="totalJobs">{{ total_appointments }}</p>
+            <p class="text-xs text-gray-500 mt-2">{{ completed_appointments }} completed</p>
           </div>
           <div class="stat-icon" style="--color-start: #8b5cf6; --color-end: #7c3aed; --color-shadow: rgba(139, 92, 246, 0.3);">
-            <i class="fas fa-redo text-white"></i>
+            <i class="fas fa-briefcase text-white"></i>
           </div>
         </div>
       </div>
@@ -259,7 +271,13 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       <!-- Appointments Trend -->
       <div class="analytics-chart fade-in-up">
-        <h3 class="text-xl font-bold text-gray-900 mb-6">Appointments Trend</h3>
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Appointments Trend</h3>
+          <div class="flex space-x-2">
+            <button class="chart-filter px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg" data-metric="count">By Count</button>
+            <button class="chart-filter px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg" data-metric="revenue">By Revenue</button>
+          </div>
+        </div>
         <div class="h-80">
           <canvas id="appointmentsChart"></canvas>
         </div>
@@ -267,7 +285,12 @@
 
       <!-- Service Distribution -->
       <div class="analytics-chart fade-in-up">
-        <h3 class="text-xl font-bold text-gray-900 mb-6">Service Distribution</h3>
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Service Distribution</h3>
+          <div class="text-sm text-gray-600">
+            Total: <span id="totalServices">{{ total_services }}</span> services
+          </div>
+        </div>
         <div class="h-80">
           <canvas id="servicesChart"></canvas>
         </div>
@@ -280,7 +303,8 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-600 mb-1">Peak Hours</p>
-            <p class="text-2xl font-bold text-gray-900">10 AM - 2 PM</p>
+            <p class="text-2xl font-bold text-gray-900" id="peakHours">{{ peak_hours }}</p>
+            <p class="text-xs text-gray-500">Most active time</p>
           </div>
           <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
             <i class="fas fa-chart-line text-blue-600 text-xl"></i>
@@ -292,7 +316,8 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-600 mb-1">Busiest Day</p>
-            <p class="text-2xl font-bold text-gray-900">Wednesday</p>
+            <p class="text-2xl font-bold text-gray-900" id="busiestDay">{{ busiest_day }}</p>
+            <p class="text-xs text-gray-500">Highest appointment volume</p>
           </div>
           <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
             <i class="fas fa-calendar-day text-green-600 text-xl"></i>
@@ -304,7 +329,8 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-600 mb-1">Avg. Job Duration</p>
-            <p class="text-2xl font-bold text-gray-900">2.5 hours</p>
+            <p class="text-2xl font-bold text-gray-900" id="avgJobDuration">{{ avg_job_duration }}</p>
+            <p class="text-xs text-gray-500">Average service time</p>
           </div>
           <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
             <i class="fas fa-hourglass-half text-yellow-600 text-xl"></i>
@@ -316,127 +342,281 @@
     <!-- Performance Insights -->
     <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 fade-in-up">
       <h3 class="text-xl font-bold text-gray-900 mb-6">Performance Insights</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <i class="fas fa-trending-up text-green-600"></i>
-            </div>
-            <div>
-              <p class="font-semibold text-gray-900">Strong Performance</p>
-              <p class="text-sm text-gray-600">Completion rate is excellent</p>
-            </div>
-          </div>
-          <p class="text-sm text-gray-700">Your job completion rate of {{ completion_rate }}% is above the platform average. Keep up the good work!</p>
-        </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="performanceInsights">
+        <!-- Dynamic insights will be loaded here -->
+      </div>
+    </div>
 
-        <div class="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <i class="fas fa-users text-blue-600"></i>
-            </div>
-            <div>
-              <p class="font-semibold text-gray-900">Customer Growth</p>
-              <p class="text-sm text-gray-600">{{ new_customers }} new clients this month</p>
-            </div>
-          </div>
-          <p class="text-sm text-gray-700">You've acquired {{ new_customers }} new customers this month, a {{ growth_rate }}% increase from last month.</p>
-        </div>
+    <!-- Service Category Breakdown -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 fade-in-up mt-6">
+      <h3 class="text-xl font-bold text-gray-900 mb-6">Service Category Performance</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="categoryBreakdown">
+        <!-- Dynamic category breakdown will be loaded here -->
       </div>
     </div>
   </div>
 
+  <!-- Loading Spinner -->
+  <div id="loadingSpinner" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-3">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <span class="text-gray-700">Loading analytics data...</span>
+    </div>
+  </div>
+
   <script>
-    // Appointments Trend Chart
-    const appointmentsCtx = document.getElementById('appointmentsChart').getContext('2d');
-    const appointmentsChart = new Chart(appointmentsCtx, {
-      type: 'line',
-      data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [{
-          label: 'Appointments',
-          data: [45, 52, 48, 65, 72, 78],
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          borderWidth: 3,
-          fill: true,
-          tension: 0.4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
+    // Dynamic data variables
+    let appointmentsChart, servicesChart;
+    let currentTimeRange = 30;
+    let currentMetric = 'count';
+
+    // Initialize charts with dynamic data
+    function initializeCharts() {
+      // Appointments Trend Chart
+      const appointmentsCtx = document.getElementById('appointmentsChart').getContext('2d');
+      appointmentsChart = new Chart(appointmentsCtx, {
+        type: 'line',
+        data: {
+          labels: JSON.parse('{{ appointments_trend.labels|escapejs }}'),
+          datasets: [{
+            label: currentMetric === 'count' ? 'Appointments' : 'Revenue (₹)',
+            data: JSON.parse('{{ appointments_trend.data|escapejs }}'),
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+          }]
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.1)'
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  if (currentMetric === 'count') {
+                    return `Appointments: ${context.parsed.y}`;
+                  } else {
+                    return `Revenue: ₹${context.parsed.y}`;
+                  }
+                }
+              }
             }
           },
-          x: {
-            grid: {
-              color: 'rgba(0, 0, 0, 0.1)'
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.1)'
+              }
+            },
+            x: {
+              grid: {
+                color: 'rgba(0, 0, 0, 0.1)'
+              }
             }
           }
         }
-      }
-    });
+      });
 
-    // Services Distribution Chart
-    const servicesCtx = document.getElementById('servicesChart').getContext('2d');
-    const servicesChart = new Chart(servicesCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Plumbing', 'Electrical', 'Painting', 'Cleaning', 'Repairs'],
-        datasets: [{
-          data: [30, 25, 20, 15, 10],
-          backgroundColor: [
-            '#3b82f6',
-            '#10b981',
-            '#f59e0b',
-            '#8b5cf6',
-            '#ef4444'
-          ],
-          borderWidth: 2,
-          borderColor: '#ffffff'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom'
+      // Services Distribution Chart
+      const servicesCtx = document.getElementById('servicesChart').getContext('2d');
+      servicesChart = new Chart(servicesCtx, {
+        type: 'doughnut',
+        data: {
+          labels: JSON.parse('{{ service_distribution.labels|escapejs }}'),
+          datasets: [{
+            data: JSON.parse('{{ service_distribution.data|escapejs }}'),
+            backgroundColor: JSON.parse('{{ service_distribution.colors|escapejs }}'),
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                usePointStyle: true,
+                padding: 20
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = Math.round((value / total) * 100);
+                  return `${label}: ${value} (${percentage}%)`;
+                }
+              }
+            }
           }
         }
+      });
+    }
+
+    // Load dynamic insights
+    function loadPerformanceInsights() {
+      const insightsContainer = document.getElementById('performanceInsights');
+      const insights = JSON.parse('{{ performance_insights|escapejs }}');
+      
+      insightsContainer.innerHTML = insights.map(insight => `
+        <div class="p-4 bg-gradient-to-br ${insight.background} rounded-xl border ${insight.border}">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 ${insight.icon_bg} rounded-lg flex items-center justify-center">
+              <i class="${insight.icon} ${insight.icon_color}"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900">${insight.title}</p>
+              <p class="text-sm text-gray-600">${insight.subtitle}</p>
+            </div>
+          </div>
+          <p class="text-sm text-gray-700">${insight.description}</p>
+        </div>
+      `).join('');
+    }
+
+    // Load category breakdown
+    function loadCategoryBreakdown() {
+      const breakdownContainer = document.getElementById('categoryBreakdown');
+      const categories = JSON.parse('{{ category_breakdown|escapejs }}');
+      
+      breakdownContainer.innerHTML = categories.map(category => `
+        <div class="p-4 border border-gray-200 rounded-lg">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-semibold text-gray-900">${category.name}</h4>
+            <span class="text-sm px-2 py-1 rounded-full ${category.trend > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+              ${category.trend > 0 ? '+' : ''}${category.trend}%
+            </span>
+          </div>
+          <p class="text-2xl font-bold text-gray-900 mb-1">${category.count}</p>
+          <p class="text-sm text-gray-600">Appointments</p>
+          <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-blue-600 h-2 rounded-full" style="width: ${category.percentage}%"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">${category.percentage}% of total</p>
+        </div>
+      `).join('');
+    }
+
+    // Refresh data based on time range
+    async function refreshData() {
+      const spinner = document.getElementById('loadingSpinner');
+      spinner.classList.remove('hidden');
+      
+      try {
+        const response = await fetch(`/api/worker/analytics/?days=${currentTimeRange}&metric=${currentMetric}`);
+        const data = await response.json();
+        
+        // Update charts with new data
+        updateCharts(data);
+        updateMetrics(data.metrics);
+        updateInsights(data.insights);
+        
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+      } finally {
+        spinner.classList.add('hidden');
       }
+    }
+
+    function updateCharts(data) {
+      // Update appointments chart
+      appointmentsChart.data.labels = data.appointments_trend.labels;
+      appointmentsChart.data.datasets[0].data = data.appointments_trend.data;
+      appointmentsChart.data.datasets[0].label = currentMetric === 'count' ? 'Appointments' : 'Revenue (₹)';
+      appointmentsChart.update();
+      
+      // Update services chart
+      servicesChart.data.labels = data.service_distribution.labels;
+      servicesChart.data.datasets[0].data = data.service_distribution.data;
+      servicesChart.update();
+    }
+
+    function updateMetrics(metrics) {
+      document.getElementById('completionRate').textContent = `${metrics.completion_rate}%`;
+      document.getElementById('totalEarnings').textContent = `₹${metrics.total_earnings}`;
+      document.getElementById('satisfactionRate').textContent = `${metrics.satisfaction_rate}%`;
+      document.getElementById('totalJobs').textContent = metrics.total_appointments;
+      document.getElementById('peakHours').textContent = metrics.peak_hours;
+      document.getElementById('busiestDay').textContent = metrics.busiest_day;
+      document.getElementById('avgJobDuration').textContent = metrics.avg_job_duration;
+    }
+
+    function updateInsights(insights) {
+      const container = document.getElementById('performanceInsights');
+      container.innerHTML = insights.map(insight => `
+        <div class="p-4 bg-gradient-to-br ${insight.background} rounded-xl border ${insight.border}">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 ${insight.icon_bg} rounded-lg flex items-center justify-center">
+              <i class="${insight.icon} ${insight.icon_color}"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900">${insight.title}</p>
+              <p class="text-sm text-gray-600">${insight.subtitle}</p>
+            </div>
+          </div>
+          <p class="text-sm text-gray-700">${insight.description}</p>
+        </div>
+      `).join('');
+    }
+
+    // Event listeners
+    document.getElementById('timeRange').addEventListener('change', function(e) {
+      currentTimeRange = e.target.value;
+      refreshData();
     });
 
-    // Animation for elements
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
+    document.getElementById('refreshData').addEventListener('click', refreshData);
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.opacity = '1';
-          entry.target.style.transform = 'translateY(0)';
-        }
+    document.querySelectorAll('.chart-filter').forEach(button => {
+      button.addEventListener('click', function() {
+        document.querySelectorAll('.chart-filter').forEach(btn => {
+          btn.classList.remove('bg-blue-100', 'text-blue-700');
+          btn.classList.add('bg-gray-100', 'text-gray-700');
+        });
+        this.classList.remove('bg-gray-100', 'text-gray-700');
+        this.classList.add('bg-blue-100', 'text-blue-700');
+        currentMetric = this.dataset.metric;
+        refreshData();
       });
-    }, observerOptions);
+    });
 
-    document.querySelectorAll('.fade-in-up').forEach(el => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(30px)';
-      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-      observer.observe(el);
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeCharts();
+      loadPerformanceInsights();
+      loadCategoryBreakdown();
+      
+      // Animation for elements
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll('.fade-in-up').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+      });
     });
   </script>
 </body>

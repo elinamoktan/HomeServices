@@ -1,16 +1,55 @@
 {% extends 'admin_dashboard/base.html' %}
+{% load static %}
 
 {% block title %}Worker Management - BlueCollar Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .modal-lg {
+        max-width: 700px;
+    }
+    .profile-pic-preview {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 2px solid #dee2e6;
+    }
+    .status-badge {
+        font-size: 0.8rem;
+    }
+    .action-buttons {
+        min-width: 140px;
+    }
+    .worker-card {
+        transition: all 0.3s ease;
+    }
+    .worker-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .alert {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Worker Management</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/super-admin/jobs/worker/add/" class="btn btn-sm btn-primary">
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createWorkerModal">
             <i class="fas fa-plus me-1"></i> Add Worker
-        </a>
+        </button>
     </div>
 </div>
+
+<!-- Alert Container for Messages -->
+<div id="alertContainer"></div>
 
 <!-- Quick Stats -->
 <div class="row mb-4">
@@ -87,17 +126,29 @@
     </div>
 </div>
 
-<!-- Filters -->
+<!-- Search and Filters -->
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
-                <div class="btn-group">
-                    <a href="?" class="btn btn-outline-secondary {% if not current_filter %}active{% endif %}">All Workers</a>
-                    <a href="?status=verified" class="btn btn-outline-success {% if current_filter == 'verified' %}active{% endif %}">Verified</a>
-                    <a href="?status=unverified" class="btn btn-outline-warning {% if current_filter == 'unverified' %}active{% endif %}">Unverified</a>
-                    <a href="?status=available" class="btn btn-outline-info {% if current_filter == 'available' %}active{% endif %}">Available</a>
-                    <a href="?status=unavailable" class="btn btn-outline-danger {% if current_filter == 'unavailable' %}active{% endif %}">Unavailable</a>
+                <div class="row">
+                    <div class="col-md-6">
+                        <form method="get" class="d-flex">
+                            <input type="text" name="search" class="form-control me-2" placeholder="Search workers..." value="{{ search_query }}">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="btn-group float-end">
+                            <a href="?" class="btn btn-outline-secondary {% if not current_filter %}active{% endif %}">All Workers</a>
+                            <a href="?status=verified" class="btn btn-outline-success {% if current_filter == 'verified' %}active{% endif %}">Verified</a>
+                            <a href="?status=unverified" class="btn btn-outline-warning {% if current_filter == 'unverified' %}active{% endif %}">Unverified</a>
+                            <a href="?status=available" class="btn btn-outline-info {% if current_filter == 'available' %}active{% endif %}">Available</a>
+                            <a href="?status=unavailable" class="btn btn-outline-danger {% if current_filter == 'unavailable' %}active{% endif %}">Unavailable</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -120,12 +171,12 @@
                         <th>Performance</th>
                         <th>Status</th>
                         <th>Joined</th>
-                        <th width="120">Actions</th>
+                        <th width="150" class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for worker in workers %}
-                    <tr>
+                    <tr class="worker-card" id="worker-{{ worker.id }}">
                         <td>{{ forloop.counter }}</td>
                         <td>
                             <div class="d-flex align-items-center">
@@ -175,11 +226,11 @@
                         </td>
                         <td>
                             <div class="status-badges">
-                                <span class="badge bg-{% if worker.verified %}success{% else %}warning{% endif %} mb-1">
+                                <span class="badge bg-{% if worker.verified %}success{% else %}warning{% endif %} mb-1 status-badge">
                                     {{ worker.verified|yesno:"Verified,Pending" }}
                                 </span>
                                 <br>
-                                <span class="badge bg-{% if worker.is_available %}info{% else %}secondary{% endif %}">
+                                <span class="badge bg-{% if worker.is_available %}info{% else %}secondary{% endif %} status-badge">
                                     {{ worker.is_available|yesno:"Available,Unavailable" }}
                                 </span>
                             </div>
@@ -189,13 +240,18 @@
                             <small class="text-muted">{{ worker.created_at|timesince }} ago</small>
                         </td>
                         <td>
-                            <div class="btn-group-vertical btn-group-sm">
-                                <a href="/super-admin/jobs/worker/{{ worker.id }}/change/" class="btn btn-outline-primary mb-1" title="Edit">
+                            <div class="btn-group-vertical btn-group-sm action-buttons">
+                                <button class="btn btn-outline-primary mb-1 edit-worker-btn" 
+                                        data-worker-id="{{ worker.id }}"
+                                        title="Edit Worker">
                                     <i class="fas fa-edit"></i> Edit
-                                </a>
-                                <a href="/super-admin/jobs/worker/{{ worker.id }}/delete/" class="btn btn-outline-danger" title="Delete">
+                                </button>
+                                <button class="btn btn-outline-danger delete-worker-btn" 
+                                        data-worker-id="{{ worker.id }}"
+                                        data-worker-name="{{ worker.name }}"
+                                        title="Delete Worker">
                                     <i class="fas fa-trash"></i> Delete
-                                </a>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -204,10 +260,18 @@
                         <td colspan="7" class="text-center py-4">
                             <i class="fas fa-users fa-3x text-muted mb-3"></i>
                             <h5>No Workers Found</h5>
-                            <p class="text-muted">No workers have been registered yet.</p>
-                            <a href="/super-admin/jobs/worker/add/" class="btn btn-primary">
+                            <p class="text-muted">
+                                {% if search_query or current_filter %}
+                                Try adjusting your search criteria
+                                {% else %}
+                                No workers have been registered yet.
+                                {% endif %}
+                            </p>
+                            {% if not search_query and not current_filter %}
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWorkerModal">
                                 <i class="fas fa-plus me-1"></i> Add First Worker
-                            </a>
+                            </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -221,19 +285,19 @@
             <ul class="pagination justify-content-center">
                 {% if workers.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ workers.previous_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}">Previous</a>
+                    <a class="page-link" href="?page={{ workers.previous_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
                 </li>
                 {% endif %}
                 
                 {% for i in workers.paginator.page_range %}
                 <li class="page-item {% if workers.number == i %}active{% endif %}">
-                    <a class="page-link" href="?page={{ i }}{% if current_filter %}&status={{ current_filter }}{% endif %}">{{ i }}</a>
+                    <a class="page-link" href="?page={{ i }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ i }}</a>
                 </li>
                 {% endfor %}
                 
                 {% if workers.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ workers.next_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}">Next</a>
+                    <a class="page-link" href="?page={{ workers.next_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
                 </li>
                 {% endif %}
             </ul>
@@ -242,31 +306,456 @@
     </div>
 </div>
 
-<!-- Bulk Actions -->
-<div class="card mt-4">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Bulk Actions</h5>
-    </div>
-    <div class="card-body">
-        <form method="post" action="{% url 'admin_dashboard:bulk_actions' %}" class="row g-3 align-items-center">
-            {% csrf_token %}
-            <div class="col-auto">
-                <label class="form-label">Select Action:</label>
+<!-- Create Worker Modal -->
+<div class="modal fade" id="createWorkerModal" tabindex="-1" aria-labelledby="createWorkerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createWorkerModalLabel">Add New Worker</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="col-auto">
-                <select name="action" class="form-select">
-                    <option value="">Choose action...</option>
-                    <option value="verify_workers">Verify Selected Workers</option>
-                    <option value="unverify_workers">Unverify Selected Workers</option>
-                </select>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary">Apply to Selected</button>
-            </div>
-            <div class="col-auto">
-                <small class="text-muted">Select workers using checkboxes in the table</small>
-            </div>
-        </form>
+            <form id="createWorkerForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="createName" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="createName" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="createPhone" class="form-label">Phone Number *</label>
+                                <input type="tel" class="form-control" id="createPhone" name="phone_number" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="createEmail" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="createEmail" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="createPassword" class="form-label">Password *</label>
+                                <input type="password" class="form-control" id="createPassword" name="password" required value="Temp123!">
+                                <small class="text-muted">Default password: Temp123!</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="createTagline" class="form-label">Tagline</label>
+                                <input type="text" class="form-control" id="createTagline" name="tagline" placeholder="e.g., Expert Electrician">
+                            </div>
+                            <div class="mb-3">
+                                <label for="createShift" class="form-label">Shift</label>
+                                <select class="form-select" id="createShift" name="shift">
+                                    <option value="day">Day Shift</option>
+                                    <option value="night">Night Shift</option>
+                                    <option value="both">Both</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="createProfilePic" class="form-label">Profile Picture</label>
+                                <input type="file" class="form-control" id="createProfilePic" name="profile_pic" accept="image/*">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="createVerified" name="verified" value="true">
+                                    <label class="form-check-label" for="createVerified">Verified Worker</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="createAvailable" name="is_available" value="true" checked>
+                                    <label class="form-check-label" for="createAvailable">Available for Work</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="createBio" class="form-label">Bio/Description</label>
+                                <textarea class="form-control" id="createBio" name="bio" rows="3" placeholder="Tell us about this worker..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Create Worker
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<!-- Edit Worker Modal -->
+<div class="modal fade" id="editWorkerModal" tabindex="-1" aria-labelledby="editWorkerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editWorkerModalLabel">Edit Worker</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editWorkerForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" id="editWorkerId" name="worker_id">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <img id="editProfilePicPreview" src="{% static 'img/default-avatar.png' %}" alt="Profile Preview" class="profile-pic-preview mb-2">
+                                <input type="file" class="form-control" id="editProfilePic" name="profile_pic" accept="image/*">
+                                <small class="text-muted">Change profile picture (optional)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editName" class="form-label">Full Name *</label>
+                                        <input type="text" class="form-control" id="editName" name="name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editPhone" class="form-label">Phone Number *</label>
+                                        <input type="tel" class="form-control" id="editPhone" name="phone_number" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editTagline" class="form-label">Tagline</label>
+                                <input type="text" class="form-control" id="editTagline" name="tagline" placeholder="e.g., Expert Electrician">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editShift" class="form-label">Shift</label>
+                                <select class="form-select" id="editShift" name="shift">
+                                    <option value="day">Day Shift</option>
+                                    <option value="night">Night Shift</option>
+                                    <option value="both">Both</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label d-block">Status</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="editVerified" name="verified" value="true">
+                                    <label class="form-check-label" for="editVerified">Verified</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="editAvailable" name="is_available" value="true">
+                                    <label class="form-check-label" for="editAvailable">Available</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBio" class="form-label">Bio/Description</label>
+                        <textarea class="form-control" id="editBio" name="bio" rows="4" placeholder="Tell us about this worker..."></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Performance Stats</h6>
+                                    <p class="mb-1"><small>Rating: <span id="editRating" class="badge bg-warning">0.0</span></small></p>
+                                    <p class="mb-1"><small>Total Ratings: <span id="editTotalRatings" class="badge bg-secondary">0</span></small></p>
+                                    <p class="mb-1"><small>Appointments: <span id="editAppointmentCount" class="badge bg-primary">0</span></small></p>
+                                    <p class="mb-0"><small>Joined: <span id="editJoinedDate" class="text-muted">-</span></small></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Update Worker
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteWorkerModal" tabindex="-1" aria-labelledby="deleteWorkerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteWorkerModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete worker: <strong id="deleteWorkerName"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone. All associated data will be permanently deleted.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteWorker">
+                    <i class="fas fa-trash me-1"></i> Delete Worker
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // CSRF token setup for AJAX
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Utility function to show alerts
+    function showAlert(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertId = 'alert-' + Date.now();
+        const alertHtml = `
+            <div id="${alertId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        $('#alertContainer').html(alertHtml);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            $('#' + alertId).alert('close');
+        }, 5000);
+    }
+
+    // Edit Worker
+    $('.edit-worker-btn').click(function() {
+        const workerId = $(this).data('worker-id');
+        console.log('Editing worker ID:', workerId);
+        
+        // Show loading state
+        $('#editWorkerModal .modal-body').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading worker data...</p></div>');
+        $('#editWorkerModal').modal('show');
+        
+        // Fetch worker data
+        $.ajax({
+            url: "{% url 'admin_dashboard:edit_worker' 0 %}".replace('0', workerId),
+            type: 'GET',
+            success: function(response) {
+                console.log('Worker data loaded:', response);
+                // Populate form fields
+                $('#editWorkerId').val(response.id);
+                $('#editName').val(response.name);
+                $('#editPhone').val(response.phone_number);
+                $('#editTagline').val(response.tagline);
+                $('#editBio').val(response.bio);
+                $('#editShift').val(response.shift);
+                $('#editVerified').prop('checked', response.verified);
+                $('#editAvailable').prop('checked', response.is_available);
+                $('#editRating').text(response.average_rating);
+                $('#editTotalRatings').text(response.total_ratings);
+                $('#editAppointmentCount').text(response.appointment_count);
+                $('#editJoinedDate').text(response.created_at);
+                
+                // Set profile picture preview
+                if (response.profile_pic_url) {
+                    $('#editProfilePicPreview').attr('src', response.profile_pic_url);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading worker data:', error);
+                showAlert('Error loading worker data: ' + error, 'error');
+                $('#editWorkerModal').modal('hide');
+            }
+        });
+    });
+
+    // Update Worker
+    $('#editWorkerForm').submit(function(e) {
+        e.preventDefault();
+        const workerId = $('#editWorkerId').val();
+        const formData = new FormData(this);
+        
+        console.log('Updating worker ID:', workerId);
+        
+        // Show loading state
+        const submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true).html('<div class="spinner-border spinner-border-sm me-1" role="status"></div> Updating...');
+        
+        $.ajax({
+            url: "{% url 'admin_dashboard:edit_worker' 0 %}".replace('0', workerId),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                console.log('Update response:', response);
+                if (response.success) {
+                    $('#editWorkerModal').modal('hide');
+                    showAlert(response.message, 'success');
+                    // Reload after a short delay to show the message
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showAlert('Error: ' + response.error, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Update error:', error);
+                let errorMessage = 'Error updating worker';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage += ': ' + xhr.responseJSON.error;
+                }
+                showAlert(errorMessage, 'error');
+            },
+            complete: function() {
+                submitBtn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> Update Worker');
+            }
+        });
+    });
+
+    // Delete Worker Confirmation
+    let workerToDelete = null;
+    $('.delete-worker-btn').click(function() {
+        workerToDelete = $(this).data('worker-id');
+        const workerName = $(this).data('worker-name');
+        $('#deleteWorkerName').text(workerName);
+        $('#deleteWorkerModal').modal('show');
+    });
+
+    // Confirm Delete
+    $('#confirmDeleteWorker').click(function() {
+        if (!workerToDelete) return;
+        
+        console.log('Deleting worker ID:', workerToDelete);
+        
+        const deleteBtn = $(this);
+        deleteBtn.prop('disabled', true).html('<div class="spinner-border spinner-border-sm me-1" role="status"></div> Deleting...');
+        
+        $.ajax({
+            url: "{% url 'admin_dashboard:delete_worker' 0 %}".replace('0', workerToDelete),
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                console.log('Delete response:', response);
+                if (response.success) {
+                    $('#deleteWorkerModal').modal('hide');
+                    showAlert(response.message, 'success');
+                    // Remove worker row from table with animation
+                    $(`#worker-${workerToDelete}`).fadeOut(300, function() {
+                        $(this).remove();
+                        // Show message if no workers left
+                        if ($('.worker-card').length === 0) {
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        }
+                    });
+                } else {
+                    showAlert('Error: ' + response.error, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Delete error:', error);
+                let errorMessage = 'Error deleting worker';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage += ': ' + xhr.responseJSON.error;
+                }
+                showAlert(errorMessage, 'error');
+            },
+            complete: function() {
+                deleteBtn.prop('disabled', false).html('<i class="fas fa-trash me-1"></i> Delete Worker');
+                workerToDelete = null;
+            }
+        });
+    });
+
+    // Create Worker
+    $('#createWorkerForm').submit(function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        console.log('Creating new worker');
+        
+        const submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true).html('<div class="spinner-border spinner-border-sm me-1" role="status"></div> Creating...');
+        
+        $.ajax({
+            url: "{% url 'admin_dashboard:create_worker' %}",
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                console.log('Create response:', response);
+                if (response.success) {
+                    $('#createWorkerModal').modal('hide');
+                    showAlert(response.message, 'success');
+                    // Reload after a short delay to show the message
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showAlert('Error: ' + response.error, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Create error:', error);
+                let errorMessage = 'Error creating worker';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage += ': ' + xhr.responseJSON.error;
+                }
+                showAlert(errorMessage, 'error');
+            },
+            complete: function() {
+                submitBtn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> Create Worker');
+            }
+        });
+    });
+
+    // Profile picture preview
+    $('#editProfilePic, #createProfilePic').change(function() {
+        const input = this;
+        const previewId = $(this).attr('id') === 'editProfilePic' ? '#editProfilePicPreview' : '#createProfilePicPreview';
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $(previewId).attr('src', e.target.result);
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    });
+
+    // Debug: Log when buttons are clicked
+    console.log('Worker management page loaded');
+    $('.edit-worker-btn, .delete-worker-btn').on('click', function() {
+        console.log('Button clicked:', $(this).text());
+    });
+});
+</script>
 {% endblock %}

@@ -5,6 +5,8 @@ from django.db.models import Count, Sum, Avg, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
 from datetime import datetime, timedelta
 import json
 import csv
@@ -84,6 +86,16 @@ def worker_management(request):
     elif status_filter == 'unavailable':
         workers = workers.filter(is_available=False)
     
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        workers = workers.filter(
+            Q(name__icontains=search_query) |
+            Q(phone_number__icontains=search_query) |
+            Q(tagline__icontains=search_query) |
+            Q(owner__email__icontains=search_query)
+        )
+    
     # Pagination
     paginator = Paginator(workers, 25)
     page_number = request.GET.get('page')
@@ -92,6 +104,7 @@ def worker_management(request):
     context = {
         'workers': page_obj,
         'current_filter': status_filter,
+        'search_query': search_query,
         'total_workers': total_workers,
         'verified_workers': verified_workers,
         'unverified_workers': unverified_workers,
@@ -102,6 +115,173 @@ def worker_management(request):
 
 @login_required
 @user_passes_test(admin_required)
+@csrf_exempt
+def edit_worker(request, worker_id):
+    """Edit worker directly in the template"""
+    worker = get_object_or_404(Worker, id=worker_id)
+    
+    if request.method == 'POST':
+        try:
+            # Update worker fields
+            worker.name = request.POST.get('name', worker.name)
+            worker.phone_number = request.POST.get('phone_number', worker.phone_number)
+            worker.tagline = request.POST.get('tagline', worker.tagline)
+            worker.bio = request.POST.get('bio', worker.bio)
+            worker.verified = request.POST.get('verified') == 'true'
+            worker.is_available = request.POST.get('is_available') == 'true'
+            worker.shift = request.POST.get('shift', worker.shift)
+            
+            # Handle profile picture upload
+            if 'profile_pic' in request.FILES:
+                worker.profile_pic = request.FILES['profile_pic']
+            
+            worker.save()
+            
+            # Log admin activity
+            AdminActivityLog.objects.create(
+                admin_user=request.user,
+                action='UPDATE',
+                model_name='Worker',
+                object_id=worker.id,
+                description=f'Updated worker {worker.name}'
+            )
+            
+            return JsonResponse({'success': True, 'message': 'Worker updated successfully'})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    # For GET request, return worker data
+    elif request.method == 'GET':
+        try:
+            # Calculate appointment count and average rating
+            appointment_count = worker.worker_appointments.count()
+            avg_rating = worker.ratings.aggregate(avg=Avg('rating'))['avg'] or 0
+            
+            worker_data = {
+                'id': worker.id,
+                'name': worker.name,
+                'phone_number': worker.phone_number,
+                'tagline': worker.tagline or '',
+                'bio': worker.bio or '',
+                'verified': worker.verified,
+                'is_available': worker.is_available,
+                'shift': worker.shift,
+                'profile_pic_url': worker.profile_pic.url if worker.profile_pic else '',
+                'average_rating': round(float(avg_rating), 1),
+                'total_ratings': worker.ratings.count(),
+                'appointment_count': appointment_count,
+                'created_at': worker.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'email': worker.owner.email if worker.owner else '',
+            }
+            return JsonResponse(worker_data)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+@login_required
+@user_passes_test(admin_required)
+@csrf_exempt
+def delete_worker(request, worker_id):
+    """Delete worker directly in the template"""
+    if request.method == 'POST':
+        try:
+            worker = get_object_or_404(Worker, id=worker_id)
+            worker_name = worker.name
+            
+            # Log admin activity before deletion
+            AdminActivityLog.objects.create(
+                admin_user=request.user,
+                action='DELETE',
+                model_name='Worker',
+                object_id=worker.id,
+                description=f'Deleted worker {worker.name}'
+            )
+            
+            worker.delete()
+            
+            return JsonResponse({'success': True, 'message': 'Worker deleted successfully'})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+@login_required
+@user_passes_test(admin_required)
+@csrf_exempt
+def create_worker(request):
+    """Create new worker directly in the template"""
+    if request.method == 'POST':
+        try:
+            # Create user first
+            username = request.POST.get('phone_number')
+            email = request.POST.get('email')
+            password = request.POST.get('password', 'Temp123!')
+            
+            # Check if user already exists
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'A user with this phone number already exists'
+                }, status=400)
+            
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'A user with this email already exists'
+                }, status=400)
+            
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+            
+            # Create worker
+            worker = Worker.objects.create(
+                owner=user,
+                name=request.POST.get('name'),
+                phone_number=request.POST.get('phone_number'),
+                tagline=request.POST.get('tagline', ''),
+                bio=request.POST.get('bio', ''),
+                verified=request.POST.get('verified') == 'true',
+                is_available=request.POST.get('is_available') == 'true',
+                shift=request.POST.get('shift', 'day')
+            )
+            
+            # Handle profile picture
+            if 'profile_pic' in request.FILES:
+                worker.profile_pic = request.FILES['profile_pic']
+                worker.save()
+            
+            # Log admin activity
+            AdminActivityLog.objects.create(
+                admin_user=request.user,
+                action='CREATE',
+                model_name='Worker',
+                object_id=worker.id,
+                description=f'Created new worker {worker.name}'
+            )
+            
+            return JsonResponse({
+                'success': True, 
+                'message': 'Worker created successfully', 
+                'worker_id': worker.id
+            })
+            
+        except Exception as e:
+            # Clean up user if worker creation fails
+            if 'user' in locals():
+                user.delete()
+                
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+@login_required
+@user_passes_test(admin_required)
 def customer_management(request):
     """Customer management view"""
     customers = Customer.objects.select_related('owner').annotate(
@@ -109,11 +289,39 @@ def customer_management(request):
         total_spent=Sum('customer_appointments__total_price')
     ).order_by('-created_at')
     
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        customers = customers.filter(
+            Q(name__icontains=search_query) |
+            Q(phone_number__icontains=search_query) |
+            Q(owner__email__icontains=search_query)
+        )
+    
+    # Filtering
+    filter_type = request.GET.get('filter')
+    if filter_type == 'active':
+        customers = customers.filter(appointment_count__gt=0)
+    elif filter_type == 'new':
+        start_of_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        customers = customers.filter(created_at__gte=start_of_month)
+    
     # Calculate stats
     total_customers = customers.count()
     active_customers = customers.filter(appointment_count__gt=0).count()
     total_revenue = customers.aggregate(total=Sum('total_spent'))['total'] or 0
     avg_appointments = customers.aggregate(avg=Avg('appointment_count'))['avg'] or 0
+    
+    # Additional insights
+    high_value_customers = customers.filter(total_spent__gt=1000).count()
+    repeat_customers = customers.filter(appointment_count__gt=1).count()
+    new_customers_this_month = customers.filter(
+        created_at__month=timezone.now().month,
+        created_at__year=timezone.now().year
+    ).count()
+    
+    # Top spenders
+    top_spenders = customers.order_by('-total_spent')[:5]
     
     context = {
         'customers': customers,
@@ -121,8 +329,166 @@ def customer_management(request):
         'active_customers': active_customers,
         'total_revenue': total_revenue,
         'avg_appointments': round(avg_appointments, 1),
+        'high_value_customers': high_value_customers,
+        'repeat_customers': repeat_customers,
+        'new_customers_this_month': new_customers_this_month,
+        'top_spenders': top_spenders,
+        'search_query': search_query,
+        'current_filter': filter_type,
     }
     return render(request, 'admin_dashboard/customer_management.html', context)
+
+@login_required
+@user_passes_test(admin_required)
+@csrf_exempt
+def edit_customer(request, customer_id):
+    """Edit customer directly in the template"""
+    customer = get_object_or_404(Customer, id=customer_id)
+    
+    if request.method == 'POST':
+        try:
+            # Update customer fields
+            customer.name = request.POST.get('name', customer.name)
+            customer.phone_number = request.POST.get('phone_number', customer.phone_number)
+            customer.location_address = request.POST.get('location_address', customer.location_address)
+            
+            # Handle profile picture upload
+            if 'profile_pic' in request.FILES:
+                customer.profile_pic = request.FILES['profile_pic']
+            
+            customer.save()
+            
+            # Log admin activity
+            AdminActivityLog.objects.create(
+                admin_user=request.user,
+                action='UPDATE',
+                model_name='Customer',
+                object_id=customer.id,
+                description=f'Updated customer {customer.name}'
+            )
+            
+            return JsonResponse({'success': True, 'message': 'Customer updated successfully'})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    # For GET request, return customer data
+    elif request.method == 'GET':
+        try:
+            customer_data = {
+                'id': customer.id,
+                'name': customer.name,
+                'phone_number': customer.phone_number,
+                'email': customer.owner.email if customer.owner else '',
+                'location_address': customer.location_address or '',
+                'profile_pic_url': customer.profile_pic.url if customer.profile_pic else '',
+                'appointment_count': customer.customer_appointments.count(),
+                'total_spent': float(customer.customer_appointments.aggregate(
+                    total=Sum('total_price')
+                )['total'] or 0),
+                'created_at': customer.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            }
+            return JsonResponse(customer_data)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+@login_required
+@user_passes_test(admin_required)
+@csrf_exempt
+def delete_customer(request, customer_id):
+    """Delete customer directly in the template"""
+    if request.method == 'POST':
+        try:
+            customer = get_object_or_404(Customer, id=customer_id)
+            customer_name = customer.name
+            
+            # Log admin activity before deletion
+            AdminActivityLog.objects.create(
+                admin_user=request.user,
+                action='DELETE',
+                model_name='Customer',
+                object_id=customer.id,
+                description=f'Deleted customer {customer.name}'
+            )
+            
+            customer.delete()
+            
+            return JsonResponse({'success': True, 'message': 'Customer deleted successfully'})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+@login_required
+@user_passes_test(admin_required)
+@csrf_exempt
+def create_customer(request):
+    """Create new customer directly in the template"""
+    if request.method == 'POST':
+        try:
+            # Create user first
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            password = request.POST.get('password', 'Temp123!')
+            
+            # Check if user already exists
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'A user with this username already exists'
+                }, status=400)
+            
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'A user with this email already exists'
+                }, status=400)
+            
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+            
+            # Create customer
+            customer = Customer.objects.create(
+                owner=user,
+                name=request.POST.get('name'),
+                phone_number=request.POST.get('phone_number'),
+                location_address=request.POST.get('location_address', '')
+            )
+            
+            # Handle profile picture
+            if 'profile_pic' in request.FILES:
+                customer.profile_pic = request.FILES['profile_pic']
+                customer.save()
+            
+            # Log admin activity
+            AdminActivityLog.objects.create(
+                admin_user=request.user,
+                action='CREATE',
+                model_name='Customer',
+                object_id=customer.id,
+                description=f'Created new customer {customer.name}'
+            )
+            
+            return JsonResponse({
+                'success': True, 
+                'message': 'Customer created successfully', 
+                'customer_id': customer.id
+            })
+            
+        except Exception as e:
+            # Clean up user if customer creation fails
+            if 'user' in locals():
+                user.delete()
+                
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
 @login_required
 @user_passes_test(admin_required)
@@ -163,23 +529,19 @@ def service_management(request):
     services = Service.objects.select_related('category').order_by('-created_at')
     
     # Get worker counts using the correct related name
-    # Let's try different possible related names
     try:
-        # Try to get worker counts - we'll handle any errors
-        from django.db.models import Count
         services_with_counts = Service.objects.annotate(
             worker_count=Count('workerservice')
         )
         worker_count_dict = {s.id: s.worker_count for s in services_with_counts}
     except Exception as e:
         print(f"Error getting worker counts: {e}")
-        # If that fails, use a safe fallback
         worker_count_dict = {}
     
     # Add counts to services
     for service in services:
         service.worker_count = worker_count_dict.get(service.id, 0)
-        service.subtask_count = service.subtasks.count()  # This should work
+        service.subtask_count = service.subtasks.count()
     
     categories = ServiceCategory.objects.annotate(
         service_count=Count('services')
@@ -283,28 +645,100 @@ def bulk_actions(request):
         selected_ids = request.POST.getlist('selected_ids')
         
         if action == 'verify_workers':
-            Worker.objects.filter(id__in=selected_ids).update(verified=True)
-            messages.success(request, f'{len(selected_ids)} workers verified successfully.')
+            workers = Worker.objects.filter(id__in=selected_ids)
+            updated_count = workers.update(verified=True)
+            
+            # Log bulk action
+            for worker in workers:
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Worker',
+                    object_id=worker.id,
+                    description=f'Bulk verified worker {worker.name}'
+                )
+            
+            messages.success(request, f'{updated_count} workers verified successfully.')
         
         elif action == 'unverify_workers':
-            Worker.objects.filter(id__in=selected_ids).update(verified=False)
-            messages.success(request, f'{len(selected_ids)} workers unverified.')
+            workers = Worker.objects.filter(id__in=selected_ids)
+            updated_count = workers.update(verified=False)
+            
+            # Log bulk action
+            for worker in workers:
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Worker',
+                    object_id=worker.id,
+                    description=f'Bulk unverified worker {worker.name}'
+                )
+            
+            messages.success(request, f'{updated_count} workers unverified.')
         
         elif action == 'activate_services':
-            Service.objects.filter(id__in=selected_ids).update(is_active=True)
-            messages.success(request, f'{len(selected_ids)} services activated.')
+            services = Service.objects.filter(id__in=selected_ids)
+            updated_count = services.update(is_active=True)
+            
+            # Log bulk action
+            for service in services:
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Service',
+                    object_id=service.id,
+                    description=f'Bulk activated service {service.name}'
+                )
+            
+            messages.success(request, f'{updated_count} services activated.')
         
         elif action == 'deactivate_services':
-            Service.objects.filter(id__in=selected_ids).update(is_active=False)
-            messages.success(request, f'{len(selected_ids)} services deactivated.')
+            services = Service.objects.filter(id__in=selected_ids)
+            updated_count = services.update(is_active=False)
+            
+            # Log bulk action
+            for service in services:
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Service',
+                    object_id=service.id,
+                    description=f'Bulk deactivated service {service.name}'
+                )
+            
+            messages.success(request, f'{updated_count} services deactivated.')
         
         elif action == 'complete_appointments':
-            Appointment.objects.filter(id__in=selected_ids).update(status='completed')
-            messages.success(request, f'{len(selected_ids)} appointments marked as completed.')
+            appointments = Appointment.objects.filter(id__in=selected_ids)
+            updated_count = appointments.update(status='completed')
+            
+            # Log bulk action
+            for appointment in appointments:
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Appointment',
+                    object_id=appointment.id,
+                    description=f'Bulk completed appointment #{appointment.id}'
+                )
+            
+            messages.success(request, f'{updated_count} appointments marked as completed.')
         
         elif action == 'cancel_appointments':
-            Appointment.objects.filter(id__in=selected_ids).update(status='cancelled')
-            messages.success(request, f'{len(selected_ids)} appointments cancelled.')
+            appointments = Appointment.objects.filter(id__in=selected_ids)
+            updated_count = appointments.update(status='cancelled')
+            
+            # Log bulk action
+            for appointment in appointments:
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Appointment',
+                    object_id=appointment.id,
+                    description=f'Bulk cancelled appointment #{appointment.id}'
+                )
+            
+            messages.success(request, f'{updated_count} appointments cancelled.')
     
     return redirect(request.META.get('HTTP_REFERER', 'admin_dashboard:dashboard'))
 

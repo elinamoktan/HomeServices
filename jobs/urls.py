@@ -88,6 +88,7 @@ urlpatterns = [
     # Worker section URLs
     path('worker/calendar/', views.worker_calendar, name='worker_calendar'),
     path('worker/reviews/', views.worker_reviews, name='worker_reviews'),
+    path('worker/reviews/reply/', views.reply_to_review, name='reply_to_review'),
     path('worker/analytics/', views.worker_analytics, name='worker_analytics'),
     path('worker/earnings/', views.worker_earnings, name='worker_earnings'),
     path('worker/settings/', views.worker_settings, name='worker_settings'),

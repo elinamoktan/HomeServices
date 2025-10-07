@@ -334,6 +334,7 @@
       font-size: 0.875rem !important;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
       transition: all 0.3s ease !important;
+      cursor: pointer !important;
     }
 
     .fc-event:hover {
@@ -393,6 +394,7 @@
     .status-accepted { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; }
     .status-pending { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
     .status-completed { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e3a8a; }
+    .status-rejected { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; }
 
     .quick-action-btn {
       width: 100%;
@@ -499,6 +501,29 @@
       font-size: 3rem;
       margin-bottom: 1rem;
       opacity: 0.5;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
 
     /* Responsive */
@@ -731,7 +756,7 @@
             </div>
           </div>
           <div class="space-y-3">
-            <button class="quick-action-btn" style="--border-color: #22c55e; --shadow-color: rgba(34, 197, 94, 0.2);">
+            <button class="quick-action-btn" style="--border-color: #22c55e; --shadow-color: rgba(34, 197, 94, 0.2);" onclick="showAvailabilityModal()">
               <div class="flex items-center gap-3">
                 <div class="action-icon" style="--icon-bg: linear-gradient(135deg, #d1fae5, #a7f3d0); --icon-color: #16a34a;">
                   <i class="fas fa-plus"></i>
@@ -743,7 +768,7 @@
               </div>
             </button>
             
-            <button class="quick-action-btn" style="--border-color: #6366f1; --shadow-color: rgba(99, 102, 241, 0.2);">
+            <button class="quick-action-btn" style="--border-color: #6366f1; --shadow-color: rgba(99, 102, 241, 0.2);" onclick="syncCalendar()">
               <div class="flex items-center gap-3">
                 <div class="action-icon" style="--icon-bg: linear-gradient(135deg, #dbeafe, #bfdbfe); --icon-color: #4f46e5;">
                   <i class="fas fa-sync-alt"></i>
@@ -755,7 +780,7 @@
               </div>
             </button>
 
-            <button class="quick-action-btn" style="--border-color: #ec4899; --shadow-color: rgba(236, 72, 153, 0.2);">
+            <button class="quick-action-btn" style="--border-color: #ec4899; --shadow-color: rgba(236, 72, 153, 0.2);" onclick="showNotifications()">
               <div class="flex items-center gap-3">
                 <div class="action-icon" style="--icon-bg: linear-gradient(135deg, #fce7f3, #fbcfe8); --icon-color: #db2777;">
                   <i class="fas fa-bell"></i>
@@ -772,6 +797,22 @@
     </div>
   </div>
 
+  <!-- Appointment Detail Modal -->
+  <div id="appointmentModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-gray-900">Appointment Details</h3>
+        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div id="modalContent">
+        <!-- Dynamic content will be loaded here -->
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -783,29 +824,115 @@
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        events: [
-          {% for appointment in appointments %}
-          {
-            title: '{{ appointment.customer.name }} - {{ appointment.service_subtask.subtask.name|default:"Service" }}',
-            start: '{{ appointment.appointment_date|date:"c" }}',
-            className: 'event-{{ appointment.status }}',
-            extendedProps: {
-              status: '{{ appointment.status }}',
-              customer: '{{ appointment.customer.name }}',
-              service: '{{ appointment.service_subtask.subtask.name|default:"Service" }}'
-            }
-          },
-          {% endfor %}
-        ],
+        events: function(fetchInfo, successCallback, failureCallback) {
+          // Dynamic event loading from Django backend
+          fetch('{% url "worker_calendar" %}')
+            .then(response => response.json())
+            .then(data => {
+              successCallback(data.events);
+            })
+            .catch(error => {
+              console.error('Error loading calendar events:', error);
+              // Fallback to static events if dynamic loading fails
+              const staticEvents = [
+                {% for appointment in appointments %}
+                {
+                  id: '{{ appointment.id }}',
+                  title: '{{ appointment.customer.name }} - {{ appointment.service_subtask.subtask.name|default:"Service" }}',
+                  start: '{{ appointment.appointment_date|date:"c" }}',
+                  className: 'event-{{ appointment.status }}',
+                  extendedProps: {
+                    status: '{{ appointment.status }}',
+                    customer: '{{ appointment.customer.name }}',
+                    service: '{{ appointment.service_subtask.subtask.name|default:"Service" }}',
+                    location: '{{ appointment.location|default:"No location specified" }}',
+                    special_instructions: '{{ appointment.special_instructions|default:"No special instructions" }}',
+                    phone: '{{ appointment.customer.phone_number }}'
+                  }
+                },
+                {% endfor %}
+              ].filter(event => event.start); // Filter out events with invalid dates
+              successCallback(staticEvents);
+            });
+        },
         eventClick: function(info) {
           const event = info.event;
-          const statusEmoji = {
-            'pending': '⏳',
-            'accepted': '✅',
-            'completed': '🎉',
-            'rejected': '❌'
-          };
-          alert(`${statusEmoji[event.extendedProps.status] || '📅'} Appointment Details\n\nCustomer: ${event.extendedProps.customer}\nService: ${event.extendedProps.service}\nStatus: ${event.extendedProps.status.toUpperCase()}`);
+          const extendedProps = event.extendedProps;
+          
+          // Create modal content
+          const modalContent = `
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Customer</label>
+                  <p class="mt-1 text-sm text-gray-900">${extendedProps.customer}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Service</label>
+                  <p class="mt-1 text-sm text-gray-900">${extendedProps.service}</p>
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Status</label>
+                  <span class="mt-1 status-badge status-${extendedProps.status}">${extendedProps.status.toUpperCase()}</span>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Date & Time</label>
+                  <p class="mt-1 text-sm text-gray-900">${event.start.toLocaleDateString()} at ${event.start.toLocaleTimeString()}</p>
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Location</label>
+                <p class="mt-1 text-sm text-gray-900">${extendedProps.location}</p>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Special Instructions</label>
+                <p class="mt-1 text-sm text-gray-900">${extendedProps.special_instructions}</p>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Contact Phone</label>
+                <p class="mt-1 text-sm text-gray-900">${extendedProps.phone}</p>
+              </div>
+              
+              <div class="flex gap-2 pt-4 border-t">
+                ${extendedProps.status === 'pending' ? `
+                <form action="/appointments/${event.id}/accept/" method="post" class="flex-1">
+                  {% csrf_token %}
+                  <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors">
+                    Accept
+                  </button>
+                </form>
+                <form action="/appointments/${event.id}/reject/" method="post" class="flex-1">
+                  {% csrf_token %}
+                  <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors">
+                    Reject
+                  </button>
+                </form>
+                ` : ''}
+                
+                ${extendedProps.status === 'accepted' ? `
+                <form action="/appointments/${event.id}/complete/" method="post" class="flex-1">
+                  {% csrf_token %}
+                  <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors">
+                    Mark Complete
+                  </button>
+                </form>
+                ` : ''}
+                
+                <button onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors">
+                  Close
+                </button>
+              </div>
+            </div>
+          `;
+          
+          document.getElementById('modalContent').innerHTML = modalContent;
+          document.getElementById('appointmentModal').style.display = 'flex';
         },
         eventDisplay: 'block',
         eventTimeFormat: {
@@ -814,16 +941,114 @@
           meridiem: true
         },
         height: 'auto',
-        aspectRatio: 1.8
-      });
-      calendar.render();
-
-      // Add hover effect to calendar events
-      document.addEventListener('mouseover', function(e) {
-        if (e.target.closest('.fc-event')) {
-          e.target.closest('.fc-event').style.cursor = 'pointer';
+        aspectRatio: 1.8,
+        nowIndicator: true,
+        slotMinTime: '06:00:00',
+        slotMaxTime: '22:00:00',
+        businessHours: {
+          daysOfWeek: [1, 2, 3, 4, 5, 6],
+          startTime: '08:00',
+          endTime: '20:00',
+        },
+        dayMaxEvents: 3,
+        views: {
+          timeGridWeek: {
+            dayMaxEvents: 6
+          }
         }
       });
+      
+      calendar.render();
+
+      // Refresh calendar every 30 seconds for real-time updates
+      setInterval(() => {
+        calendar.refetchEvents();
+      }, 30000);
+    });
+
+    // Modal functions
+    function closeModal() {
+      document.getElementById('appointmentModal').style.display = 'none';
+    }
+
+    // Quick action functions
+    function showAvailabilityModal() {
+      const modalContent = `
+        <div class="space-y-4">
+          <h4 class="text-lg font-semibold text-gray-900">Set Your Availability</h4>
+          <p class="text-sm text-gray-600">Configure your working hours and availability preferences.</p>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Start Time</label>
+              <input type="time" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" value="08:00">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">End Time</label>
+              <input type="time" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" value="18:00">
+            </div>
+          </div>
+          
+          <div class="flex gap-2 pt-4">
+            <button class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors">
+              Save Availability
+            </button>
+            <button onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('modalContent').innerHTML = modalContent;
+      document.getElementById('appointmentModal').style.display = 'flex';
+    }
+
+    function syncCalendar() {
+      alert('Calendar sync feature would connect with Google Calendar, Outlook, etc.');
+    }
+
+    function showNotifications() {
+      const modalContent = `
+        <div class="space-y-4">
+          <h4 class="text-lg font-semibold text-gray-900">Notification Settings</h4>
+          <p class="text-sm text-gray-600">Manage how you receive appointment notifications.</p>
+          
+          <div class="space-y-3">
+            <label class="flex items-center">
+              <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked>
+              <span class="ml-2 text-sm text-gray-700">Email notifications</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked>
+              <span class="ml-2 text-sm text-gray-700">SMS notifications</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+              <span class="ml-2 text-sm text-gray-700">Push notifications</span>
+            </label>
+          </div>
+          
+          <div class="flex gap-2 pt-4">
+            <button class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors">
+              Save Settings
+            </button>
+            <button onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors">
+              Close
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('modalContent').innerHTML = modalContent;
+      document.getElementById('appointmentModal').style.display = 'flex';
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('appointmentModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
     });
 
     // Animation observer
@@ -848,7 +1073,7 @@
       observer.observe(el);
     });
 
-    // Mobile menu toggle (if needed)
+    // Mobile menu toggle
     const createMobileMenu = () => {
       if (window.innerWidth <= 1024) {
         const sidebar = document.querySelector('.sidebar');

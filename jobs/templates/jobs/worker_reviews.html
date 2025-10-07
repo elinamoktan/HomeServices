@@ -114,7 +114,6 @@
       transition: width 0.6s ease;
     }
 
-    /* New styles for enhanced UI */
     .floating-action-btn {
       position: fixed;
       bottom: 2rem;
@@ -136,28 +135,6 @@
     .floating-action-btn:hover {
       transform: scale(1.1);
       box-shadow: 0 15px 30px rgba(59, 130, 246, 0.6);
-    }
-    
-    .reply-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .modal-content {
-      background: white;
-      border-radius: 16px;
-      padding: 2rem;
-      width: 90%;
-      max-width: 500px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     }
     
     .tab-button {
@@ -448,7 +425,11 @@
           <div class="flex justify-between items-start mb-4">
             <div class="flex items-center gap-3">
               <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                <span class="font-semibold text-blue-600">{{ review.customer.name|first }}</span>
+                {% if review.customer.profile_pic %}
+                  <img src="{{ review.customer.profile_pic.url }}" alt="{{ review.customer.name }}" class="w-full h-full object-cover rounded-full">
+                {% else %}
+                  <span class="font-semibold text-blue-600">{{ review.customer.name|first }}</span>
+                {% endif %}
               </div>
               <div>
                 <h4 class="font-semibold text-gray-900">{{ review.customer.name }}</h4>
@@ -487,28 +468,8 @@
             <span class="text-sm text-gray-500">
               Service: {{ review.appointment.service_subtask.subtask.name|default:"General Service" }}
             </span>
-            <div class="flex gap-2">
-              {% if review.reply %}
-                <span class="badge badge-success">Replied</span>
-              {% else %}
-                <button class="text-blue-600 hover:text-blue-700 font-semibold text-sm flex items-center gap-2 reply-btn" data-review-id="{{ review.id }}">
-                  <i class="fas fa-reply"></i>
-                  Reply
-                </button>
-              {% endif %}
-            </div>
+            <!-- Reply functionality removed since there's no reply field in the model -->
           </div>
-          
-          {% if review.reply %}
-          <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <div class="flex items-center gap-2 mb-2">
-              <i class="fas fa-reply text-blue-500"></i>
-              <span class="font-semibold text-blue-700">Your Response</span>
-            </div>
-            <p class="text-gray-700">{{ review.reply }}</p>
-            <p class="text-xs text-gray-500 mt-2">{{ review.replied_at|date:"M j, Y" }}</p>
-          </div>
-          {% endif %}
         </div>
         {% empty %}
         <div class="text-center text-gray-500 py-12">
@@ -521,30 +482,6 @@
     </div>
   </div>
 
-  <!-- Reply Modal -->
-  <div id="replyModal" class="reply-modal">
-    <div class="modal-content">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-bold text-gray-900">Reply to Review</h3>
-        <button id="closeModal" class="text-gray-500 hover:text-gray-700">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <form id="replyForm" method="post">
-        {% csrf_token %}
-        <input type="hidden" id="reviewId" name="review_id">
-        <div class="mb-4">
-          <label for="replyMessage" class="block text-sm font-medium text-gray-700 mb-2">Your Response</label>
-          <textarea id="replyMessage" name="reply_message" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Type your response to this review..."></textarea>
-        </div>
-        <div class="flex justify-end gap-3">
-          <button type="button" id="cancelReply" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Send Reply</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- Floating Action Button -->
   <div class="floating-action-btn" id="shareBtn">
     <i class="fas fa-share-alt"></i>
@@ -553,79 +490,77 @@
   <script>
     // Filter reviews by rating
     function filterReviews(rating) {
-      const reviews = document.querySelectorAll('.review-card');
       const tabButtons = document.querySelectorAll('.tab-button');
       
       // Update active tab
       tabButtons.forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
       
-      // Filter reviews
-      reviews.forEach(review => {
-        if (rating === 'all' || review.dataset.rating === rating) {
-          review.style.display = 'block';
-        } else {
-          review.style.display = 'none';
+      // Show loading state
+      const container = document.getElementById('reviews-container');
+      container.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-blue-500"></i><p class="mt-2">Loading reviews...</p></div>';
+      
+      // Fetch filtered reviews
+      fetch(`/worker/reviews/?rating=${rating}`, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
         }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.reviews && data.reviews.length > 0) {
+          container.innerHTML = data.reviews.map(review => `
+            <div class="review-card ${review.rating >= 4 ? 'review-highlight' : ''}" data-rating="${review.rating}">
+              <div class="flex justify-between items-start mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                    <span class="font-semibold text-blue-600">${review.customer_name.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">${review.customer_name}</h4>
+                    <p class="text-sm text-gray-500">${review.created_at}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="rating-stars">
+                    ${'<i class="fas fa-star"></i>'.repeat(review.rating)}${'<i class="far fa-star"></i>'.repeat(5 - review.rating)}
+                  </div>
+                  ${review.rating >= 4 ? 
+                    '<span class="review-sentiment sentiment-positive"><i class="fas fa-smile"></i> Positive</span>' :
+                    review.rating === 3 ?
+                    '<span class="review-sentiment sentiment-neutral"><i class="fas fa-meh"></i> Neutral</span>' :
+                    '<span class="review-sentiment sentiment-negative"><i class="fas fa-frown"></i> Negative</span>'
+                  }
+                </div>
+              </div>
+              
+              <p class="text-gray-700 mb-4">${review.comment}</p>
+              
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500">
+                  Service: ${review.service_name}
+                </span>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = `
+            <div class="text-center text-gray-500 py-12">
+              <i class="fas fa-comments text-3xl mb-2"></i>
+              <h4 class="text-xl font-semibold text-gray-900 mb-2">No Reviews Found</h4>
+              <p class="text-gray-600">No reviews match your selected filter.</p>
+            </div>
+          `;
+        }
+      })
+      .catch(error => {
+        console.error('Error filtering reviews:', error);
+        container.innerHTML = '<div class="text-center text-red-500 py-8">Error loading reviews. Please try again.</div>';
       });
     }
 
-    // Reply modal functionality
-    const replyModal = document.getElementById('replyModal');
-    const replyBtns = document.querySelectorAll('.reply-btn');
-    const closeModal = document.getElementById('closeModal');
-    const cancelReply = document.getElementById('cancelReply');
-    const replyForm = document.getElementById('replyForm');
-    const reviewIdInput = document.getElementById('reviewId');
-    
-    replyBtns.forEach(btn => {
-      btn.addEventListener('click', function() {
-        const reviewId = this.getAttribute('data-review-id');
-        reviewIdInput.value = reviewId;
-        replyModal.style.display = 'flex';
-      });
-    });
-    
-    closeModal.addEventListener('click', function() {
-      replyModal.style.display = 'none';
-    });
-    
-    cancelReply.addEventListener('click', function() {
-      replyModal.style.display = 'none';
-    });
-    
-    // Close modal when clicking outside
-    window.addEventListener('click', function(event) {
-      if (event.target === replyModal) {
-        replyModal.style.display = 'none';
-      }
-    });
-    
-    // Form submission
-    replyForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      // Here you would typically send the form data to your Django backend
-      // For now, we'll just close the modal and show a success message
-      const reviewId = reviewIdInput.value;
-      const replyMessage = document.getElementById('replyMessage').value;
-      
-      // Simulate AJAX submission
-      console.log(`Submitting reply for review ${reviewId}: ${replyMessage}`);
-      
-      // In a real implementation, you would use fetch or XMLHttpRequest
-      // to submit the form data to your Django view
-      
-      // Close modal and show success message
-      replyModal.style.display = 'none';
-      alert('Your reply has been submitted successfully!');
-      
-      // Reset form
-      replyForm.reset();
-    });
-
     // Share functionality
     document.getElementById('shareBtn').addEventListener('click', function() {
-      // In a real implementation, this would share the worker's review page
       if (navigator.share) {
         navigator.share({
           title: 'My Reviews - BlueCollar',
@@ -636,8 +571,11 @@
       } else {
         // Fallback for browsers that don't support the Web Share API
         navigator.clipboard.writeText(window.location.href)
-          .then(() => alert('Link copied to clipboard!'))
-          .catch(err => console.error('Could not copy text: ', err));
+          .then(() => showNotification('Link copied to clipboard!', 'success'))
+          .catch(err => {
+            console.error('Could not copy text: ', err);
+            showNotification('Failed to copy link', 'error');
+          });
       }
     });
 
@@ -679,6 +617,37 @@
       setTimeout(() => {
         bar.style.width = width;
       }, 500);
+    });
+
+    // Notification function
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${
+        type === 'success' ? 'bg-green-500 text-white' :
+        type === 'error' ? 'bg-red-500 text-white' :
+        'bg-blue-500 text-white'
+      }`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      // Animate in
+      setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+      }, 100);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 300);
+      }, 3000);
+    }
+
+    // Initialize animations
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add any additional initialization code here
     });
   </script>
 </body>

@@ -1,13 +1,16 @@
 from django.urls import path
 from . import views
 
-app_name = 'admin_dashboard'  # This defines the namespace
+app_name = 'admin_dashboard'
 
 urlpatterns = [
     path('', views.admin_dashboard, name='dashboard'),
     path('analytics/', views.admin_analytics, name='analytics'),
     path('reports/', views.admin_reports, name='reports'),
     path('workers/', views.worker_management, name='worker_management'),
+    path('workers/create/', views.create_worker, name='create_worker'),
+    path('workers/<int:worker_id>/edit/', views.edit_worker, name='edit_worker'),
+    path('workers/<int:worker_id>/delete/', views.delete_worker, name='delete_worker'),
     path('customers/', views.customer_management, name='customer_management'),
     path('appointments/', views.appointment_management, name='appointment_management'),
     path('services/', views.service_management, name='service_management'),
