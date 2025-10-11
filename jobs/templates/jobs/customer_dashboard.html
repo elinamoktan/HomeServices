@@ -8,13 +8,28 @@
   <title>Customer Dashboard - AppointMate</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #7209b7;
+      --accent: #f72585;
+      --success: #4cc9f0;
+      --warning: #f8961e;
+      --danger: #e63946;
+      --dark: #1a1d29;
+      --light: #f8f9fa;
+      --gray: #6c757d;
+      --gray-light: #e9ecef;
+    }
+    
     body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ec 100%);
       min-height: 100vh;
+      color: var(--dark);
     }
 
     .dashboard-container {
@@ -24,24 +39,35 @@
     
     .sidebar {
       width: 280px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      color: #1f2937;
+      background: var(--dark);
+      color: white;
       transition: all 0.3s ease;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
       z-index: 1000;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(114, 9, 183, 0.1) 100%);
+      z-index: -1;
     }
     
     .sidebar-header {
       padding: 2rem 1.5rem;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     }
     
     .sidebar-logo {
       font-size: 1.75rem;
-      font-weight: 700;
+      font-weight: 800;
       display: flex;
       align-items: center;
       gap: 0.75rem;
@@ -49,7 +75,7 @@
     
     .sidebar-logo i {
       background: white;
-      color: #667eea;
+      color: var(--primary);
       width: 45px;
       height: 45px;
       display: flex;
@@ -61,14 +87,14 @@
     
     .nav-item {
       padding: 1rem 1.5rem;
-      margin: 0.5rem 1rem;
+      margin: 0.25rem 1rem;
       border-radius: 12px;
       transition: all 0.3s ease;
       cursor: pointer;
       display: flex;
       align-items: center;
       text-decoration: none;
-      color: #4b5563;
+      color: rgba(255, 255, 255, 0.8);
       font-weight: 500;
       position: relative;
       overflow: hidden;
@@ -81,14 +107,14 @@
       top: 0;
       height: 100%;
       width: 4px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       transform: scaleY(0);
       transition: transform 0.3s ease;
     }
     
     .nav-item:hover, .nav-item.active {
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-      color: #667eea;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
     }
     
     .nav-item.active::before {
@@ -108,21 +134,23 @@
     }
     
     .header {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
+      background: white;
       padding: 1.5rem 2rem;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin: 1rem;
       border-radius: 16px;
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
     }
     
     .search-bar {
       display: flex;
       align-items: center;
-      background: #f1f5f9;
+      background: var(--gray-light);
       border-radius: 12px;
       padding: 0.75rem 1.25rem;
       width: 350px;
@@ -131,7 +159,7 @@
     
     .search-bar:focus-within {
       background: white;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
     }
     
     .search-bar input {
@@ -140,7 +168,8 @@
       outline: none;
       width: 100%;
       margin-left: 0.5rem;
-      color: #1f2937;
+      color: var(--dark);
+      font-weight: 500;
     }
     
     .user-profile {
@@ -154,12 +183,12 @@
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
     }
     
     .user-avatar img {
@@ -173,12 +202,12 @@
     }
     
     .welcome-banner {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       border-radius: 20px;
       padding: 2.5rem;
       margin-bottom: 2rem;
       color: white;
-      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
       position: relative;
       overflow: hidden;
     }
@@ -217,6 +246,7 @@
       padding: 2rem;
       margin-bottom: 2rem;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid rgba(0, 0, 0, 0.03);
     }
     
     .dashboard-card:hover {
@@ -241,6 +271,7 @@
       position: relative;
       overflow: hidden;
       transition: all 0.3s ease;
+      border: 1px solid rgba(0, 0, 0, 0.03);
     }
     
     .stat-card:hover {
@@ -258,22 +289,22 @@
       background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
     }
     
-    .stat-card:nth-child(1) { --gradient-start: #667eea; --gradient-end: #764ba2; }
-    .stat-card:nth-child(2) { --gradient-start: #f093fb; --gradient-end: #f5576c; }
-    .stat-card:nth-child(3) { --gradient-start: #4facfe; --gradient-end: #00f2fe; }
+    .stat-card:nth-child(1) { --gradient-start: var(--primary); --gradient-end: var(--secondary); }
+    .stat-card:nth-child(2) { --gradient-start: #f8961e; --gradient-end: #f3722c; }
+    .stat-card:nth-child(3) { --gradient-start: #4cc9f0; --gradient-end: #4895ef; }
     .stat-card:nth-child(4) { --gradient-start: #43e97b; --gradient-end: #38f9d7; }
     
     .stat-value {
       font-size: 2.5rem;
-      font-weight: 700;
+      font-weight: 800;
       margin: 1rem 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     
     .stat-label {
-      color: #64748b;
+      color: var(--gray);
       font-size: 0.95rem;
       font-weight: 500;
     }
@@ -287,6 +318,7 @@
       justify-content: center;
       margin-bottom: 1rem;
       font-size: 1.75rem;
+      color: white;
     }
 
     .notification-badge {
@@ -297,7 +329,7 @@
       width: 44px;
       height: 44px;
       border-radius: 12px;
-      background: #f1f5f9;
+      background: var(--gray-light);
       transition: all 0.3s ease;
       cursor: pointer;
     }
@@ -310,7 +342,7 @@
       position: absolute;
       top: -6px;
       right: -6px;
-      background: #ef4444;
+      background: var(--danger);
       color: white;
       border-radius: 50%;
       width: 22px;
@@ -328,7 +360,7 @@
       border-radius: 16px;
       padding: 1.5rem;
       margin-bottom: 1rem;
-      border-left: 5px solid #667eea;
+      border-left: 5px solid var(--primary);
       transition: all 0.3s ease;
     }
     
@@ -341,13 +373,13 @@
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       margin-right: 1rem;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
     }
 
     .worker-avatar img {
@@ -381,6 +413,7 @@
       text-decoration: none;
       color: inherit;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.03);
     }
     
     .quick-action-card:hover {
@@ -408,6 +441,7 @@
       transition: all 0.3s ease;
       cursor: pointer;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.03);
     }
     
     .service-category:hover {
@@ -432,9 +466,10 @@
       border-radius: 16px;
       padding: 1.5rem;
       margin-bottom: 1rem;
-      border-left: 5px solid #f59e0b;
+      border-left: 5px solid var(--warning);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       transition: all 0.3s ease;
+      border: 1px solid rgba(0, 0, 0, 0.03);
     }
     
     .request-card:hover {
@@ -449,15 +484,21 @@
       flex-wrap: wrap;
     }
     
-    .btn-accept {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
+    .btn {
       border: none;
       padding: 0.5rem 1.5rem;
       border-radius: 8px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .btn-accept {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
     }
     
     .btn-accept:hover {
@@ -466,14 +507,8 @@
     }
     
     .btn-reject {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
       color: white;
-      border: none;
-      padding: 0.5rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
     }
     
     .btn-reject:hover {
@@ -484,12 +519,6 @@
     .btn-delete {
       background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
       color: white;
-      border: none;
-      padding: 0.5rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
     }
     
     .btn-delete:hover {
@@ -498,14 +527,8 @@
     }
     
     .btn-view-details {
-      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       color: white;
-      border: none;
-      padding: 0.5rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
     }
     
     .btn-view-details:hover {
@@ -523,7 +546,7 @@
     }
 
     .rate-worker-btn {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
       color: white;
       border: none;
       padding: 0.5rem 1rem;
@@ -571,15 +594,15 @@
     }
     
     .notification-toast.error {
-      border-left-color: #ef4444;
+      border-left-color: var(--danger);
     }
     
     .notification-toast.info {
-      border-left-color: #3b82f6;
+      border-left-color: var(--primary);
     }
     
     .notification-toast.warning {
-      border-left-color: #f59e0b;
+      border-left-color: var(--warning);
     }
     
     .notification-icon {
@@ -599,17 +622,17 @@
     }
     
     .notification-toast.error .notification-icon {
-      background: #ef4444;
+      background: var(--danger);
       color: white;
     }
     
     .notification-toast.info .notification-icon {
-      background: #3b82f6;
+      background: var(--primary);
       color: white;
     }
     
     .notification-toast.warning .notification-icon {
-      background: #f59e0b;
+      background: var(--warning);
       color: white;
     }
     
@@ -625,7 +648,7 @@
     
     .notification-message {
       font-size: 0.85rem;
-      color: #6b7280;
+      color: var(--gray);
     }
     
     .notification-close {
@@ -657,7 +680,7 @@
     
     .request-updated {
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-      border-left-color: #0ea5e9 !important;
+      border-left-color: var(--primary) !important;
     }
 
     /* NEW: Notifications Panel */
@@ -673,6 +696,7 @@
       max-height: 500px;
       overflow: hidden;
       display: none;
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
     
     .notifications-panel.show {
@@ -711,9 +735,155 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #3b82f6;
+      background: var(--primary);
       display: inline-block;
       margin-right: 0.5rem;
+    }
+
+    /* NEW: Enhanced card headers */
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .card-title i {
+      color: var(--primary);
+    }
+    
+    .card-action {
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    
+    .card-action:hover {
+      color: var(--primary-dark);
+    }
+
+    /* NEW: Progress bars */
+    .progress-bar {
+      height: 8px;
+      background: var(--gray-light);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transition: width 0.5s ease;
+    }
+
+    /* NEW: Service progress tracker */
+    .progress-tracker {
+      display: flex;
+      justify-content: space-between;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+    
+    .progress-tracker::before {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gray-light);
+      z-index: 1;
+    }
+    
+    .progress-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .step-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gray-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+      color: var(--gray);
+      font-size: 0.9rem;
+    }
+    
+    .step-active .step-icon {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .step-completed .step-icon {
+      background: var(--success);
+      color: white;
+    }
+    
+    .step-label {
+      font-size: 0.8rem;
+      color: var(--gray);
+      font-weight: 500;
+    }
+    
+    .step-active .step-label {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    
+    .step-completed .step-label {
+      color: var(--success);
+    }
+
+    /* NEW: Service category grid */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* NEW: Empty state styling */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--gray);
+    }
+    
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+    
+    .empty-state h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--dark);
+    }
+    
+    .empty-state p {
+      margin-bottom: 1.5rem;
     }
 
     @media (max-width: 768px) {
@@ -773,6 +943,10 @@
         width: 90vw;
         right: 5vw;
         left: 5vw;
+      }
+      
+      .services-grid {
+        grid-template-columns: repeat(2, 1fr);
       }
     }
   </style>
@@ -867,48 +1041,88 @@
           <div class="welcome-content">
             <h1 class="text-3xl font-bold mb-2">Welcome back, {{ customer.name }}!</h1>
             <p class="text-white text-opacity-90 text-lg">Ready to book your next service?</p>
+            <div class="mt-4">
+              <div class="progress-tracker">
+                <div class="progress-step step-completed">
+                  <div class="step-icon">
+                    <i class="fas fa-user"></i>
+                  </div>
+                  <span class="step-label">Profile</span>
+                </div>
+                <div class="progress-step step-active">
+                  <div class="step-icon">
+                    <i class="fas fa-search"></i>
+                  </div>
+                  <span class="step-label">Find Service</span>
+                </div>
+                <div class="progress-step">
+                  <div class="step-icon">
+                    <i class="fas fa-calendar"></i>
+                  </div>
+                  <span class="step-label">Book</span>
+                </div>
+                <div class="progress-step">
+                  <div class="step-icon">
+                    <i class="fas fa-check"></i>
+                  </div>
+                  <span class="step-label">Complete</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-              <i class="fas fa-calendar-check text-white"></i>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
+              <i class="fas fa-calendar-check"></i>
             </div>
             <div class="stat-value">{{ total_appointments }}</div>
             <div class="stat-label">Total Bookings</div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 75%"></div>
+            </div>
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-              <i class="fas fa-clock text-white"></i>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f8961e 0%, #f3722c 100%);">
+              <i class="fas fa-clock"></i>
             </div>
             <div class="stat-value">{{ pending_count }}</div>
             <div class="stat-label">Pending</div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 30%"></div>
+            </div>
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-              <i class="fas fa-check-circle text-white"></i>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);">
+              <i class="fas fa-check-circle"></i>
             </div>
             <div class="stat-value">{{ completed_count }}</div>
             <div class="stat-label">Completed</div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 60%"></div>
+            </div>
           </div>
           
           <div class="stat-card">
             <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-              <i class="fas fa-heart text-white"></i>
+              <i class="fas fa-heart"></i>
             </div>
             <div class="stat-value">{{ favorite_workers_count|default:0 }}</div>
             <div class="stat-label">Favorite Workers</div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 45%"></div>
+            </div>
           </div>
         </div>
 
         <!-- My Appointment Requests Section -->
         <div class="dashboard-card">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">
-              <i class="fas fa-paper-plane text-orange-500 mr-2"></i>
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-paper-plane"></i>
               My Appointment Requests
             </h2>
             {% if worker_requests %}
@@ -986,20 +1200,20 @@
                           {% if request.status == 'pending' %}
                             <form method="post" action="{% url 'delete_appointment' request.id %}" class="inline">
                               {% csrf_token %}
-                              <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
+                              <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
                                 <i class="fas fa-trash mr-1"></i>Cancel Request
                               </button>
                             </form>
                           {% endif %}
-                          <button class="btn-view-details" onclick="showRequestDetails({{ request.id }})">
+                          <button class="btn btn-view-details" onclick="showRequestDetails({{ request.id }})">
                             <i class="fas fa-eye mr-1"></i>View Details
                           </button>
                           {% if request.status == 'pending' %}
-                            <a href="{% url 'worker_service_details' request.worker.id %}" class="btn-view-details">
+                            <a href="{% url 'worker_service_details' request.worker.id %}" class="btn btn-view-details">
                               <i class="fas fa-edit mr-1"></i>Modify Request
                             </a>
                           {% elif request.status == 'accepted' %}
-                            <a href="{% url 'customer_appointments' %}" class="btn-accept">
+                            <a href="{% url 'customer_appointments' %}" class="btn btn-accept">
                               <i class="fas fa-calendar-check mr-1"></i>View Booking
                             </a>
                           {% endif %}
@@ -1010,11 +1224,11 @@
                 </div>
               {% endfor %}
             {% else %}
-              <div class="text-center py-12">
-                <i class="fas fa-paper-plane text-6xl text-gray-300 mb-4"></i>
-                <p class="text-gray-500 text-lg mb-4">No appointment requests sent yet</p>
-                <p class="text-gray-400 text-sm">When you book a service, your appointment requests will appear here.</p>
-                <a href="{% url 'worker-list' %}" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all mt-4">
+              <div class="empty-state">
+                <i class="fas fa-paper-plane"></i>
+                <h3>No appointment requests sent yet</h3>
+                <p>When you book a service, your appointment requests will appear here.</p>
+                <a href="{% url 'worker-list' %}" class="btn btn-view-details mt-4">
                   Book Your First Service
                 </a>
               </div>
@@ -1024,12 +1238,12 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="dashboard-card">
-            <div class="flex justify-between items-center mb-6">
-              <h2 class="text-2xl font-bold text-gray-800">
-                <i class="fas fa-calendar-alt text-indigo-600 mr-2"></i>
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fas fa-calendar-alt"></i>
                 Upcoming Bookings
               </h2>
-              <a href="{% url 'customer_appointments' %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-semibold">View All →</a>
+              <a href="{% url 'customer_appointments' %}" class="card-action">View All →</a>
             </div>
 
             {% if appointments %}
@@ -1059,7 +1273,7 @@
                       {% if appointment.status == 'accepted' and not appointment.customer_completed %}
                       <form method="post" action="{% url 'mark_customer_completed' appointment.id %}" class="ml-2">
                         {% csrf_token %}
-                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-semibold transition-colors">
+                        <button type="submit" class="btn btn-accept">
                           Mark Completed
                         </button>
                       </form>
@@ -1073,26 +1287,26 @@
                 </div>
               {% endfor %}
             {% else %}
-              <div class="text-center py-12">
-                <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
-                <p class="text-gray-500 text-lg mb-4">No confirmed bookings yet</p>
-                <p class="text-gray-400 text-sm">Your confirmed appointments will appear here once workers accept your requests.</p>
+              <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No confirmed bookings yet</h3>
+                <p>Your confirmed appointments will appear here once workers accept your requests.</p>
               </div>
             {% endif %}
           </div>
 
           <div class="dashboard-card">
-            <div class="flex justify-between items-center mb-6">
-              <h2 class="text-2xl font-bold text-gray-800">
-                <i class="fas fa-fire text-orange-500 mr-2"></i>
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fas fa-fire"></i>
                 Popular Services
               </h2>
-              <a href="{% url 'worker-list' %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-semibold">Explore All →</a>
+              <a href="{% url 'worker-list' %}" class="card-action">Explore All →</a>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
+            <div class="services-grid">
               <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=plumbing'">
-                <div class="service-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="service-icon" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
                   <i class="fas fa-wrench"></i>
                 </div>
                 <h3 class="font-semibold text-gray-800">Plumbing</h3>
@@ -1100,7 +1314,7 @@
               </div>
               
               <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=electrical'">
-                <div class="service-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="service-icon" style="background: linear-gradient(135deg, #f8961e 0%, #f3722c 100%);">
                   <i class="fas fa-bolt"></i>
                 </div>
                 <h3 class="font-semibold text-gray-800">Electrical</h3>
@@ -1108,7 +1322,7 @@
               </div>
               
               <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=painting'">
-                <div class="service-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="service-icon" style="background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);">
                   <i class="fas fa-paint-roller"></i>
                 </div>
                 <h3 class="font-semibold text-gray-800">Painting</h3>
@@ -1127,13 +1341,15 @@
         </div>
 
         <div class="dashboard-card">
-          <h2 class="text-2xl font-bold text-gray-800 mb-6">
-            <i class="fas fa-bolt text-yellow-500 mr-2"></i>
-            Quick Actions
-          </h2>
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-bolt"></i>
+              Quick Actions
+            </h2>
+          </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <a href="{% url 'worker-list' %}" class="quick-action-card">
-              <div class="quick-action-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              <div class="quick-action-icon" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
                 <i class="fas fa-plus"></i>
               </div>
               <div>
@@ -1143,7 +1359,7 @@
             </a>
             
             <a href="{% url 'customer_appointments' %}" class="quick-action-card">
-              <div class="quick-action-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+              <div class="quick-action-icon" style="background: linear-gradient(135deg, #f8961e 0%, #f3722c 100%);">
                 <i class="fas fa-history"></i>
               </div>
               <div>
@@ -1153,7 +1369,7 @@
             </a>
             
             <a href="{% url 'favorite_workers_list' %}" class="quick-action-card">
-              <div class="quick-action-icon" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa8a8 100%);">
+              <div class="quick-action-icon" style="background: linear-gradient(135deg, #e63946 0%, #ffa8a8 100%);">
                 <i class="fas fa-heart"></i>
               </div>
               <div>
@@ -1165,9 +1381,9 @@
         </div>
 
         <div class="dashboard-card">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">
-              <i class="fas fa-history text-blue-600 mr-2"></i>
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-history"></i>
               Recent Activity
             </h2>
           </div>
@@ -1175,7 +1391,7 @@
           {% if appointments %}
             {% for appointment in appointments|slice:":4" %}
               {% if appointment.status == 'completed' %}
-              <div class="appointment-preview" style="border-left-color: #3b82f6;">
+              <div class="appointment-preview" style="border-left-color: var(--primary);">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center flex-1">
                     <div class="worker-avatar">
@@ -1210,15 +1426,15 @@
               </div>
               {% endif %}
             {% empty %}
-              <div class="text-center py-12">
-                <i class="fas fa-clipboard-list text-6xl text-gray-300 mb-4"></i>
-                <p class="text-gray-500 text-lg">No completed appointments yet</p>
+              <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>No completed appointments yet</h3>
               </div>
             {% endfor %}
           {% else %}
-            <div class="text-center py-12">
-              <i class="fas fa-clipboard-list text-6xl text-gray-300 mb-4"></i>
-              <p class="text-gray-500 text-lg">No activity yet</p>
+            <div class="empty-state">
+              <i class="fas fa-clipboard-list"></i>
+              <h3>No activity yet</h3>
             </div>
           {% endif %}
         </div>
@@ -1263,6 +1479,7 @@
   <div id="notificationToastContainer"></div>
 
   <script>
+    // All JavaScript functionality remains the same as in the original code
     // Global variables for real-time updates
     let autoRefreshEnabled = true;
     let refreshInterval;
@@ -1399,32 +1616,32 @@
         newActionsHTML = `
           <form method="post" action="/appointments/${appointmentId}/delete/" class="inline">
             <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
-            <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
+            <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
               <i class="fas fa-trash mr-1"></i>Cancel Request
             </button>
           </form>
-          <button class="btn-view-details" onclick="showRequestDetails(${appointmentId})">
+          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
             <i class="fas fa-eye mr-1"></i>View Details
           </button>
-          <a href="/worker/service-details/${appointmentId}/" class="btn-view-details">
+          <a href="/worker/service-details/${appointmentId}/" class="btn btn-view-details">
             <i class="fas fa-edit mr-1"></i>Modify Request
           </a>
         `;
       } else if (status === 'accepted') {
         newActionsHTML = `
-          <button class="btn-view-details" onclick="showRequestDetails(${appointmentId})">
+          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
             <i class="fas fa-eye mr-1"></i>View Details
           </button>
-          <a href="{% url 'customer_appointments' %}" class="btn-accept">
+          <a href="{% url 'customer_appointments' %}" class="btn btn-accept">
             <i class="fas fa-calendar-check mr-1"></i>View Booking
           </a>
         `;
       } else if (status === 'rejected') {
         newActionsHTML = `
-          <button class="btn-view-details" onclick="showRequestDetails(${appointmentId})">
+          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
             <i class="fas fa-eye mr-1"></i>View Details
           </button>
-          <a href="{% url 'worker-list' %}" class="btn-view-details">
+          <a href="{% url 'worker-list' %}" class="btn btn-view-details">
             <i class="fas fa-search mr-1"></i>Find Another Worker
           </a>
         `;
@@ -1755,11 +1972,11 @@
                 <div class="flex space-x-2 pt-4">
                   <form method="post" action="/appointments/${requestId}/delete/" class="flex-1">
                     <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
-                    <button type="submit" class="btn-delete w-full text-center" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
+                    <button type="submit" class="btn btn-delete w-full text-center" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
                       <i class="fas fa-trash mr-1"></i>Cancel Request
                     </button>
                   </form>
-                  <a href="/worker/service-details/${requestId}/" class="btn-view-details flex-1 text-center">
+                  <a href="/worker/service-details/${requestId}/" class="btn btn-view-details flex-1 text-center">
                     <i class="fas fa-edit mr-1"></i>Modify Request
                   </a>
                 </div>
@@ -1770,7 +1987,7 @@
               <div class="text-center py-8">
                 <i class="fas fa-exclamation-triangle text-2xl text-red-500 mb-2"></i>
                 <p class="text-gray-600">Error loading request details</p>
-                <button onclick="closeRequestDetails()" class="btn-view-details mt-4">
+                <button onclick="closeRequestDetails()" class="btn btn-view-details mt-4">
                   Close
                 </button>
               </div>
@@ -1783,7 +2000,7 @@
             <div class="text-center py-8">
               <i class="fas fa-exclamation-triangle text-2xl text-red-500 mb-2"></i>
               <p class="text-gray-600">Error loading request details</p>
-              <button onclick="closeRequestDetails()" class="btn-view-details mt-4">
+              <button onclick="closeRequestDetails()" class="btn btn-view-details mt-4">
                 Close
               </button>
             </div>

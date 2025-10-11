@@ -439,6 +439,17 @@ body {
     box-shadow: var(--shadow-xl);
 }
 
+.book-service-btn.login-required {
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    cursor: pointer;
+}
+
+.book-service-btn.login-required:hover {
+    background: linear-gradient(135deg, #4b5563, #6b7280);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
 /* ================== SERVICE SPECS ================== */
 .service-specs {
     background: #f8f9fa;
@@ -704,6 +715,114 @@ body {
     box-shadow: none;
 }
 
+/* ================== LOGIN REQUIRED MODAL ================== */
+.login-required-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.login-required-modal.active {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.login-modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+    animation: modalSlideIn 0.3s ease;
+    text-align: center;
+}
+
+.login-icon {
+    font-size: 4rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.login-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.login-message {
+    color: var(--gray);
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.login-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.login-btn {
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: var(--shadow-md);
+}
+
+.login-btn.primary {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.login-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+.login-btn.secondary {
+    background: var(--white);
+    color: var(--primary);
+    border: 2px solid var(--primary);
+}
+
+.login-btn.secondary:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+.login-footer {
+    color: var(--gray);
+    font-size: 0.9rem;
+}
+
+.login-footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-footer a:hover {
+    text-decoration: underline;
+}
+
 /* ================== DATE PICKER ENHANCEMENTS ================== */
 .date-picker-container {
     position: relative;
@@ -770,6 +889,12 @@ body {
     
     .time-slots {
         grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .login-modal-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+        padding: 1.5rem;
     }
 }
 </style>
@@ -940,18 +1065,29 @@ body {
                         {% endfor %}
                     </ul>
                     
-                    <button class="book-service-btn" 
-                            data-service-id="{{ service.id }}"
-                            data-service-name="{{ service.name }}"
-                            data-service-price="{{ service.price_display }}"
-                            data-service-duration="{{ service.duration }}"
-                            {% if service.base_price == 0 %}data-consultation="true"{% endif %}>
-                        {% if service.base_price == 0 %}
-                        Request Consultation
-                        {% else %}
-                        Book This Service - {{ service.price_display }}
-                        {% endif %}
-                    </button>
+                    <!-- MODIFIED: Booking button with login check -->
+                    {% if user.is_authenticated and user.customer %}
+                        <!-- User is logged in and has customer profile - show booking button -->
+                        <button class="book-service-btn" 
+                                data-service-id="{{ service.id }}"
+                                data-service-name="{{ service.name }}"
+                                data-service-price="{{ service.price_display }}"
+                                data-service-duration="{{ service.duration }}"
+                                {% if service.base_price == 0 %}data-consultation="true"{% endif %}>
+                            {% if service.base_price == 0 %}
+                            Request Consultation
+                            {% else %}
+                            Book This Service - {{ service.price_display }}
+                            {% endif %}
+                        </button>
+                    {% else %}
+                        <!-- User is not logged in or doesn't have customer profile - show login prompt button -->
+                        <button class="book-service-btn login-required" 
+                                onclick="showLoginRequired()">
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Login to Book Service
+                        </button>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -974,67 +1110,135 @@ body {
 <!-- ================== BOOKING MODAL ================== -->
 <div class="booking-modal" id="bookingModal">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title" id="modalTitle">Book Service</h3>
-            <button class="close-modal" id="closeModal">&times;</button>
-        </div>
-        
-        <div class="service-summary" id="serviceSummary">
-            <div class="summary-item">
-                <span class="summary-label">Service:</span>
-                <span class="summary-value" id="summaryServiceName">-</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">Price:</span>
-                <span class="summary-value" id="summaryServicePrice">-</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">Duration:</span>
-                <span class="summary-value" id="summaryServiceDuration">-</span>
-            </div>
-        </div>
-        
-        <form class="booking-form" id="bookingForm" action="{% url 'appointment_request' worker.id %}" method="post">
-            {% csrf_token %}
-            <input type="hidden" id="selectedServiceId" name="service_id">
-            <input type="hidden" id="selectedServiceName" name="service_name">
-            <input type="hidden" id="selectedServicePrice" name="service_price">
-            <input type="hidden" id="selectedTimeSlot" name="preferred_time">
-            
-            <div class="form-group">
-                <label for="serviceDate">Preferred Date *</label>
-                <input type="date" id="serviceDate" name="preferred_date" required>
-                <small style="color: var(--gray); font-size: 0.8rem;">Select today or a future date</small>
+        {% if user.is_authenticated and user.customer %}
+            <!-- User is logged in - show booking form -->
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Book Service</h3>
+                <button class="close-modal" id="closeModal">&times;</button>
             </div>
             
-            <div class="form-group">
-                <label>Preferred Time Slot *</label>
-                <div class="time-slots" id="timeSlots">
-                    <div class="time-slot" data-time="09:00-11:00">09:00 - 11:00</div>
-                    <div class="time-slot" data-time="11:00-13:00">11:00 - 13:00</div>
-                    <div class="time-slot" data-time="13:00-15:00">13:00 - 15:00</div>
-                    <div class="time-slot" data-time="15:00-17:00">15:00 - 17:00</div>
-                    <div class="time-slot" data-time="17:00-19:00">17:00 - 19:00</div>
+            <div class="service-summary" id="serviceSummary">
+                <div class="summary-item">
+                    <span class="summary-label">Service:</span>
+                    <span class="summary-value" id="summaryServiceName">-</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Price:</span>
+                    <span class="summary-value" id="summaryServicePrice">-</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Duration:</span>
+                    <span class="summary-value" id="summaryServiceDuration">-</span>
                 </div>
             </div>
             
-            <div class="form-group">
-                <label for="serviceAddress">Service Location *</label>
-                <textarea id="serviceAddress" name="address" required placeholder="Enter complete service address" rows="3"></textarea>
+            <form class="booking-form" id="bookingForm" action="{% url 'appointment_request' worker.id %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="selectedServiceId" name="service_id">
+                <input type="hidden" id="selectedServiceName" name="service_name">
+                <input type="hidden" id="selectedServicePrice" name="service_price">
+                <input type="hidden" id="selectedTimeSlot" name="preferred_time">
+                
+                <div class="form-group">
+                    <label for="serviceDate">Preferred Date *</label>
+                    <input type="date" id="serviceDate" name="preferred_date" required>
+                    <small style="color: var(--gray); font-size: 0.8rem;">Select today or a future date</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Preferred Time Slot *</label>
+                    <div class="time-slots" id="timeSlots">
+                        <div class="time-slot" data-time="09:00-11:00">09:00 - 11:00</div>
+                        <div class="time-slot" data-time="11:00-13:00">11:00 - 13:00</div>
+                        <div class="time-slot" data-time="13:00-15:00">13:00 - 15:00</div>
+                        <div class="time-slot" data-time="15:00-17:00">15:00 - 17:00</div>
+                        <div class="time-slot" data-time="17:00-19:00">17:00 - 19:00</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="serviceAddress">Service Location *</label>
+                    <textarea id="serviceAddress" name="address" required placeholder="Enter complete service address" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="customerName">Your Name *</label>
+                    <input type="text" id="customerName" name="customer_name" required placeholder="Enter your full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="customerPhone">Your Phone Number *</label>
+                    <input type="tel" id="customerPhone" name="customer_phone" required placeholder="Enter your phone number">
+                </div>
+                
+                <button type="submit" class="submit-booking" id="submitBookingBtn">Confirm Booking</button>
+            </form>
+        {% else %}
+            <!-- User is not logged in - show login prompt -->
+            <div class="modal-header">
+                <h3 class="modal-title">Login Required</h3>
+                <button class="close-modal" id="closeModal">&times;</button>
             </div>
             
-            <div class="form-group">
-                <label for="customerName">Your Name *</label>
-                <input type="text" id="customerName" name="customer_name" required placeholder="Enter your full name">
+            <div class="p-6 text-center">
+                <div class="text-6xl mb-4 text-indigo-600">
+                    <i class="fas fa-user-lock"></i>
+                </div>
+                <h4 class="text-xl font-bold text-gray-900 mb-2">Login to Book Services</h4>
+                <p class="text-gray-600 mb-6">You need to be logged in with a customer account to book services.</p>
+                
+                <div class="space-y-3">
+                    <a href="{% url 'account_login' %}" class="btn-primary w-full block text-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Login to Your Account
+                    </a>
+                    <a href="{% url 'account_signup' %}" class="btn-secondary w-full block text-center">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Create New Account
+                    </a>
+                </div>
+                
+                <p class="text-sm text-gray-500 mt-6">
+                    Don't have a customer profile? 
+                    <a href="{% url 'customer-create' %}" class="text-indigo-600 hover:text-indigo-800 font-medium">
+                        Create one here
+                    </a>
+                </p>
             </div>
-            
-            <div class="form-group">
-                <label for="customerPhone">Your Phone Number *</label>
-                <input type="tel" id="customerPhone" name="customer_phone" required placeholder="Enter your phone number">
-            </div>
-            
-            <button type="submit" class="submit-booking" id="submitBookingBtn">Confirm Booking</button>
-        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ================== LOGIN REQUIRED MODAL ================== -->
+<div class="login-required-modal" id="loginRequiredModal">
+    <div class="login-modal-content">
+        <div class="login-icon">
+            <i class="fas fa-user-lock"></i>
+        </div>
+        <h3 class="login-title">Login Required</h3>
+        <p class="login-message">
+            You need to be logged in with a customer account to book services and view detailed worker information.
+        </p>
+        
+        <div class="login-actions">
+            <a href="{% url 'account_login' %}" class="login-btn primary">
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                Login to Your Account
+            </a>
+            <a href="{% url 'account_signup' %}" class="login-btn secondary">
+                <i class="fas fa-user-plus mr-2"></i>
+                Create New Account
+            </a>
+        </div>
+        
+        <p class="login-footer">
+            Don't have a customer profile? 
+            <a href="{% url 'customer-create' %}">Create one here</a>
+        </p>
+        
+        <button class="close-modal" onclick="closeLoginRequiredModal()" style="margin-top: 1rem; background: none; border: none; color: var(--gray); cursor: pointer;">
+            <i class="fas fa-times mr-1"></i> Close
+        </button>
     </div>
 </div>
 
@@ -1084,7 +1288,7 @@ function initializeEventListeners() {
     // Event delegation for booking buttons
     document.addEventListener('click', function(e) {
         const bookButton = e.target.closest('.book-service-btn');
-        if (bookButton) {
+        if (bookButton && !bookButton.classList.contains('login-required')) {
             handleBookingButtonClick(bookButton);
             e.preventDefault();
             e.stopPropagation();
@@ -1166,27 +1370,50 @@ function initializeFormElements() {
     }
 }
 
+// NEW: Login required modal functions
+function showLoginRequired() {
+    const modal = document.getElementById('loginRequiredModal');
+    if (!modal) return;
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLoginRequiredModal() {
+    const modal = document.getElementById('loginRequiredModal');
+    if (!modal) return;
+    
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
 function handleBookingButtonClick(button) {
-    const serviceId = button.getAttribute('data-service-id');
-    const serviceName = button.getAttribute('data-service-name');
-    const servicePrice = button.getAttribute('data-service-price');
-    const serviceDuration = button.getAttribute('data-service-duration');
-    
-    if (!serviceId) {
-        alert('Error: Service information not found. Please try again.');
-        return;
-    }
-    
-    // Store booking data
-    currentBookingData = {
-        serviceId: serviceId,
-        serviceName: serviceName || 'Service',
-        servicePrice: servicePrice || 'Contact for pricing',
-        serviceDuration: serviceDuration || 'Varies'
-    };
-    
-    // Open modal
-    openBookingModal(serviceName, servicePrice, serviceId);
+    {% if user.is_authenticated and user.customer %}
+        // User is logged in - proceed with booking
+        const serviceId = button.getAttribute('data-service-id');
+        const serviceName = button.getAttribute('data-service-name');
+        const servicePrice = button.getAttribute('data-service-price');
+        const serviceDuration = button.getAttribute('data-service-duration');
+        
+        if (!serviceId) {
+            alert('Error: Service information not found. Please try again.');
+            return;
+        }
+        
+        // Store booking data
+        currentBookingData = {
+            serviceId: serviceId,
+            serviceName: serviceName || 'Service',
+            servicePrice: servicePrice || 'Contact for pricing',
+            serviceDuration: serviceDuration || 'Varies'
+        };
+        
+        // Open modal
+        openBookingModal(serviceName, servicePrice, serviceId);
+    {% else %}
+        // User is not logged in - show login required
+        showLoginRequired();
+    {% endif %}
 }
 
 function openBookingModal(serviceTitle, servicePrice, serviceId = null) {
@@ -1242,6 +1469,16 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeModal();
     initializeEventListeners();
     initializeFormElements();
+    
+    // Close login modal when clicking outside
+    const loginModal = document.getElementById('loginRequiredModal');
+    if (loginModal) {
+        loginModal.addEventListener('click', function(e) {
+            if (e.target === loginModal) {
+                closeLoginRequiredModal();
+            }
+        });
+    }
 });
 </script>
 {% endblock content %}

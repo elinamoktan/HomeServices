@@ -7,6 +7,9 @@ from .views import CustomLoginView  # ✅ NEW: Import custom login view
 urlpatterns = [
     # Landing page
     path('', TemplateView.as_view(template_name="landing/index.html"), name='landing-page'),
+    
+    # Location storage
+    path('store-landing-location/', views.store_landing_location, name='store_landing_location'),
 
     # ✅ NEW: Override allauth's default login with custom view (must come BEFORE allauth urls)
     path('accounts/login/', CustomLoginView.as_view(), name='account_login'),
@@ -102,5 +105,6 @@ urlpatterns = [
     path('notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
     path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     path('get-notification-count/', views.get_notification_count, name='get_notification_count'),
+    path('workers/', views.workers_redirect, name='workers-direct'),
 
 ]

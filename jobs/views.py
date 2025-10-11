@@ -583,10 +583,16 @@ class WorkerListView(ListView):
         # Get the base queryset
         workers_qs = context.get('object_list', self.get_queryset())
 
-        # Get customer info if available
-        customer = getattr(self.request.user, 'customer', None)
+        # Get customer info if available (only if user is authenticated)
+        customer = None
         cust_lat = None
         cust_lon = None
+        current_lat = None
+        current_lon = None
+        location_source = None
+        
+        if self.request.user.is_authenticated:
+            customer = getattr(self.request.user, 'customer', None)
         
         # PRIORITY 1: Check for landing page location (most recent)
         landing_location = self.request.session.get('landing_location')
@@ -594,6 +600,7 @@ class WorkerListView(ListView):
             try:
                 cust_lat = float(landing_location['latitude'])
                 cust_lon = float(landing_location['longitude'])
+                location_source = 'landing'
                 logger.info("Using landing page location for worker sorting")
             except (ValueError, TypeError, KeyError):
                 cust_lat = None
@@ -607,14 +614,16 @@ class WorkerListView(ListView):
             if current_lat and current_lon:
                 cust_lat = current_lat
                 cust_lon = current_lon
+                location_source = 'session'
                 logger.info("Using session location for worker sorting")
         
-        # PRIORITY 3: Fallback to database location
+        # PRIORITY 3: Fallback to database location (only if user is authenticated)
         if cust_lat is None and customer:
             if customer.latitude and customer.longitude:
                 try:
                     cust_lat = float(customer.latitude)
                     cust_lon = float(customer.longitude)
+                    location_source = 'database'
                     logger.info("Using database location for worker sorting")
                 except (ValueError, TypeError):
                     cust_lat = None
@@ -664,6 +673,7 @@ class WorkerListView(ListView):
             # First, annotate each worker with their average rating
             for worker_info in workers_with_distance:
                 w = worker_info['worker']
+                # ✅ FIXED: Use Bayesian average for sorting
                 average_rating = w.bayesian_average_rating()
                 worker_info['average_rating'] = average_rating
                 worker_info['total_ratings'] = w.ratings.count()
@@ -682,20 +692,24 @@ class WorkerListView(ListView):
                 # If no customer location, sort by rating as fallback
                 for worker_info in workers_with_distance:
                     w = worker_info['worker']
+                    # ✅ FIXED: Use Bayesian average for sorting
                     average_rating = w.bayesian_average_rating()
                     worker_info['average_rating'] = average_rating
                 
                 workers_with_distance.sort(key=lambda x: x.get('average_rating', 0), reverse=True)
         
-        # Add rating information to each worker for display
+        # ✅ FIXED: Add rating information to each worker for display using Bayesian average
         for worker_info in workers_with_distance:
             w = worker_info['worker']
+            
+            # ✅ FIXED: Use Bayesian average for display instead of simple average
             average_rating = w.bayesian_average_rating()
-            w.average_rating = average_rating
+            w.average_rating = average_rating  # This ensures template uses Bayesian average
             w.total_ratings = w.ratings.count()
             breakdown = w.get_rating_breakdown()
             w.rating_breakdown = breakdown
 
+            # Star breakdown calculations based on Bayesian average
             full_stars = int(average_rating)
             half_star = 1 if average_rating % 1 >= 0.5 else 0
             empty_stars = 5 - (full_stars + half_star)
@@ -715,15 +729,19 @@ class WorkerListView(ListView):
         context['customer_location'] = {
             'latitude': cust_lat,
             'longitude': cust_lon,
-            'source': 'session' if current_lat else 'database'
+            'source': location_source
         } if cust_lat and cust_lon else None
         
         # Add filter context for template
         context['current_filter'] = filter_param or 'distance'  # default to distance
         
-        return context   
-# Class-based view for worker detail
-class WorkerDetailView(LoginRequiredMixin, DetailView):
+        return context
+
+def workers_redirect(request):
+    """Redirect to worker list"""
+    return redirect('worker-list')
+
+class WorkerDetailView(DetailView):
     model = Worker
     template_name = 'jobs/worker_detail.html'
 
@@ -732,9 +750,7 @@ class WorkerDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         worker = super().get_object(queryset)
-        
-        if self.request.user != worker.owner and not hasattr(self.request.user, 'customer'):
-            raise PermissionDenied("You do not have permission to view this worker's details.")
+        # Remove authentication check - allow public access
         return worker
 
     def get_context_data(self, **kwargs):
@@ -1776,8 +1792,14 @@ def rate_worker(request, appointment_id):
             )
             messages.success(request, "Thank you for rating the worker!")
         
-        # Update worker's average rating using Bayesian algorithm
-        appointment.worker.update_average_rating()
+        # ✅ FIXED: Force update worker's average rating using Bayesian algorithm
+        worker = appointment.worker
+        worker.update_average_rating()  # This now uses Bayesian average
+        
+        # Debug info - you can remove this later
+        print(f"Rating submitted: {rating_value}")
+        print(f"Worker {worker.name} new Bayesian average: {worker.average_rating}")
+        print(f"Total ratings: {worker.rating_count}")
         
         return redirect('customer_dashboard')
     
@@ -1788,6 +1810,8 @@ def rate_worker(request, appointment_id):
     }
     
     return render(request, 'jobs/rate_worker.html', context)
+
+
 @login_required
 def mark_customer_completed(request, pk):
     """Enhanced version that creates notifications when customer marks as completed"""
@@ -2617,7 +2641,6 @@ def appointment_request(request, worker_id):
     # GET request - redirect to worker service details
     return redirect('worker_service_details', worker_id=worker_id)
 
-@login_required
 def worker_service_details(request, worker_id):
     worker = get_object_or_404(Worker, id=worker_id)
     

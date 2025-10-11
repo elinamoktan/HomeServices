@@ -127,13 +127,23 @@ def edit_worker(request, worker_id):
             worker.phone_number = request.POST.get('phone_number', worker.phone_number)
             worker.tagline = request.POST.get('tagline', worker.tagline)
             worker.bio = request.POST.get('bio', worker.bio)
-            worker.verified = request.POST.get('verified') == 'true'
+            
+            # Handle verified status - check if it's being passed
+            if 'verified' in request.POST:
+                worker.verified = request.POST.get('verified') in ['true', 'True', '1', 'on']
+            
             worker.is_available = request.POST.get('is_available') == 'true'
             worker.shift = request.POST.get('shift', worker.shift)
             
-            # Handle profile picture upload
+            # Handle file uploads
             if 'profile_pic' in request.FILES:
                 worker.profile_pic = request.FILES['profile_pic']
+            
+            if 'citizenship_image' in request.FILES:
+                worker.citizenship_image = request.FILES['citizenship_image']
+            
+            if 'certificate_file' in request.FILES:
+                worker.certificate_file = request.FILES['certificate_file']
             
             worker.save()
             
@@ -158,6 +168,9 @@ def edit_worker(request, worker_id):
             appointment_count = worker.worker_appointments.count()
             avg_rating = worker.ratings.aggregate(avg=Avg('rating'))['avg'] or 0
             
+            # Format location updated at
+            location_updated_at = worker.location_updated_at.strftime('%b. %d, %Y, %I:%M %p') if worker.location_updated_at else None
+            
             worker_data = {
                 'id': worker.id,
                 'name': worker.name,
@@ -168,11 +181,24 @@ def edit_worker(request, worker_id):
                 'is_available': worker.is_available,
                 'shift': worker.shift,
                 'profile_pic_url': worker.profile_pic.url if worker.profile_pic else '',
-                'average_rating': round(float(avg_rating), 1),
+                'average_rating': round(float(avg_rating), 2),
                 'total_ratings': worker.ratings.count(),
                 'appointment_count': appointment_count,
                 'created_at': worker.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                 'email': worker.owner.email if worker.owner else '',
+                'owner_id': worker.owner.id if worker.owner else None,
+                
+                # Location information
+                'latitude': str(worker.latitude) if worker.latitude else None,
+                'longitude': str(worker.longitude) if worker.longitude else None,
+                'location_address': worker.location_address or 'Browser Geolocation',
+                'location_updated_at': location_updated_at,
+                'location_accuracy': '12/0',  # Default value as shown in screenshot
+                'location_source': 'Browser Geolocation',
+                
+                # Documents
+                'citizenship_image_url': worker.citizenship_image.url if worker.citizenship_image else None,
+                'certificate_file_url': worker.certificate_file.url if worker.certificate_file else None,
             }
             return JsonResponse(worker_data)
         except Exception as e:
@@ -825,3 +851,39 @@ def export_data(request, model_type):
     
     messages.error(request, 'Invalid format type')
     return redirect('admin_dashboard:dashboard')
+
+
+@login_required
+@user_passes_test(admin_required)
+@csrf_exempt
+def verify_worker(request, worker_id):
+    """Verify/Unverify worker"""
+    if request.method == 'POST':
+        try:
+            worker = get_object_or_404(Worker, id=worker_id)
+            action = request.POST.get('action', 'verify')
+            
+            if action == 'verify':
+                worker.verified = True
+                message = f'Worker {worker.name} verified successfully'
+            else:
+                worker.verified = False
+                message = f'Worker {worker.name} unverified'
+            
+            worker.save()
+            
+            # Log admin activity
+            AdminActivityLog.objects.create(
+                admin_user=request.user,
+                action='UPDATE',
+                model_name='Worker',
+                object_id=worker.id,
+                description=message
+            )
+            
+            return JsonResponse({'success': True, 'message': message})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)

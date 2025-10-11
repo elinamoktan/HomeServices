@@ -1,4 +1,4 @@
-# models.py - Enhanced with Notification System and Dynamic Pricing (Without GIS)
+# models.py - Enhanced with Bayesian Rating System
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Avg, Count
@@ -175,16 +175,17 @@ class Worker(models.Model):
         except (ValueError, TypeError) as e:
             logger.error(f"Error updating location for worker {self.name}: {e}")
             return False
-            """Get previous location data"""
+
     def get_previous_location(self):
-            if self.previous_latitude and self.previous_longitude:
-                return {
-                    'latitude': self.previous_latitude,
-                    'longitude': self.previous_longitude,
-                    'address': self.previous_location_address,
-                    'updated_at': self.previous_location_updated_at
-                }
-            return None
+        """Get previous location data"""
+        if self.previous_latitude and self.previous_longitude:
+            return {
+                'latitude': self.previous_latitude,
+                'longitude': self.previous_longitude,
+                'address': self.previous_location_address,
+                'updated_at': self.previous_location_updated_at
+            }
+        return None
 
     def has_previous_location(self):
         """Check if previous location exists"""
@@ -203,7 +204,6 @@ class Worker(models.Model):
             }
         return None
 
-
     def calculate_distance(self, other_lat, other_lon):
         """Calculate distance to another point in kilometers"""
         if not all([self.latitude, self.longitude, other_lat, other_lon]):
@@ -211,42 +211,85 @@ class Worker(models.Model):
             
         return _haversine_km(self.latitude, self.longitude, other_lat, other_lon)
 
-    def bayesian_average_rating(self, confidence=5.0):
+    def bayesian_average_rating(self, confidence=5.0, default_rating=3.0):
         """
         Calculate Bayesian average rating for a worker.
-        confidence represents the number of "dummy" ratings to consider
+        confidence: number of "dummy" ratings to consider
+        default_rating: the default rating to use when there are few ratings
         """
-        # Get all ratings for this worker
-        ratings = self.ratings.all()
-        total_ratings = ratings.count()
+        try:
+            # Get all ratings for this worker
+            ratings = self.ratings.all()
+            total_ratings = ratings.count()
 
-        if total_ratings == 0:
-            return 0
+            if total_ratings == 0:
+                return default_rating
 
-        # Calculate average rating
-        avg_rating = ratings.aggregate(Avg('rating'))['rating__avg']
+            # Calculate average rating for this worker
+            avg_rating = ratings.aggregate(Avg('rating'))['rating__avg']
+            if avg_rating is None:
+                return default_rating
 
-        # Calculate global average (across all workers)
-        from .models import WorkerRating
-        global_avg = WorkerRating.objects.aggregate(Avg('rating'))['rating__avg'] or 3.0
+            # Calculate global average (across all workers) - cache this if possible
+            from .models import WorkerRating
+            global_stats = WorkerRating.objects.aggregate(
+                global_avg=Avg('rating'),
+                global_count=Count('id')
+            )
+            global_avg = global_stats['global_avg'] or default_rating
 
-        # Apply Bayesian formula
-        bayesian_avg = (confidence * global_avg + total_ratings * avg_rating) / (confidence + total_ratings)
+            # Apply Bayesian formula:
+            # (confidence * global_avg + total_ratings * actual_avg) / (confidence + total_ratings)
+            bayesian_avg = (confidence * global_avg + total_ratings * avg_rating) 
+            bayesian_avg /= (confidence + total_ratings)
 
-        return round(bayesian_avg, 2)
+            return round(bayesian_avg, 2)
+            
+        except Exception as e:
+            logger.error(f"Error calculating Bayesian average for worker {self.id}: {e}")
+            return default_rating
+
+    def get_bayesian_rating_display(self):
+        """Get Bayesian rating for display with rating count"""
+        return {
+            'rating': self.bayesian_average_rating(),
+            'count': self.ratings.count(),
+            'total_ratings': self.ratings.count()
+        }
+
+    def get_star_breakdown(self):
+        """Get star breakdown for Bayesian rating display"""
+        bayesian_rating = self.bayesian_average_rating()
+        full_stars = int(bayesian_rating)
+        half_star = (bayesian_rating - full_stars) >= 0.5
+        empty_stars = 5 - full_stars - (1 if half_star else 0)
+        
+        return {
+            'full_stars': range(full_stars),
+            'half_star': half_star,
+            'empty_stars': range(empty_stars),
+            'rating': bayesian_rating
+        }
 
     def update_average_rating(self):
-        """Update the average rating and rating count for the worker"""
-        ratings = self.ratings.all()
-        self.rating_count = ratings.count()
+        """Update the average rating using Bayesian algorithm"""
+        try:
+            ratings = self.ratings.all()
+            self.rating_count = ratings.count()
 
-        if self.rating_count > 0:
-            # Use Bayesian average for more accurate representation
-            self.average_rating = self.bayesian_average_rating()
-        else:
-            self.average_rating = 0
+            if self.rating_count > 0:
+                # Use Bayesian average instead of simple average
+                self.average_rating = self.bayesian_average_rating()
+            else:
+                self.average_rating = 0
 
-        self.save()
+            # Also update total_ratings field for consistency
+            self.total_ratings = self.rating_count
+            
+            self.save(update_fields=['average_rating', 'rating_count', 'total_ratings'])
+            
+        except Exception as e:
+            logger.error(f"Error updating average rating for worker {self.id}: {e}")
 
     def get_rating_breakdown(self):
         """Get the breakdown of ratings (how many of each star)"""
@@ -422,15 +465,15 @@ class Customer(models.Model):
             return False
 
     def get_previous_location(self):
-            """Get previous location data"""
-            if self.previous_latitude and self.previous_longitude:
-                return {
-                    'latitude': self.previous_latitude,
-                    'longitude': self.previous_longitude,
-                    'address': self.previous_location_address,
-                    'updated_at': self.previous_location_updated_at
-                }
-            return None
+        """Get previous location data"""
+        if self.previous_latitude and self.previous_longitude:
+            return {
+                'latitude': self.previous_latitude,
+                'longitude': self.previous_longitude,
+                'address': self.previous_location_address,
+                'updated_at': self.previous_location_updated_at
+            }
+        return None
 
     def has_previous_location(self):
         """Check if previous location exists"""
@@ -674,6 +717,7 @@ class Appointment(models.Model):
         if not self.appointment_date:
             return False
         return self.appointment_date > timezone.now()
+
 # Worker Rating Model
 class WorkerRating(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='ratings')

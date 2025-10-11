@@ -1,5 +1,4 @@
 {% extends 'jobs/_base.html' %}
-{% load distance %}
 {% load static %}
 {% load custom_tags %}
 
@@ -435,6 +434,95 @@
       </div>
       {% endif %}
     </div>
+    {% else %}
+    <!-- Search and Filter Section for non-authenticated users -->
+    <div class="w-full">
+      <div class="flex flex-col gap-8 w-full">
+        
+        <!-- Search and Filter Section -->
+        <div class="bg-white rounded-2xl shadow-xl p-6">
+          <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+            <!-- Search Form -->
+            <form method="get" class="flex-1 min-w-0">
+              <div class="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="text"
+                  name="q"
+                  value="{{ query|default:'' }}"
+                  placeholder="Search workers by tagline..."
+                  class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg"
+                />
+                <button
+                  type="submit"
+                  class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-lg"
+                >
+                  <i class="fas fa-search mr-2"></i>Search
+                </button>
+              </div>
+            </form>
+
+            <!-- Service Filter -->
+            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <form method="get" class="flex items-center gap-3">
+                <select
+                  name="service"
+                  class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg min-w-[200px]"
+                  onchange="this.form.submit()"
+                >
+                  <option value="">All Services</option>
+                  {% for service in all_services %}
+                  <option value="{{ service.id }}" {% if selected_service == service.id|stringformat:"s" %}selected{% endif %}>
+                    {{ service.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                
+                <!-- Clear filters -->
+                {% if query or selected_service %}
+                <a href="{% url 'worker-list' %}" class="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-semibold">
+                  Clear Filters
+                </a>
+                {% endif %}
+              </form>
+            </div>
+          </div>
+
+          <!-- Distance Filter for non-authenticated users -->
+          <div class="mt-6 pt-6 border-t border-gray-200">
+            <form id="distanceForm" method="get" class="flex flex-col lg:flex-row items-center gap-6">
+              <input type="hidden" name="q" value="{{ query|default:'' }}">
+              <input type="hidden" name="service" value="{{ selected_service|default:'' }}">
+              
+              <div class="flex items-center gap-4 flex-1 min-w-0">
+                <label for="distanceSlider" class="text-indigo-700 font-semibold whitespace-nowrap text-lg min-w-[120px]">
+                  Max Distance:
+                </label>
+                <span id="distanceValue" class="text-indigo-600 font-medium whitespace-nowrap text-lg min-w-[60px]">
+                  {{ max_distance|default:50 }} km
+                </span>
+                <input
+                  type="range"
+                  id="distanceSlider"
+                  name="max_distance"
+                  min="1"
+                  max="100"
+                  value="{{ max_distance|default:50 }}"
+                  class="flex-1 min-w-0 h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer slider"
+                >
+              </div>
+              
+              <button
+                type="submit"
+                class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-lg font-semibold min-w-[120px]"
+              >
+                Apply Filter
+              </button>
+            </form>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
     {% endif %}
   </div>
 
@@ -446,6 +534,12 @@
   <div class="mb-6 text-center">
     <p class="text-lg text-indigo-700 font-semibold">
       Showing workers within <span class="text-indigo-900 font-bold">{{ max_distance }} km</span> of your location
+    </p>
+  </div>
+  {% elif customer_location %}
+  <div class="mb-6 text-center">
+    <p class="text-lg text-indigo-700 font-semibold">
+      Workers sorted by distance from your location
     </p>
   </div>
   {% endif %}
@@ -535,42 +629,52 @@
                 {% endif %}
               </div>
               
+              <!-- BAYESIAN RATING DISPLAY - UPDATED -->
               <div class="flex flex-col items-center space-y-3">
                 <div class="flex items-center justify-center space-x-1">
-                  {# Full Stars #}
-                  {% for _ in worker.full_stars %}
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="gold" class="drop-shadow-md">
-                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                    </svg>
-                  {% endfor %}
+                  {# Full Stars - using Bayesian rating #}
+                  {% with stars=worker.get_star_breakdown %}
+                    {% for _ in stars.full_stars %}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="gold" class="drop-shadow-md">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                    {% endfor %}
 
-                  {# Half Star #}
-                  {% if worker.half_star %}
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" class="drop-shadow-md">
-                      <defs>
-                        <clipPath id="half-mask-{{ worker.id }}">
-                          <rect x="0" y="0" width="50%" height="100%" />
-                        </clipPath>
-                      </defs>
-                      <path fill="gold" clip-path="url(#half-mask-{{ worker.id }})"
-                            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                      <path fill="gray"
-                            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                    </svg>
-                  {% endif %}
+                    {# Half Star - using Bayesian rating #}
+                    {% if stars.half_star %}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" class="drop-shadow-md">
+                        <defs>
+                          <linearGradient id="half-gradient-{{ worker.id }}">
+                            <stop offset="50%" stop-color="gold" />
+                            <stop offset="50%" stop-color="gray" />
+                          </linearGradient>
+                        </defs>
+                        <path fill="url(#half-gradient-{{ worker.id }})"
+                              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                      </svg>
+                    {% endif %}
 
-                  {# Empty Stars #}
-                  {% for _ in worker.empty_stars %}
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="gray" class="drop-shadow-sm">
-                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                    </svg>
-                  {% endfor %}
+                    {# Empty Stars - using Bayesian rating #}
+                    {% for _ in stars.empty_stars %}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="gray" class="drop-shadow-sm">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                    {% endfor %}
+                  {% endwith %}
                 </div>
 
                 <div class="text-center">
-                  <span class="text-indigo-900 font-bold text-xl">{{ worker.average_rating }} / 5</span>
+                  {# Display Bayesian rating instead of simple average #}
+                  <span class="text-indigo-900 font-bold text-xl">{{ worker.bayesian_average_rating|floatformat:1 }} / 5</span>
                   <br>
-                  <span class="text-indigo-600 font-medium text-sm">({{ worker.total_ratings }} reviews)</span>
+                  <span class="text-indigo-600 font-medium text-sm">({{ worker.ratings.count }} reviews)</span>
+                  {# Show Bayesian indicator #}
+                  <div class="text-xs text-green-600 font-semibold mt-1 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Bayesian Rating
+                  </div>
                 </div>
               </div>
             </div>
@@ -587,6 +691,137 @@
       </a>
     </div>
     {% endif %}
+    {% empty %}
+    <div class="col-span-full text-center py-12">
+      <p class="text-xl text-indigo-700 font-semibold">
+        {% if max_distance %}
+          No workers found within {{ max_distance }} km of your location.
+        {% else %}
+          No workers found matching your search criteria.
+        {% endif %}
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <!-- Worker list for non-authenticated users -->
+  <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+    {% for worker in object_list %}
+    <div class="group relative">
+      <a href="{% url 'worker_service_details' worker.id %}" class="block">
+        <div
+          class="bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full"
+        >
+          <!-- Worker Image -->
+          <div class="relative h-48 overflow-hidden">
+            {% if worker.profile_pic %}
+            <img
+              src="{{ worker.profile_pic.url }}"
+              alt="{{ worker.name }}"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            />
+            {% else %}
+            <div class="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+              <i class="fas fa-user text-white text-6xl"></i>
+            </div>
+            {% endif %}
+            
+            <!-- Verified Badge -->
+            {% if worker.verified %}
+            <div class="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+              <i class="fas fa-check-circle"></i>
+              Verified
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Worker Info -->
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
+              {{ worker.name }}
+            </h3>
+            
+            <p class="text-gray-600 mb-3 text-sm line-clamp-2">
+              {{ worker.tagline|default:"Professional service provider" }}
+            </p>
+
+            <!-- Rating with Stars -->
+            <div class="flex flex-col items-center space-y-2 mb-3">
+              <div class="flex items-center justify-center space-x-1">
+                {# Full Stars - using Bayesian rating #}
+                {% with stars=worker.get_star_breakdown %}
+                  {% for _ in stars.full_stars %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                    </svg>
+                  {% endfor %}
+
+                  {# Half Star - using Bayesian rating #}
+                  {% if stars.half_star %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
+                      <defs>
+                        <linearGradient id="half-gradient-{{ worker.id }}">
+                          <stop offset="50%" stop-color="gold" />
+                          <stop offset="50%" stop-color="gray" />
+                        </linearGradient>
+                      </defs>
+                      <path fill="url(#half-gradient-{{ worker.id }})"
+                            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                  {% endif %}
+
+                  {# Empty Stars - using Bayesian rating #}
+                  {% for _ in stars.empty_stars %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray" class="drop-shadow-sm">
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                    </svg>
+                  {% endfor %}
+                {% endwith %}
+              </div>
+
+              <div class="text-center">
+                {# Display Bayesian rating instead of simple average #}
+                <span class="text-gray-900 font-bold text-lg">{{ worker.bayesian_average_rating|floatformat:1 }} / 5</span>
+                <br>
+                <span class="text-gray-600 font-medium text-sm">({{ worker.ratings.count }} reviews)</span>
+              </div>
+            </div>
+
+            <!-- Distance (if available) -->
+            {% if worker.distance_km %}
+            <div class="flex items-center justify-center gap-1 text-sm text-indigo-600 mb-3">
+              <i class="fas fa-map-marker-alt"></i>
+              <span class="font-semibold">{{ worker.distance_km }} km away</span>
+            </div>
+            {% endif %}
+
+            <!-- Services -->
+            <div class="mb-4">
+              <div class="flex flex-wrap gap-1">
+                {% for service in worker.services.all|slice:":3" %}
+                <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-medium">
+                  {{ service.service.name }}
+                </span>
+                {% endfor %}
+                {% if worker.services.count > 3 %}
+                <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
+                  +{{ worker.services.count|add:"-3" }} more
+                </span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- View Details Button -->
+            <div class="text-center">
+              <span class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                View Details
+                <i class="fas fa-arrow-right ml-2"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
     {% empty %}
     <div class="col-span-full text-center py-12">
       <p class="text-xl text-indigo-700 font-semibold">

@@ -179,6 +179,7 @@
             <div class="hidden lg:flex items-center space-x-8">
                 <ul class="flex items-center space-x-8 text-gray-700">
                     <li><a href="#home" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Home</a></li>
+                    <li><a href="{% url 'worker-list' %}" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Workers</a></li>
                     <li><a href="#services" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Services</a></li>
                     <li><a href="#features" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Features</a></li>
                     <li><a href="#testimonials" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Reviews</a></li>
@@ -193,6 +194,7 @@
         <div id="mobile-menu" class="lg:hidden hidden bg-white shadow-lg p-6">
             <ul class="flex flex-col space-y-4 text-gray-700">
                 <li><a href="#home" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Home</a></li>
+                <li><a href="{% url 'worker-list' %}" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Workers</a></li>
                 <li><a href="#services" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Services</a></li>
                 <li><a href="#features" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Features</a></li>
                 <li><a href="#testimonials" class="nav-link font-medium hover:text-indigo-600 transition-colors duration-300">Reviews</a></li>
@@ -220,8 +222,8 @@
                                 <a href="{% url 'handle-login' %}" class="btn-primary">
                                     Book Now <i class="fas fa-arrow-right ml-2"></i>
                                 </a>
-                                <a href="#services" class="btn-secondary bg-white/20 text-white border-white hover:bg-white/30">
-                                    Explore Services
+                                <a href="{% url 'worker-list' %}" class="btn-secondary bg-white/20 text-white border-white hover:bg-white/30">
+                                    Browse Workers
                                 </a>
                             </div>
                         </div>
@@ -335,8 +337,8 @@
                         </div>
                         <h4 class="text-xl font-bold text-gray-900 mb-3">Plumbing</h4>
                         <p class="text-gray-600 mb-4">Expert plumbing solutions for leaks, installations, and repairs with lifetime warranty.</p>
-                        <a href="#" class="text-indigo-600 font-semibold inline-flex items-center">
-                            Learn More <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                        <a href="{% url 'worker-list' %}?service=plumbing" class="text-indigo-600 font-semibold inline-flex items-center">
+                            Find Plumbers <i class="fas fa-arrow-right ml-2 text-sm"></i>
                         </a>
                     </div>
                     <div class="service-card bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="zoom-in" data-aos-delay="200">
@@ -345,8 +347,8 @@
                         </div>
                         <h4 class="text-xl font-bold text-gray-900 mb-3">Electrical</h4>
                         <p class="text-gray-600 mb-4">Certified electricians for wiring, repairs, and installations with safety guarantee.</p>
-                        <a href="#" class="text-indigo-600 font-semibold inline-flex items-center">
-                            Learn More <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                        <a href="{% url 'worker-list' %}?service=electrical" class="text-indigo-600 font-semibold inline-flex items-center">
+                            Find Electricians <i class="fas fa-arrow-right ml-2 text-sm"></i>
                         </a>
                     </div>
                     <div class="service-card bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="zoom-in" data-aos-delay="300">
@@ -355,8 +357,8 @@
                         </div>
                         <h4 class="text-xl font-bold text-gray-900 mb-3">Carpentry</h4>
                         <p class="text-gray-600 mb-4">Custom woodwork and furniture with premium materials and craftsmanship.</p>
-                        <a href="#" class="text-indigo-600 font-semibold inline-flex items-center">
-                            Learn More <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                        <a href="{% url 'worker-list' %}?service=carpentry" class="text-indigo-600 font-semibold inline-flex items-center">
+                            Find Carpenters <i class="fas fa-arrow-right ml-2 text-sm"></i>
                         </a>
                     </div>
                     <div class="service-card bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="zoom-in" data-aos-delay="400">
@@ -365,8 +367,8 @@
                         </div>
                         <h4 class="text-xl font-bold text-gray-900 mb-3">Painting</h4>
                         <p class="text-gray-600 mb-4">Professional painting services with premium paints and flawless finish.</p>
-                        <a href="#" class="text-indigo-600 font-semibold inline-flex items-center">
-                            Learn More <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                        <a href="{% url 'worker-list' %}?service=painting" class="text-indigo-600 font-semibold inline-flex items-center">
+                            Find Painters <i class="fas fa-arrow-right ml-2 text-sm"></i>
                         </a>
                     </div>
                     <div class="service-card bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="zoom-in" data-aos-delay="100">
@@ -375,8 +377,8 @@
                         </div>
                         <h4 class="text-xl font-bold text-gray-900 mb-3">HVAC</h4>
                         <p class="text-gray-600 mb-4">Heating, ventilation, and AC services with energy-efficient solutions.</p>
-                        <a href="#" class="text-indigo-600 font-semibold inline-flex items-center">
-                            Learn More <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                        <a href="{% url 'worker-list' %}?service=hvac" class="text-indigo-600 font-semibold inline-flex items-center">
+                            Find HVAC Techs <i class="fas fa-arrow-right ml-2 text-sm"></i>
                         </a>
                     </div>
                     <div class="service-card bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="zoom-in" data-aos-delay="200">
@@ -385,8 +387,8 @@
                         </div>
                         <h4 class="text-xl font-bold text-gray-900 mb-3">Cleaning</h4>
                         <p class="text-gray-600 mb-4">Deep cleaning services for homes and offices with eco-friendly products.</p>
-                        <a href="#" class="text-indigo-600 font-semibold inline-flex items-center">
-                            Learn More <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                        <a href="{% url 'worker-list' %}?service=cleaning" class="text-indigo-600 font-semibold inline-flex items-center">
+                            Find Cleaners <i class="fas fa-arrow-right ml-2 text-sm"></i>
                         </a>
                     </div>
                     <div class="service-card bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="zoom-in" data-aos-delay="300">
@@ -395,8 +397,8 @@
                         </div>
                         <h4 class="text-xl font-bold text-gray-900 mb-3">Gardening</h4>
                         <p class="text-gray-600 mb-4">Landscaping and garden maintenance with sustainable practices.</p>
-                        <a href="#" class="text-indigo-600 font-semibold inline-flex items-center">
-                            Learn More <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                        <a href="{% url 'worker-list' %}?service=gardening" class="text-indigo-600 font-semibold inline-flex items-center">
+                            Find Gardeners <i class="fas fa-arrow-right ml-2 text-sm"></i>
                         </a>
                     </div>
                     <div class="service-card bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="zoom-in" data-aos-delay="400">
@@ -405,10 +407,15 @@
                         </div>
                         <h4 class="text-xl font-bold text-gray-900 mb-3">Handyman</h4>
                         <p class="text-gray-600 mb-4">All-in-one solutions for home repairs and maintenance needs.</p>
-                        <a href="#" class="text-indigo-600 font-semibold inline-flex items-center">
-                            Learn More <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                        <a href="{% url 'worker-list' %}?service=handyman" class="text-indigo-600 font-semibold inline-flex items-center">
+                            Find Handymen <i class="fas fa-arrow-right ml-2 text-sm"></i>
                         </a>
                     </div>
+                </div>
+                <div class="text-center mt-12" data-aos="fade-up">
+                    <a href="{% url 'worker-list' %}" class="btn-primary">
+                        View All Workers <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
                 </div>
             </div>
         </section>
@@ -569,8 +576,8 @@
                     <a href="{% url 'handle-login' %}" class="btn-primary bg-white text-indigo-600 hover:bg-gray-100">
                         Get Started Now <i class="fas fa-arrow-right ml-2"></i>
                     </a>
-                    <a href="#contact" class="btn-secondary border-white text-white hover:bg-white/10">
-                        Contact Us
+                    <a href="{% url 'worker-list' %}" class="btn-secondary border-white text-white hover:bg-white/10">
+                        Browse Workers
                     </a>
                 </div>
             </div>
@@ -703,6 +710,7 @@
                     <h5 class="text-lg font-bold text-white mb-6">Quick Links</h5>
                     <ul class="space-y-3">
                         <li><a href="#home" class="text-gray-400 hover:text-white transition-colors text-sm">Home</a></li>
+                        <li><a href="{% url 'worker-list' %}" class="text-gray-400 hover:text-white transition-colors text-sm">Workers</a></li>
                         <li><a href="#services" class="text-gray-400 hover:text-white transition-colors text-sm">Services</a></li>
                         <li><a href="#features" class="text-gray-400 hover:text-white transition-colors text-sm">Features</a></li>
                         <li><a href="#testimonials" class="text-gray-400 hover:text-white transition-colors text-sm">Testimonials</a></li>
@@ -712,11 +720,11 @@
                 <div>
                     <h5 class="text-lg font-bold text-white mb-6">Services</h5>
                     <ul class="space-y-3">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Plumbing</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Electrical</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Carpentry</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Painting</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">View All Services</a></li>
+                        <li><a href="{% url 'worker-list' %}?service=plumbing" class="text-gray-400 hover:text-white transition-colors text-sm">Plumbing</a></li>
+                        <li><a href="{% url 'worker-list' %}?service=electrical" class="text-gray-400 hover:text-white transition-colors text-sm">Electrical</a></li>
+                        <li><a href="{% url 'worker-list' %}?service=carpentry" class="text-gray-400 hover:text-white transition-colors text-sm">Carpentry</a></li>
+                        <li><a href="{% url 'worker-list' %}?service=painting" class="text-gray-400 hover:text-white transition-colors text-sm">Painting</a></li>
+                        <li><a href="{% url 'worker-list' %}" class="text-gray-400 hover:text-white transition-colors text-sm">View All Services</a></li>
                     </ul>
                 </div>
                 <div>
@@ -808,9 +816,9 @@
         // Smooth Scroll
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
-                e.preventDefault();
                 const targetId = this.getAttribute('href');
                 if (targetId.startsWith('#')) {
+                    e.preventDefault();
                     const targetSection = document.querySelector(targetId);
                     if (targetSection) {
                         const offset = targetSection.offsetTop - navbar.offsetHeight;
@@ -824,6 +832,7 @@
                         icon.classList.remove('fa-times');
                     }
                 }
+                // For non-anchor links (like Workers), allow normal navigation
             });
         });
         
@@ -873,6 +882,29 @@
                             // Store in memory
                             window.capturedLocation = locationData;
                             
+                            // Send to server to store in session
+                            fetch('{% url "store_landing_location" %}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': '{{ csrf_token }}'
+                                },
+                                body: JSON.stringify({
+                                    latitude: latitude,
+                                    longitude: longitude,
+                                    accuracy: accuracy
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log('Location stored in session:', data);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error storing location:', error);
+                            });
+                            
                             console.log('Location captured on landing:', latitude, longitude);
                         },
                         function(error) {
@@ -889,6 +921,8 @@
             
             setTimeout(captureLocationOnLanding, 1000);
         });
+
+        
     </script>
 </body>
 </html>

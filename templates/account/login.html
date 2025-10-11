@@ -3,69 +3,140 @@
 {% load static %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-300 py-8 px-4 sm:px-6 lg:px-8">
-    <div class="w-full max-w-md bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-blue-100 p-8 sm:p-10 transition-all duration-300 ease-in-out">
-        <div class="flex flex-col items-center mb-8">
-            <img src="{% static 'landing/img/logo/logo1.png' %}" alt="Blue Caller Logo" class="h-14 w-auto mb-4">
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-1">Welcome Back</h2>
-            <p class="text-gray-600 text-sm sm:text-base">Manage your appointments effortlessly.</p>
-        </div>
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+    
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute -top-40 -right-32 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-pulse-slow"></div>
+        <div class="absolute -bottom-40 -left-32 w-80 h-80 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse-slow animation-delay-2000"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow animation-delay-4000"></div>
+    </div>
+    
+    <div class="absolute inset-0">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+    </div>
 
-        {% if messages %}
-            <div class="mb-6">
-                {% for message in messages %}
-                    <div class="p-3 rounded-lg text-sm 
-                        {% if message.tags == 'success' %} bg-green-100 text-green-700 border border-green-200
-                        {% elif message.tags == 'error' %} bg-red-100 text-red-700 border border-red-200
-                        {% else %} bg-blue-100 text-blue-700 border border-blue-200 {% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+    <div class="w-full max-w-md z-10">
+        <div class="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-100 overflow-hidden transition-all duration-500 ease-out hover:bg-white hover:shadow-3xl">
+            
+            <div class="h-2 bg-gradient-to-r from-teal-400 via-indigo-500 to-purple-600 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer"></div>
             </div>
-        {% endif %}
-
-        <!-- Location status indicator -->
-        <div id="location-status" class="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 hidden">
-            <p class="text-sm text-blue-700 text-center">
-                <span id="location-message">📍 Getting your location...</span>
-            </p>
-        </div>
-
-        <form method="POST" id="login-form" class="space-y-6 animate-fade-in">
-            {% csrf_token %}
-            {{ form|crispy }}
             
-            <!-- Hidden fields for location data -->
-            <input type="hidden" name="latitude" id="latitude">
-            <input type="hidden" name="longitude" id="longitude">
-            <input type="hidden" name="location_accuracy" id="location_accuracy">
-            
-            <button type="submit" id="login-button"
-                class="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
-                Log In
-            </button>
-        </form>
-        
-        <div class="mt-6 text-center">
-            <span class="text-sm text-gray-500">Don't have an account?</span>
-            <a href="{% url 'account_signup' %}" class="ml-2 font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 underline">
-                Sign up here
-            </a>
-        </div>
-        
-        <!-- OTP Info Box -->
-        <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p class="text-sm text-blue-700 text-center">
-                <span class="font-semibold">Secure Login:</span> After entering your password, you'll receive an OTP code via email for verification.
-            </p>
+            <div class="p-8 sm:p-10">
+                <div class="flex flex-col items-center mb-10">
+                    <div class="mb-6 relative group">
+                        <div class="h-20 w-20 rounded-2xl bg-gradient-to-br from-teal-500 to-indigo-600 flex items-center justify-center shadow-lg relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer"></div>
+                            <span class="text-white font-extrabold text-3xl relative z-10 transform group-hover:scale-110 transition-transform duration-300 tracking-wider">HS</span>
+                        </div>
+                        <div class="absolute -inset-2 rounded-2xl bg-gradient-to-r from-teal-400 to-indigo-600 opacity-0 group-hover:opacity-40 blur-md transition-all duration-500 animate-pulse"></div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-2 tracking-tight">Welcome Back</h2>
+                        <p class="text-gray-500 text-sm sm:text-base tracking-widest">Your home services, perfected.</p>
+                    </div>
+                </div>
+
+                {% if messages %}
+                    <div class="mb-6 space-y-3">
+                        {% for message in messages %}
+                            <div class="p-4 rounded-xl text-sm flex items-center backdrop-blur-md bg-white border border-gray-200 text-gray-700 animate-fade-in-up shadow-sm
+                                {% if message.tags == 'success' %} border-l-4 border-l-green-500
+                                {% elif message.tags == 'error' %} border-l-4 border-l-red-500
+                                {% else %} border-l-4 border-l-blue-500 {% endif %}">
+                                <span class="mr-3 text-lg">
+                                    {% if message.tags == 'success' %} ✅
+                                    {% elif message.tags == 'error' %} ⚠️
+                                    {% else %} ℹ️ {% endif %}
+                                </span>
+                                <span class="flex-1">{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div id="location-status" class="mb-4 p-4 rounded-xl backdrop-blur-md bg-blue-50 border border-blue-200 text-blue-700 hidden animate-fade-in">
+                    <p class="text-sm flex items-center justify-center">
+                        <span id="location-message" class="flex items-center font-medium">
+                            <svg class="w-4 h-4 mr-2 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            📍 Getting your location...
+                        </span>
+                    </p>
+                </div>
+
+                <form method="POST" id="login-form" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <div class="space-y-5">
+                        {% for field in form %}
+                            <div class="relative group">
+                                <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-500 group-focus-within:opacity-30"></div>
+                                <div class="relative">
+                                    {{ field|as_crispy_field }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <input type="hidden" name="latitude" id="latitude">
+                    <input type="hidden" name="longitude" id="longitude">
+                    <input type="hidden" name="location_accuracy" id="location_accuracy">
+                    
+                    <div class="relative group mt-8">
+                        <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-xl blur opacity-90 group-hover:opacity-100 transition duration-500 animate-pulse-fast"></div>
+                        <button type="submit" id="login-button"
+                            class="relative w-full py-4 px-6 bg-indigo-600 text-white font-extrabold rounded-xl shadow-xl hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-white transition-all duration-300 ease-out transform group-hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none tracking-wider">
+                            <span class="flex items-center justify-center">
+                                <span id="button-text">Access Your Account</span>
+                                <svg class="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-8 pt-6 border-t border-gray-200 text-center">
+                    <span class="text-sm text-gray-500">New to Homeservices?</span>
+                    <a href="{% url 'account_signup' %}" class="ml-2 font-extrabold text-indigo-600 hover:text-indigo-800 transition-colors duration-200 underline hover:no-underline tracking-wide">
+                        Create an account
+                    </a>
+                </div>
+                
+                <div class="mt-6 p-4 rounded-xl backdrop-blur-md bg-teal-50 border border-teal-300/80 shadow-md">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mt-0.5">
+                            <svg class="w-5 h-5 text-teal-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-700">
+                                <span class="font-extrabold">Secure Authentication:</span> After entering your credentials, you'll receive a one-time verification code via email.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+// ... (Your original JavaScript for geolocation)
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('login-form');
     const loginButton = document.getElementById('login-button');
+    const buttonText = document.getElementById('button-text');
     const locationStatus = document.getElementById('location-status');
     const locationMessage = document.getElementById('location-message');
     
@@ -75,13 +146,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to show location status
     function showLocationStatus(message, isError = false) {
         locationStatus.classList.remove('hidden');
-        locationMessage.textContent = message;
+        locationMessage.innerHTML = message;
         
         if (isError) {
-            locationStatus.classList.remove('bg-blue-50', 'border-blue-200');
-            locationStatus.classList.add('bg-yellow-50', 'border-yellow-200');
-            locationMessage.classList.remove('text-blue-700');
-            locationMessage.classList.add('text-yellow-700');
+            // Updated error style for light background
+            locationStatus.classList.remove('bg-blue-50', 'border-blue-200', 'text-blue-700');
+            locationStatus.classList.add('bg-red-50', 'border-red-300', 'text-red-700');
+        } else {
+            // Updated success/loading style for light background
+            locationStatus.classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
+            locationStatus.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-700');
         }
     }
 
@@ -100,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('location_accuracy').value = pendingAcc || '';
                 
                 locationCaptured = true;
-                showLocationStatus('✓ Location ready');
+                showLocationStatus('✅ Location ready for personalized service');
                 setTimeout(() => locationStatus.classList.add('hidden'), 2000);
                 
                 // Clear session storage
@@ -118,7 +192,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            showLocationStatus('📍 Getting your location...');
+            showLocationStatus(`
+                <svg class="w-4 h-4 mr-2 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                📍 Detecting your location for better service...
+            `);
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -131,14 +211,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('location_accuracy').value = accuracy;
 
                     locationCaptured = true;
-                    showLocationStatus('✓ Location captured');
+                    showLocationStatus('✅ Location detected - Personalizing your experience');
                     
                     setTimeout(() => locationStatus.classList.add('hidden'), 2000);
                     resolve({ lat, lon, accuracy });
                 },
                 (error) => {
                     console.warn('Geolocation error:', error);
-                    showLocationStatus('⚠ Location unavailable (will use IP fallback)', true);
+                    showLocationStatus('⚠️ Using approximate location for service matching (Location access denied/unavailable)', true);
                     setTimeout(() => locationStatus.classList.add('hidden'), 3000);
                     reject(error);
                 },
@@ -157,16 +237,16 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             formSubmissionPending = true;
             loginButton.disabled = true;
-            loginButton.textContent = 'Getting Location...';
+            buttonText.textContent = 'Detecting Location...';
 
             captureLocation()
                 .then(() => {
-                    loginButton.textContent = 'Logging In...';
+                    buttonText.textContent = 'Securing Access...';
                     loginForm.submit();
                 })
                 .catch(() => {
-                    console.log('Proceeding without browser location');
-                    loginButton.textContent = 'Logging In...';
+                    console.log('Proceeding without precise location');
+                    buttonText.textContent = 'Securing Access...';
                     loginForm.submit();
                 });
         }
@@ -181,5 +261,124 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<style>
+/* Animations (remain largely the same, but color-related ones are slightly adjusted) */
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
+@keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-slow {
+    0%, 100% { opacity: 0.6; } /* Increased opacity for lighter background */
+    50% { opacity: 0.8; }
+}
+
+@keyframes pulse-fast {
+    0%, 100% { opacity: 0.9; }
+    50% { opacity: 1; }
+}
+
+@keyframes gradient-x {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+}
+
+.animate-fade-in { animation: fade-in 0.6s ease-out; }
+.animate-fade-in-up { animation: fade-in-up 0.6s ease-out; }
+.animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
+.animate-pulse-fast { animation: pulse-fast 2s ease-in-out infinite; }
+
+.animate-gradient-x {
+    background-size: 200% 200%;
+    animation: gradient-x 4s ease infinite;
+}
+
+.animate-shimmer { animation: shimmer 2s infinite; }
+
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+
+
+/* Particle animation (Less visible on light background) */
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(100, 100, 100, 0.1); /* Darker, subtle particles */
+    animation: float 8s ease-in-out infinite;
+}
+
+.particle-1 { width: 4px; height: 4px; top: 20%; left: 10%; animation-delay: 0s; }
+.particle-2 { width: 6px; height: 6px; top: 60%; left: 80%; animation-delay: 1s; }
+.particle-3 { width: 3px; height: 3px; top: 80%; left: 20%; animation-delay: 2s; }
+.particle-4 { width: 5px; height: 5px; top: 30%; left: 70%; animation-delay: 3s; }
+.particle-5 { width: 4px; height: 4px; top: 70%; left: 40%; animation-delay: 4s; }
+.particle-6 { width: 6px; height: 6px; top: 40%; left: 30%; animation-delay: 5s; }
+
+
+/* Custom form styling for a bright theme */
+.form-control {
+    transition: all 0.3s ease;
+    background: white !important; /* Pure white input */
+    border: 1px solid rgb(229 231 235) !important; /* Light gray border */
+    color: rgb(55 65 81) !important; /* Dark gray text */
+    backdrop-filter: blur(5px); /* Less blur for less contrast on light background */
+    padding: 1rem 1rem !important;
+}
+
+.form-control:focus {
+    background: white !important;
+    border-color: rgb(99 102 241) !important; /* Indigo focus border */
+    box-shadow: 0 0 0 4px rgb(99 102 241 / 0.1) !important; /* Subtle indigo focus shadow */
+    color: rgb(55 65 81) !important;
+}
+
+.form-control::placeholder {
+    color: rgb(107 114 128) !important; /* Medium gray placeholder */
+}
+
+/* Custom label styling */
+.control-label {
+    color: rgb(55 65 81) !important; /* Dark gray label */
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+/* Improve contrast for form text */
+.help-block {
+    color: rgb(107 114 128) !important;
+}
+
+/* Custom checkbox styling */
+input[type="checkbox"] {
+    background: rgb(243 244 246) !important; /* Light background for checkbox */
+    border: 1px solid rgb(209 213 219) !important;
+}
+
+input[type="checkbox"]:checked {
+    background-color: rgb(99 102 241) !important; /* Indigo checked color */
+    border-color: rgb(99 102 241) !important;
+}
+
+/* Custom select styling */
+select.form-control {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234b5563' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important; /* Darker arrow for contrast */
+    background-position: right 1rem center !important;
+    padding-right: 3rem !important;
+}
+</style>
 {% endblock content %}
