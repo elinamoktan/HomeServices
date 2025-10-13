@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from datetime import datetime, timedelta
 import json
 import csv
-
+# import logger
 from jobs.models import (
     Worker, Customer, Appointment, WorkerRating, Service, 
     WorkerService, WorkerSubTaskPricing, ServiceCategory, SubTask,
@@ -852,7 +852,6 @@ def export_data(request, model_type):
     messages.error(request, 'Invalid format type')
     return redirect('admin_dashboard:dashboard')
 
-
 @login_required
 @user_passes_test(admin_required)
 @csrf_exempt
@@ -887,3 +886,278 @@ def verify_worker(request, worker_id):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+# NEW: Worker Verification Popup Views
+@login_required
+@user_passes_test(admin_required)
+def pending_worker_verifications(request):
+    """View for pending worker verifications"""
+    pending_workers = Worker.objects.filter(verified=False).select_related('owner').order_by('-created_at')
+    
+    # Calculate statistics
+    total_pending = pending_workers.count()
+    recent_pending = pending_workers.filter(created_at__gte=timezone.now() - timedelta(days=7)).count()
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        pending_workers = pending_workers.filter(
+            Q(name__icontains=search_query) |
+            Q(phone_number__icontains=search_query) |
+            Q(owner__email__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(pending_workers, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'pending_workers': page_obj,
+        'total_pending': total_pending,
+        'recent_pending': recent_pending,
+        'search_query': search_query,
+    }
+    return render(request, 'admin_dashboard/pending_verifications.html', context)
+
+@login_required
+@user_passes_test(admin_required)
+@csrf_exempt
+def quick_verify_worker(request, worker_id):
+    """Quick verify/reject worker from the popup"""
+    if request.method == 'POST':
+        try:
+            worker = get_object_or_404(Worker, id=worker_id)
+            action = request.POST.get('action')
+            
+            if action == 'verify':
+                worker.verified = True
+                worker.save()
+                
+                # Send notification to worker
+                Notification.objects.create(
+                    worker=worker,
+                    notification_type='worker_verified',
+                    title='Profile Verified!',
+                    message='Your worker profile has been verified by admin. You can now receive appointments.',
+                    appointment=None
+                )
+                
+                # Send email notification to worker
+                try:
+                    send_worker_verification_email(worker, True)
+                except Exception as e:
+                    logger.error(f"Failed to send verification email: {e}")
+                
+                # Log admin activity
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Worker',
+                    object_id=worker.id,
+                    description=f'Verified worker {worker.name} from quick verification'
+                )
+                
+                return JsonResponse({
+                    'success': True, 
+                    'message': f'Worker {worker.name} verified successfully',
+                    'worker_id': worker.id
+                })
+                
+            elif action == 'reject':
+                reason = request.POST.get('reason', 'Profile does not meet requirements')
+                
+                # Send notification to worker
+                Notification.objects.create(
+                    worker=worker,
+                    notification_type='worker_rejected',
+                    title='Profile Verification Failed',
+                    message=f'Your worker profile verification was rejected. Reason: {reason}',
+                    appointment=None
+                )
+                
+                # Send email notification to worker
+                try:
+                    send_worker_verification_email(worker, False, reason)
+                except Exception as e:
+                    logger.error(f"Failed to send rejection email: {e}")
+                
+                # Log admin activity
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Worker',
+                    object_id=worker.id,
+                    description=f'Rejected worker {worker.name} from quick verification. Reason: {reason}'
+                )
+                
+                return JsonResponse({
+                    'success': True, 
+                    'message': f'Worker {worker.name} rejected successfully',
+                    'worker_id': worker.id
+                })
+                
+            else:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Invalid action'
+                }, status=400)
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False, 
+                'error': str(e)
+            }, status=400)
+    
+    return JsonResponse({
+        'success': False, 
+        'error': 'Invalid request method'
+    }, status=405)
+
+@login_required
+@user_passes_test(admin_required)
+def get_pending_workers_count(request):
+    """API endpoint to get count of pending worker verifications"""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        pending_count = Worker.objects.filter(verified=False).count()
+        return JsonResponse({'pending_count': pending_count})
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@login_required
+@user_passes_test(admin_required)
+def get_next_pending_worker(request):
+    """API endpoint to get next pending worker for popup"""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        pending_worker = Worker.objects.filter(verified=False).select_related('owner').first()
+        
+        if pending_worker:
+            worker_data = {
+                'id': pending_worker.id,
+                'name': pending_worker.name,
+                'phone_number': str(pending_worker.phone_number),
+                'email': pending_worker.owner.email,
+                'tagline': pending_worker.tagline or 'No tagline',
+                'bio': pending_worker.bio or 'No bio',
+                'profile_pic': pending_worker.profile_pic.url if pending_worker.profile_pic else '/static/images/default-profile.png',
+                'citizenship_image': pending_worker.citizenship_image.url if pending_worker.citizenship_image else None,
+                'certificate_file': pending_worker.certificate_file.url if pending_worker.certificate_file else None,
+                'created_at': pending_worker.created_at.strftime('%Y-%m-%d %H:%M'),
+                'shift': pending_worker.get_shift_display(),
+            }
+            return JsonResponse({'worker': worker_data})
+        else:
+            return JsonResponse({'worker': None})
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+# Email function for worker verification
+def send_worker_verification_email(worker, approved, rejection_reason=None):
+    """Send email notification to worker about verification status"""
+    try:
+        if approved:
+            subject = "Worker Profile Verified - BlueCaller"
+            html_message = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #2c3e50;">Profile Verified Successfully! 🎉</h2>
+                    
+                    <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin: 0;">Your worker profile has been verified</h3>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #007bff; margin-top: 0;">What's Next?</h3>
+                        <p>✅ Your profile is now visible to customers</p>
+                        <p>✅ You can receive appointment requests</p>
+                        <p>✅ Start building your reputation with reviews</p>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{settings.SITE_URL}/worker/dashboard/" 
+                           style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                            Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+        else:
+            subject = "Worker Profile Verification Update - BlueCaller"
+            html_message = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #2c3e50;">Profile Verification Update</h2>
+                    
+                    <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin: 0;">Verification Required</h3>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <p>Your worker profile requires additional verification.</p>
+                        <p><strong>Reason:</strong> {rejection_reason}</p>
+                        <p>Please update your profile and ensure all documents are clear and valid.</p>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{settings.SITE_URL}/worker/settings/" 
+                           style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                            Update Profile
+                        </a>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+        
+        # Plain text version
+        plain_message = strip_tags(html_message)
+        
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
+        recipients = [worker.owner.email]
+        
+        # Send email asynchronously
+        send_email_async(subject, plain_message, from_email, recipients, html_message)
+        
+        logger.info(f"Worker verification email sent to {worker.name} ({worker.owner.email})")
+        
+    except Exception as e:
+        logger.error(f"Failed to send worker verification email: {str(e)}")
+
+# Helper function for async email sending
+def send_email_async(subject, plain_message, from_email, recipients, html_message=None):
+    """Send email in a separate thread to avoid blocking"""
+    import threading
+    from django.core.mail import EmailMultiAlternatives
+    
+    def send_email():
+        try:
+            if html_message:
+                email = EmailMultiAlternatives(
+                    subject=subject,
+                    body=plain_message,
+                    from_email=from_email,
+                    to=recipients
+                )
+                email.attach_alternative(html_message, "text/html")
+                email.send()
+            else:
+                from django.core.mail import send_mail
+                send_mail(
+                    subject=subject,
+                    message=plain_message,
+                    from_email=from_email,
+                    recipient_list=recipients,
+                    fail_silently=False
+                )
+            logger.info(f"Email sent successfully to {recipients}")
+        except Exception as e:
+            logger.error(f"Failed to send email to {recipients}: {str(e)}")
+    
+    # Start email sending in background thread
+    thread = threading.Thread(target=send_email)
+    thread.daemon = True
+    thread.start()

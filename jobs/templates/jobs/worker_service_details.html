@@ -3,6 +3,9 @@
 
 {% block content %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<!-- Add Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ================== GLOBAL STYLES ================== */
 :root {
@@ -847,6 +850,54 @@ body {
     box-shadow: none;
 }
 
+/* ================== MAP STYLES ================== */
+.map-container {
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--light-gray);
+    margin-bottom: 1rem;
+}
+
+#locationMap {
+    height: 100%;
+    width: 100%;
+}
+
+.location-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.location-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.location-btn:hover {
+    border-color: var(--primary);
+    background: #f8fafc;
+}
+
+.location-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.address-name-input {
+    margin-bottom: 1rem;
+}
+
 /* ================== LOGIN REQUIRED MODAL ================== */
 .login-required-modal {
     display: none;
@@ -955,6 +1006,28 @@ body {
     text-decoration: underline;
 }
 
+/* ================== FORM ENHANCEMENTS ================== */
+.form-group small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--gray);
+}
+
+input[type="tel"]:valid {
+    border-color: var(--success);
+}
+
+input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
+    border-color: var(--accent);
+}
+
+/* Auto-filled field styling */
+.form-group input[value]:not([value=""]) {
+    background-color: #f0f9ff;
+    border-left: 3px solid var(--primary);
+}
+
 /* ================== DATE PICKER ENHANCEMENTS ================== */
 .date-picker-container {
     position: relative;
@@ -1045,6 +1118,14 @@ body {
         margin: 1rem;
         width: calc(100% - 2rem);
         padding: 1.5rem;
+    }
+    
+    .map-container {
+        height: 250px;
+    }
+    
+    .location-controls {
+        flex-direction: column;
     }
 }
 </style>
@@ -1350,6 +1431,10 @@ body {
                 <input type="hidden" id="selectedServiceName" name="service_name">
                 <input type="hidden" id="selectedServicePrice" name="service_price">
                 <input type="hidden" id="selectedTimeSlot" name="preferred_time">
+                <!-- NEW: Hidden fields for location data -->
+                <input type="hidden" id="selectedLatitude" name="latitude">
+                <input type="hidden" id="selectedLongitude" name="longitude">
+                <input type="hidden" id="selectedAddress" name="address">
                 
                 <div class="form-group">
                     <label for="serviceDate">Preferred Date *</label>
@@ -1367,21 +1452,63 @@ body {
                         <div class="time-slot" data-time="17:00-19:00">17:00 - 19:00</div>
                     </div>
                 </div>
+            
                 
                 <div class="form-group">
-                    <label for="serviceAddress">Service Location *</label>
-                    <textarea id="serviceAddress" name="address" required placeholder="Enter complete service address" rows="3"></textarea>
+                    <label>Service Location *</label>
+                    <div class="location-controls">
+                        <button type="button" class="location-btn" id="useCurrentLocation">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Use My Location
+                        </button>
+                        <button type="button" class="location-btn" id="searchLocation">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            Search Location
+                        </button>
+                    </div>
+                    
+                    <div class="map-container">
+                        <div id="locationMap"></div>
+                    </div>
+                    
+                    <div id="selectedLocationInfo" style="display: none;">
+                        <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; border-left: 4px solid var(--primary);">
+                            <strong>Selected Location:</strong>
+                            <span id="locationDisplay">No location selected</span>
+                        </div>
+                    </div>
+                    
+                    <small style="color: var(--gray); font-size: 0.8rem;">
+                        Click on the map to select your exact location or use the buttons above
+                    </small>
                 </div>
                 
+                <!-- Auto-filled but editable customer information -->
                 <div class="form-group">
                     <label for="customerName">Your Name *</label>
-                    <input type="text" id="customerName" name="customer_name" required placeholder="Enter your full name">
+                    <input type="text" id="customerName" name="customer_name" required 
+                           placeholder="Enter your full name"
+                           value="{{ user.customer.name }}">
+                    <small style="color: var(--gray); font-size: 0.8rem;">Pre-filled from your profile. You can modify if needed.</small>
                 </div>
                 
                 <div class="form-group">
                     <label for="customerPhone">Your Phone Number *</label>
-                    <input type="tel" id="customerPhone" name="customer_phone" required placeholder="Enter your phone number">
+                    <input type="tel" id="customerPhone" name="customer_phone" required 
+                           placeholder="Enter your phone number"
+                           value="{{ user.customer.phone_number }}"
+                           pattern="[0-9]{10}" 
+                           title="Please enter a valid 10-digit phone number">
+                    <small style="color: var(--gray); font-size: 0.8rem;">Pre-filled from your profile. Numbers only, no text.</small>
                 </div>
+                
+                <!-- REMOVED: Special Instructions field -->
                 
                 <button type="submit" class="submit-booking" id="submitBookingBtn">Confirm Booking</button>
             </form>
@@ -1476,6 +1603,139 @@ let currentBookingData = {
 let currentSearchTerm = '';
 let currentPriceFilter = 'all';
 let currentCategoryFilter = 'all';
+
+// Map variables
+let map = null;
+let marker = null;
+let selectedLocation = null;
+
+// ================== MAP FUNCTIONS ==================
+function initializeMap() {
+    // Default coordinates (center of India)
+    const defaultLat = 20.5937;
+    const defaultLng = 78.9629;
+    
+    // Initialize the map
+    map = L.map('locationMap').setView([defaultLat, defaultLng], 5);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Add click event to map
+    map.on('click', function(e) {
+        setMarkerLocation(e.latlng.lat, e.latlng.lng);
+    });
+    
+    // Try to get user's current location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                map.setView([userLat, userLng], 13);
+                setMarkerLocation(userLat, userLng);
+            },
+            function(error) {
+                console.log('Geolocation error:', error);
+                // Use default location
+                setMarkerLocation(defaultLat, defaultLng);
+            }
+        );
+    } else {
+        // Browser doesn't support geolocation
+        setMarkerLocation(defaultLat, defaultLng);
+    }
+}
+
+function setMarkerLocation(lat, lng) {
+    // Remove existing marker
+    if (marker) {
+        map.removeLayer(marker);
+    }
+    
+    // Add new marker
+    marker = L.marker([lat, lng]).addTo(map)
+        .bindPopup('Selected Location')
+        .openPopup();
+    
+    // Store selected location
+    selectedLocation = {
+        latitude: lat,
+        longitude: lng
+    };
+    
+    // Update hidden fields
+    document.getElementById('selectedLatitude').value = lat;
+    document.getElementById('selectedLongitude').value = lng;
+    
+    // Reverse geocode to get address
+    reverseGeocode(lat, lng);
+}
+
+function reverseGeocode(lat, lng) {
+    // Use OpenStreetMap Nominatim for reverse geocoding
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.display_name) {
+                const address = data.display_name;
+                document.getElementById('selectedAddress').value = address;
+                document.getElementById('locationDisplay').textContent = address;
+                document.getElementById('selectedLocationInfo').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.log('Reverse geocoding error:', error);
+            const address = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+            document.getElementById('selectedAddress').value = address;
+            document.getElementById('locationDisplay').textContent = address;
+            document.getElementById('selectedLocationInfo').style.display = 'block';
+        });
+}
+
+function useCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                map.setView([lat, lng], 15);
+                setMarkerLocation(lat, lng);
+            },
+            function(error) {
+                alert('Unable to get your current location. Please allow location access or select manually on the map.');
+            }
+        );
+    } else {
+        alert('Geolocation is not supported by your browser. Please select location manually on the map.');
+    }
+}
+
+function searchLocation() {
+    const query = prompt('Enter location to search:');
+    if (query) {
+        // Use OpenStreetMap Nominatim for forward geocoding
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const result = data[0];
+                    const lat = parseFloat(result.lat);
+                    const lng = parseFloat(result.lon);
+                    map.setView([lat, lng], 15);
+                    setMarkerLocation(lat, lng);
+                } else {
+                    alert('Location not found. Please try a different search term.');
+                }
+            })
+            .catch(error => {
+                console.log('Geocoding error:', error);
+                alert('Error searching for location. Please try again.');
+            });
+    }
+}
 
 // ================== SEARCH AND FILTER FUNCTIONS ==================
 function initializeSearchAndFilter() {
@@ -1626,6 +1886,60 @@ function resetFilters() {
     if (noResults) noResults.classList.remove('show');
 }
 
+// ================== PHONE NUMBER VALIDATION ==================
+function initializePhoneValidation() {
+    const phoneInput = document.getElementById('customerPhone');
+    
+    if (phoneInput) {
+        // Remove any non-digit characters on input
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            // Limit to 10 digits
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+            
+            e.target.value = value;
+        });
+        
+        // Validate on form submission
+        const bookingForm = document.getElementById('bookingForm');
+        if (bookingForm) {
+            bookingForm.addEventListener('submit', function(e) {
+                // Validate location selection
+                if (!selectedLocation) {
+                    e.preventDefault();
+                    alert('Please select a service location on the map');
+                    return false;
+                }
+                
+                // Validate address name
+                const addressName = document.getElementById('addressName').value.trim();
+                if (!addressName) {
+                    e.preventDefault();
+                    alert('Please enter an address name');
+                    document.getElementById('addressName').focus();
+                    return false;
+                }
+                
+                const phoneValue = phoneInput.value.replace(/\D/g, '');
+                
+                if (phoneValue.length !== 10) {
+                    e.preventDefault();
+                    alert('Please enter a valid 10-digit phone number');
+                    phoneInput.focus();
+                    return false;
+                }
+                
+                // Ensure the submitted value is only digits
+                phoneInput.value = phoneValue;
+                return true;
+            });
+        }
+    }
+}
+
 // ================== MODAL FUNCTIONS ==================
 function initializeModal() {
     const modal = document.getElementById('bookingModal');
@@ -1689,50 +2003,19 @@ function initializeFormElements() {
         });
     });
     
-    // Form validation on submit
-    const bookingForm = document.getElementById('bookingForm');
-    if (bookingForm) {
-        bookingForm.addEventListener('submit', function(e) {
-            // Check if time slot is selected
-            if (!timeSlotInput.value) {
-                e.preventDefault();
-                alert('Please select a preferred time slot');
-                return false;
-            }
-            
-            // Check other required fields
-            const serviceDate = document.getElementById('serviceDate');
-            const serviceAddress = document.getElementById('serviceAddress');
-            const customerName = document.getElementById('customerName');
-            const customerPhone = document.getElementById('customerPhone');
-            
-            if (!serviceDate.value) {
-                e.preventDefault();
-                alert('Please select a preferred date');
-                return false;
-            }
-            
-            if (!serviceAddress.value.trim()) {
-                e.preventDefault();
-                alert('Please enter the service location');
-                return false;
-            }
-            
-            if (!customerName.value.trim()) {
-                e.preventDefault();
-                alert('Please enter your name');
-                return false;
-            }
-            
-            if (!customerPhone.value.trim()) {
-                e.preventDefault();
-                alert('Please enter your phone number');
-                return false;
-            }
-            
-            // All validations passed
-            return true;
-        });
+    // Initialize phone validation
+    initializePhoneValidation();
+    
+    // Initialize map location buttons
+    const useCurrentLocationBtn = document.getElementById('useCurrentLocation');
+    const searchLocationBtn = document.getElementById('searchLocation');
+    
+    if (useCurrentLocationBtn) {
+        useCurrentLocationBtn.addEventListener('click', useCurrentLocation);
+    }
+    
+    if (searchLocationBtn) {
+        searchLocationBtn.addEventListener('click', searchLocation);
     }
 }
 
@@ -1817,6 +2100,13 @@ function openBookingModal(serviceTitle, servicePrice, serviceId = null) {
     // Show modal
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    
+    // Initialize map if not already done
+    if (!map) {
+        setTimeout(() => {
+            initializeMap();
+        }, 100);
+    }
 }
 
 function updateServiceSummary(name, price, duration) {
@@ -1835,7 +2125,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeSearchAndFilter();
     initializeModal();
     initializeEventListeners();
-    initializeFormElements();
+    initializeFormElements(); // This now includes phone validation
+    initializePhoneValidation(); // Extra safety
     
     // Close login modal when clicking outside
     const loginModal = document.getElementById('loginRequiredModal');
