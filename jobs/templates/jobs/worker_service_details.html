@@ -119,6 +119,130 @@ body {
     font-weight: 500;
 }
 
+/* ================== SEARCH AND FILTER SECTION ================== */
+.search-filter-section {
+    max-width: 1200px;
+    margin: 0 auto 2rem auto;
+    padding: 0 1rem;
+}
+
+.search-filter-container {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--light-gray);
+}
+
+.search-box {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 2px solid var(--light-gray);
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: var(--light);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background: var(--white);
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray);
+}
+
+.filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-label {
+    font-weight: 600;
+    color: var(--dark);
+    font-size: 0.9rem;
+}
+
+.filter-select {
+    padding: 0.75rem;
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filter-reset {
+    background: var(--light-gray);
+    color: var(--dark);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1.6rem;
+}
+
+.filter-reset:hover {
+    background: var(--gray);
+    color: var(--white);
+    transform: translateY(-1px);
+}
+
+.results-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f0f9ff;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+    display: none;
+}
+
+.results-info.show {
+    display: block;
+}
+
+.no-results {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gray);
+    display: none;
+}
+
+.no-results.show {
+    display: block;
+}
+
 /* ================== SERVICE NAVIGATION ================== */
 .service-nav-container {
     max-width: 1200px;
@@ -308,6 +432,14 @@ body {
 
 .service-card.show {
     display: block;
+}
+
+.service-card.filtered {
+    display: block;
+}
+
+.service-card.hidden {
+    display: none !important;
 }
 
 .service-card::before {
@@ -849,6 +981,24 @@ body {
         font-size: 1.5rem;
     }
     
+    .search-filter-container {
+        padding: 1rem;
+    }
+    
+    .filter-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .filter-group {
+        min-width: 100%;
+    }
+    
+    .filter-reset {
+        margin-top: 0;
+        width: 100%;
+    }
+    
     .assistance-card {
         flex-direction: column;
         text-align: center;
@@ -929,6 +1079,61 @@ body {
     </div>
 </div>
 
+<!-- ================== SEARCH AND FILTER SECTION ================== -->
+<div class="search-filter-section">
+    <div class="search-filter-container">
+        <div class="search-box">
+            <input type="text" id="serviceSearch" class="search-input" placeholder="Search services by name, description, or features...">
+            <div class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="filter-container">
+            <div class="filter-group">
+                <label class="filter-label" for="priceFilter">Filter by Price</label>
+                <select id="priceFilter" class="filter-select">
+                    <option value="all">All Prices</option>
+                    <option value="0-500">Less than ₹500</option>
+                    <option value="500-1000">₹500 - ₹1000</option>
+                    <option value="1000+">Above ₹1000</option>
+                    <option value="consultation">Consultation/Free Quotes</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label" for="categoryFilter">Filter by Category</label>
+                <select id="categoryFilter" class="filter-select">
+                    <option value="all">All Categories</option>
+                    {% for category in categories_data %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button class="filter-reset" id="resetFilters">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                </svg>
+                Reset Filters
+            </button>
+        </div>
+        
+        <div class="results-info" id="resultsInfo">
+            <strong id="resultsCount">0</strong> services found matching your criteria
+        </div>
+        
+        <div class="no-results" id="noResults">
+            <h3>No services found</h3>
+            <p>Try adjusting your search terms or filters to see more results.</p>
+        </div>
+    </div>
+</div>
+
 <!-- ================== SERVICE NAVIGATION ================== -->
 {% if categories_data and categories_data|length > 1 %}
 <div class="service-nav-container">
@@ -986,7 +1191,14 @@ body {
     <div class="service-grid" id="service-grid">
         {% for category in categories_data %}
             {% for service in category.services %}
-            <div class="service-card {% if forloop.parentloop.first %}show{% endif %}" data-category="{{ category.id }}">
+            <div class="service-card {% if forloop.parentloop.first %}show{% endif %}" 
+                 data-category="{{ category.id }}"
+                 data-service-id="{{ service.id }}"
+                 data-service-name="{{ service.name|lower }}"
+                 data-service-description="{{ service.description|lower }} {{ service.detailed_description|lower }}"
+                 data-service-features="{{ service.features|join:' '|lower }}"
+                 data-service-price="{{ service.base_price }}"
+                 data-service-category="{{ category.name|lower }}">
                 {% if service.image %}
                 <img src="{{ service.image }}" alt="{{ service.name }}" class="service-image">
                 {% else %}
@@ -1260,6 +1472,160 @@ let currentBookingData = {
     serviceDuration: null
 };
 
+// Search and filter state
+let currentSearchTerm = '';
+let currentPriceFilter = 'all';
+let currentCategoryFilter = 'all';
+
+// ================== SEARCH AND FILTER FUNCTIONS ==================
+function initializeSearchAndFilter() {
+    const searchInput = document.getElementById('serviceSearch');
+    const priceFilter = document.getElementById('priceFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const resetButton = document.getElementById('resetFilters');
+
+    // Search input event
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            currentSearchTerm = e.target.value.toLowerCase().trim();
+            filterServices();
+        });
+    }
+
+    // Price filter event
+    if (priceFilter) {
+        priceFilter.addEventListener('change', function(e) {
+            currentPriceFilter = e.target.value;
+            filterServices();
+        });
+    }
+
+    // Category filter event
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', function(e) {
+            currentCategoryFilter = e.target.value;
+            filterServices();
+        });
+    }
+
+    // Reset filters event
+    if (resetButton) {
+        resetButton.addEventListener('click', function() {
+            resetFilters();
+        });
+    }
+}
+
+function filterServices() {
+    const serviceCards = document.querySelectorAll('.service-card');
+    let visibleCount = 0;
+
+    serviceCards.forEach(card => {
+        const serviceName = card.getAttribute('data-service-name') || '';
+        const serviceDescription = card.getAttribute('data-service-description') || '';
+        const serviceFeatures = card.getAttribute('data-service-features') || '';
+        const servicePrice = parseFloat(card.getAttribute('data-service-price')) || 0;
+        const serviceCategory = card.getAttribute('data-service-category') || '';
+        const cardCategory = card.getAttribute('data-category');
+
+        // Search filter
+        const matchesSearch = !currentSearchTerm || 
+            serviceName.includes(currentSearchTerm) ||
+            serviceDescription.includes(currentSearchTerm) ||
+            serviceFeatures.includes(currentSearchTerm);
+
+        // Price filter
+        let matchesPrice = true;
+        if (currentPriceFilter !== 'all') {
+            switch (currentPriceFilter) {
+                case '0-500':
+                    matchesPrice = servicePrice > 0 && servicePrice < 500;
+                    break;
+                case '500-1000':
+                    matchesPrice = servicePrice >= 500 && servicePrice <= 1000;
+                    break;
+                case '1000+':
+                    matchesPrice = servicePrice > 1000;
+                    break;
+                case 'consultation':
+                    matchesPrice = servicePrice === 0;
+                    break;
+            }
+        }
+
+        // Category filter
+        let matchesCategory = true;
+        if (currentCategoryFilter !== 'all') {
+            matchesCategory = cardCategory === currentCategoryFilter;
+        }
+
+        // Show/hide card based on all filters
+        if (matchesSearch && matchesPrice && matchesCategory) {
+            card.classList.remove('hidden');
+            card.classList.add('filtered');
+            visibleCount++;
+        } else {
+            card.classList.add('hidden');
+            card.classList.remove('filtered');
+        }
+    });
+
+    updateResultsInfo(visibleCount);
+    updateNoResultsMessage(visibleCount);
+}
+
+function updateResultsInfo(visibleCount) {
+    const resultsInfo = document.getElementById('resultsInfo');
+    const resultsCount = document.getElementById('resultsCount');
+    
+    if (resultsInfo && resultsCount) {
+        if (currentSearchTerm || currentPriceFilter !== 'all' || currentCategoryFilter !== 'all') {
+            resultsCount.textContent = visibleCount;
+            resultsInfo.classList.add('show');
+        } else {
+            resultsInfo.classList.remove('show');
+        }
+    }
+}
+
+function updateNoResultsMessage(visibleCount) {
+    const noResults = document.getElementById('noResults');
+    
+    if (noResults) {
+        if (visibleCount === 0 && (currentSearchTerm || currentPriceFilter !== 'all' || currentCategoryFilter !== 'all')) {
+            noResults.classList.add('show');
+        } else {
+            noResults.classList.remove('show');
+        }
+    }
+}
+
+function resetFilters() {
+    // Reset form elements
+    const searchInput = document.getElementById('serviceSearch');
+    const priceFilter = document.getElementById('priceFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    
+    if (searchInput) searchInput.value = '';
+    if (priceFilter) priceFilter.value = 'all';
+    if (categoryFilter) categoryFilter.value = 'all';
+    
+    // Reset state
+    currentSearchTerm = '';
+    currentPriceFilter = 'all';
+    currentCategoryFilter = 'all';
+    
+    // Reset UI
+    filterServices();
+    
+    // Hide results info
+    const resultsInfo = document.getElementById('resultsInfo');
+    const noResults = document.getElementById('noResults');
+    
+    if (resultsInfo) resultsInfo.classList.remove('show');
+    if (noResults) noResults.classList.remove('show');
+}
+
 // ================== MODAL FUNCTIONS ==================
 function initializeModal() {
     const modal = document.getElementById('bookingModal');
@@ -1466,6 +1832,7 @@ function updateServiceSummary(name, price, duration) {
 // ================== INITIALIZATION ==================
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize everything
+    initializeSearchAndFilter();
     initializeModal();
     initializeEventListeners();
     initializeFormElements();

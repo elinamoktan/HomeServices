@@ -27,6 +27,11 @@ from .models import FavoriteWorker
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt 
 from jobs.models import Notification
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+import threading
+
 # ✅ FIXED: Import CustomUser instead of User
 try:
     from accounts.models import CustomUser
@@ -196,6 +201,36 @@ def service_categories(request):
     
     return render(request, 'jobs/service_categories.html', context)
 
+def send_email_async(subject, plain_message, from_email, recipients, html_message=None):
+    """Send email in a separate thread to avoid blocking"""
+    def send_email():
+        try:
+            if html_message:
+                email = EmailMultiAlternatives(
+                    subject=subject,
+                    body=plain_message,
+                    from_email=from_email,
+                    to=recipients
+                )
+                email.attach_alternative(html_message, "text/html")
+                email.send()
+            else:
+                send_mail(
+                    subject=subject,
+                    message=plain_message,
+                    from_email=from_email,
+                    recipient_list=recipients,
+                    html_message=html_message,
+                    fail_silently=False
+                )
+            logger.info(f"Email sent successfully to {recipients}")
+        except Exception as e:
+            logger.error(f"Failed to send email to {recipients}: {str(e)}")
+    
+    # Start email sending in background thread
+    thread = threading.Thread(target=send_email)
+    thread.daemon = True
+    thread.start()
 # Enhanced email functions with better formatting and error handling
 def send_appointment_request_email(worker, appointment):
     """Send email notification to worker when customer requests an appointment"""
@@ -207,94 +242,37 @@ def send_appointment_request_email(worker, appointment):
         if appointment.service_subtask and appointment.service_subtask.price:
             price_info = f"₹{appointment.service_subtask.price}"
         
-        # Create HTML email template
-        html_message = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #2c3e50;">New Appointment Request</h2>
-                
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="color: #007bff; margin-top: 0;">Appointment Details</h3>
-                    <p><strong>Customer:</strong> {appointment.customer.name}</p>
-                    <p><strong>Service:</strong> {appointment.service_subtask.subtask.name if appointment.service_subtask else 'Not specified'}</p>
-                    <p><strong>Price:</strong> {price_info}</p>
-                    <p><strong>Date & Time:</strong> {appointment.appointment_date.strftime('%B %d, %Y at %I:%M %p')}</p>
-                    <p><strong>Location:</strong> {appointment.location or 'Not specified'}</p>
-                    {f"<p><strong>Special Instructions:</strong> {appointment.special_instructions}</p>" if appointment.special_instructions else ""}
-                </div>
-                
-                <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                    <h4 style="color: #17a2b8; margin-top: 0;">What's Next?</h4>
-                    <p>Please log in to your BlueCaller dashboard to:</p>
-                    <ul>
-                        <li>Accept or reject this appointment request</li>
-                        <li>View customer contact information</li>
-                        <li>Communicate with the customer</li>
-                    </ul>
-                </div>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="{settings.SITE_URL}/worker/dashboard/" 
-                       style="background: #007bff; color: white; padding: 12px 30px; 
-                              text-decoration: none; border-radius: 5px; display: inline-block;">
-                        View Dashboard
-                    </a>
-                </div>
-                
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-                <p style="color: #666; font-size: 12px;">
-                    This is an automated message from BlueCaller. 
-                    Please do not reply to this email directly.
-                </p>
-            </div>
-        </body>
-        </html>
-        """
+        # Use template rendering instead of hardcoded HTML
+        context = {
+            'worker_name': worker.name,
+            'customer_name': appointment.customer.name,
+            'service_name': appointment.service_subtask.subtask.name if appointment.service_subtask else 'Service',
+            'price_info': price_info,
+            'appointment_date': appointment.appointment_date.strftime('%B %d, %Y at %I:%M %p'),
+            'location': appointment.location or 'Not specified',
+            'special_instructions': appointment.special_instructions or '',
+            'site_url': getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+            'appointment_id': appointment.id
+        }
         
-        # Plain text version
-        plain_message = f"""
-New Appointment Request
-
-Dear {worker.name},
-
-You have received a new appointment request from {appointment.customer.name}.
-
-Appointment Details:
-- Service: {appointment.service_subtask.subtask.name if appointment.service_subtask else 'Not specified'}
-- Price: {price_info}
-- Date & Time: {appointment.appointment_date.strftime('%B %d, %Y at %I:%M %p')}
-- Location: {appointment.location or 'Not specified'}
-{f"- Special Instructions: {appointment.special_instructions}" if appointment.special_instructions else ""}
-
-Please log in to your BlueCaller dashboard to accept or reject this request.
-Dashboard: {settings.SITE_URL}/worker/dashboard/
-
-Best regards,
-BlueCaller Team
-        """
+        # Render HTML template
+        html_message = render_to_string('emails/appointment_request_to_worker.html', context)
+        plain_message = strip_tags(html_message)
         
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
         recipients = [worker.owner.email]
         
-        send_mail(
-            subject=subject,
-            message=plain_message,
-            from_email=from_email,
-            recipient_list=recipients,
-            html_message=html_message,
-            fail_silently=False
-        )
+        # Send email asynchronously
+        send_email_async(subject, plain_message, from_email, recipients, html_message)
         
         logger.info(f"Appointment request email sent to worker {worker.name} ({worker.owner.email})")
         
     except Exception as e:
         logger.error(f"Failed to send appointment request email to worker {worker.name}: {str(e)}")
         # Don't raise the exception to prevent appointment creation from failing
-        pass
 
 def send_appointment_status_email(appointment, status):
-    """Send email notification to customer when appointment status changes"""
+    """Send email notification to customer when appointment status changes - FIXED VERSION"""
     try:
         customer = appointment.customer
         worker = appointment.worker
@@ -304,121 +282,108 @@ def send_appointment_status_email(appointment, status):
         if appointment.service_subtask and appointment.service_subtask.price:
             price_info = f"₹{appointment.service_subtask.price}"
         
+        # Service name safely
+        service_name = "Service"
+        if appointment.service_subtask and appointment.service_subtask.subtask:
+            service_name = appointment.service_subtask.subtask.name
+        
+        # Date safely
+        appointment_date_str = "Not specified"
+        if appointment.appointment_date:
+            appointment_date_str = appointment.appointment_date.strftime('%B %d, %Y at %I:%M %p')
+        
+        context = {
+            'customer_name': customer.name,
+            'worker_name': worker.name,
+            'status': status,
+            'service_name': service_name,
+            'price_info': price_info,
+            'appointment_date': appointment_date_str,
+            'location': appointment.location or 'Not specified',
+            'special_instructions': appointment.special_instructions or '',
+            'site_url': getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+            'appointment_id': appointment.id
+        }
+        
         if status == 'accepted':
             subject = f"Appointment Confirmed - {worker.name}"
-            status_message = "Your appointment has been confirmed!"
-            status_color = "#28a745"
-            next_steps = """
-            <p>Your appointment is now confirmed. Here's what happens next:</p>
-            <ul>
-                <li>The worker will contact you if needed</li>
-                <li>Please be available at the scheduled time</li>
-                <li>You can contact the worker through our platform</li>
-            </ul>
+            
+            html_message = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #2c3e50;">Appointment Confirmed! 🎉</h2>
+                    
+                    <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin: 0;">Your appointment has been confirmed</h3>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #007bff; margin-top: 0;">Appointment Details</h3>
+                        <p><strong>Worker:</strong> {worker.name}</p>
+                        <p><strong>Service:</strong> {service_name}</p>
+                        <p><strong>Date & Time:</strong> {appointment_date_str}</p>
+                        <p><strong>Location:</strong> {appointment.location or 'Not specified'}</p>
+                        <p><strong>Estimated Price:</strong> {price_info}</p>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{getattr(settings, 'SITE_URL', 'http://localhost:8000')}/customer/appointments/" 
+                           style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                            View Appointment
+                        </a>
+                    </div>
+                </div>
+            </body>
+            </html>
             """
+            
         else:  # rejected
-            subject = f"Appointment Update - {worker.name}"
-            status_message = "Your appointment request was declined"
-            status_color = "#dc3545"
-            next_steps = """
-            <p>Unfortunately, this worker was unable to accept your appointment. You can:</p>
-            <ul>
-                <li>Browse other available workers</li>
-                <li>Try a different date and time with the same worker</li>
-                <li>Contact our support team for assistance</li>
-            </ul>
+            subject = f"Appointment Declined - {worker.name}"
+            
+            html_message = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #2c3e50;">Appointment Declined</h2>
+                    
+                    <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin: 0;">Your appointment request was declined</h3>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <p><strong>Worker:</strong> {worker.name}</p>
+                        <p><strong>Service:</strong> {service_name}</p>
+                        <p><strong>Reason:</strong> The worker was unable to accept your appointment at this time.</p>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{getattr(settings, 'SITE_URL', 'http://localhost:8000')}/workers/" 
+                           style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                            Find Another Worker
+                        </a>
+                    </div>
+                </div>
+            </body>
+            </html>
             """
         
-        html_message = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #2c3e50;">Appointment Update</h2>
-                
-                <div style="background: {status_color}; color: white; padding: 15px; 
-                           border-radius: 8px; text-align: center; margin: 20px 0;">
-                    <h3 style="margin: 0;">{status_message}</h3>
-                </div>
-                
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="color: #007bff; margin-top: 0;">Appointment Details</h3>
-                    <p><strong>Worker:</strong> {worker.name}</p>
-                    <p><strong>Service:</strong> {appointment.service_subtask.subtask.name if appointment.service_subtask else 'Not specified'}</p>
-                    <p><strong>Price:</strong> {price_info}</p>
-                    <p><strong>Date & Time:</strong> {appointment.appointment_date.strftime('%B %d, %Y at %I:%M %p')}</p>
-                    <p><strong>Location:</strong> {appointment.location or 'Not specified'}</p>
-                    {f"<p><strong>Special Instructions:</strong> {appointment.special_instructions}</p>" if appointment.special_instructions else ""}
-                </div>
-                
-                <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                    <h4 style="color: #17a2b8; margin-top: 0;">What's Next?</h4>
-                    {next_steps}
-                </div>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="{settings.SITE_URL}/customer/appointments/" 
-                       style="background: #007bff; color: white; padding: 12px 30px; 
-                              text-decoration: none; border-radius: 5px; display: inline-block;">
-                        View My Appointments
-                    </a>
-                    <a href="{settings.SITE_URL}/get-started/" 
-                       style="background: #28a745; color: white; padding: 12px 30px; 
-                              text-decoration: none; border-radius: 5px; display: inline-block; margin-left: 10px;">
-                        Browse Workers
-                    </a>
-                </div>
-                
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-                <p style="color: #666; font-size: 12px;">
-                    This is an automated message from BlueCaller. 
-                    Please do not reply to this email directly.
-                </p>
-            </div>
-        </body>
-        </html>
-        """
-        
-        # Plain text version
-        plain_message = f"""
-Appointment Update
-
-Dear {customer.name},
-
-{status_message}
-
-Appointment Details:
-- Worker: {worker.name}
-- Service: {appointment.service_subtask.subtask.name if appointment.service_subtask else 'Not specified'}
-- Price: {price_info}
-- Date & Time: {appointment.appointment_date.strftime('%B %d, %Y at %I:%M %p')}
-- Location: {appointment.location or 'Not specified'}
-{f"- Special Instructions: {appointment.special_instructions}" if appointment.special_instructions else ""}
-
-View your appointments: {settings.SITE_URL}/customer/appointments/
-Browse workers: {settings.SITE_URL}/get-started/
-
-Best regards,
-BlueCaller Team
-        """
+        # Create plain text version
+        plain_message = strip_tags(html_message)
         
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
         recipients = [customer.owner.email]
         
-        send_mail(
-            subject=subject,
-            message=plain_message,
-            from_email=from_email,
-            recipient_list=recipients,
-            html_message=html_message,
-            fail_silently=False
-        )
+        # Send email asynchronously
+        send_email_async(subject, plain_message, from_email, recipients, html_message)
         
-        logger.info(f"Appointment status email ({status}) sent to customer {customer.name} ({customer.owner.email})")
+        logger.info(f"Appointment status email ({status}) sent to customer {customer.name}")
         
     except Exception as e:
-        logger.error(f"Failed to send appointment status email to customer {customer.name}: {str(e)}")
-        # Don't raise the exception to prevent the main action from failing
-        pass
+        logger.error(f"❌ FAILED to send appointment status email to customer {customer.name}: {str(e)}")
+        # Re-raise the exception to see the actual error
+        raise
+
 
 def send_appointment_completion_email(appointment):
     """Send email notification when appointment is completed"""
@@ -1520,6 +1485,7 @@ def worker_appointments(request, worker_id=None):
         'worker': worker
     })
 
+
 @login_required
 def accept_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -1543,19 +1509,21 @@ def accept_appointment(request, appointment_id):
                 appointment=appointment
             )
             
-            # Send email notification to customer
+            # ✅ FIXED: Send email notification to customer with better error handling
             try:
                 send_appointment_status_email(appointment, 'accepted')
-                logger.info(f"Appointment acceptance email sent for appointment {appointment.id}")
+                logger.info(f"✅ Appointment acceptance email sent for appointment {appointment.id}")
             except Exception as email_error:
-                logger.error(f"Failed to send acceptance email for appointment {appointment.id}: {email_error}")
-                # Continue without failing - appointment is still accepted
+                logger.error(f"❌ FAILED to send acceptance email for appointment {appointment.id}: {str(email_error)}")
+                # Add a message but don't fail the appointment acceptance
+                messages.warning(request, "Appointment accepted but email notification failed to send.")
             
             messages.success(request, "Appointment accepted successfully.")
         else:
             messages.warning(request, "This appointment is not in a pending state.")
     
     return redirect('worker_dashboard')
+
 
 @login_required
 def reject_appointment(request, appointment_id):
@@ -1580,20 +1548,20 @@ def reject_appointment(request, appointment_id):
                 appointment=appointment
             )
             
-            # Send email notification to customer
+            # ✅ FIXED: Send email notification to customer with better error handling
             try:
                 send_appointment_status_email(appointment, 'rejected')
-                logger.info(f"Appointment rejection email sent for appointment {appointment.id}")
+                logger.info(f"✅ Appointment rejection email sent for appointment {appointment.id}")
             except Exception as email_error:
-                logger.error(f"Failed to send rejection email for appointment {appointment.id}: {email_error}")
-                # Continue without failing
+                logger.error(f"❌ FAILED to send rejection email for appointment {appointment.id}: {str(email_error)}")
+                # Add a message but don't fail the appointment rejection
+                messages.warning(request, "Appointment rejected but email notification failed to send.")
             
             messages.info(request, "Appointment rejected.")
         else:
             messages.warning(request, "This appointment is not in a pending state.")
     
     return redirect('worker_dashboard')
-
 @login_required
 def delete_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -2644,6 +2612,15 @@ def appointment_request(request, worker_id):
 def worker_service_details(request, worker_id):
     worker = get_object_or_404(Worker, id=worker_id)
     
+    # Check for AJAX filter requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        search_query = request.GET.get('search', '').lower()
+        price_filter = request.GET.get('price_filter', 'all')
+        category_filter = request.GET.get('category_filter', 'all')
+        
+        # Return filtered results via AJAX
+        return filter_services_ajax(worker, search_query, price_filter, category_filter)
+    
     try:
         # Get worker services with pricing from database
         worker_services = WorkerService.objects.filter(
@@ -2750,19 +2727,26 @@ def worker_service_details(request, worker_id):
         # Convert dict to list and sort categories by name
         categories_data = sorted(list(categories_dict.values()), key=lambda x: x['name'])
         
-        # ✅ NEW: Convert categories_data to JSON-serializable format
+        # ✅ NEW: Ensure base_price is properly set for all services for client-side filtering
         for category in categories_data:
-            category['id'] = str(category['id'])  # Ensure ID is string
             for service in category['services']:
-                # Ensure all service values are JSON serializable
-                service['id'] = str(service['id'])
-                service['base_price'] = float(service['base_price'])
-                service['night_shift_extra'] = float(service['night_shift_extra'])
-                service['min_hours'] = int(service['min_hours'])
-                if service['offer_price'] is not None:
-                    service['offer_price'] = float(service['offer_price'])
-                if service['original_price'] is not None:
-                    service['original_price'] = float(service['original_price'])
+                # Make sure base_price is properly set for filtering
+                if service.get('base_price') is None:
+                    # Extract numeric price from price_display if possible
+                    price_display = service.get('price_display', '')
+                    if '₹' in price_display:
+                        try:
+                            # Extract numeric value from price string like "₹500/hour"
+                            import re
+                            price_match = re.search(r'₹(\d+(?:\.\d+)?)', price_display)
+                            if price_match:
+                                service['base_price'] = float(price_match.group(1))
+                            else:
+                                service['base_price'] = 0.0
+                        except (ValueError, TypeError):
+                            service['base_price'] = 0.0
+                    else:
+                        service['base_price'] = 0.0
         
     except Exception as e:
         logger.error(f"Error in worker_service_details for worker {worker_id}: {str(e)}")
@@ -2782,7 +2766,7 @@ def worker_service_details(request, worker_id):
                 'description': worker.bio or 'Professional consultation and service assessment',
                 'detailed_description': 'Get expert advice and custom quotes for your project',
                 'price_display': 'Contact for pricing',
-                'base_price': 0.0,
+                'base_price': 0.0,  # ✅ Explicitly set base_price for filtering
                 'pricing_type': 'consultation',
                 'pricing_type_display': 'Custom Quote',
                 'duration': '1 hour minimum',
@@ -2804,13 +2788,25 @@ def worker_service_details(request, worker_id):
             }]
         }]
     
-    # ✅ NEW: Convert to JSON string for safe template rendering
-     # Convert to JSON string for safe template rendering
+    # ✅ NEW: Convert categories_data to JSON-serializable format
+    for category in categories_data:
+        category['id'] = str(category['id'])  # Ensure ID is string
+        for service in category['services']:
+            # Ensure all service values are JSON serializable
+            service['id'] = str(service['id'])
+            service['base_price'] = float(service['base_price'])
+            service['night_shift_extra'] = float(service['night_shift_extra'])
+            service['min_hours'] = int(service['min_hours'])
+            if service['offer_price'] is not None:
+                service['offer_price'] = float(service['offer_price'])
+            if service['original_price'] is not None:
+                service['original_price'] = float(service['original_price'])
+    
+    # Convert to JSON string for safe template rendering
     import json
     from datetime import date  
     categories_data_json = json.dumps(categories_data, ensure_ascii=False)
     
-    # ✅ THEN UPDATE YOUR CONTEXT DICTIONARY
     context = {
         'worker': worker,
         'categories_data': categories_data,
@@ -2825,6 +2821,96 @@ def worker_service_details(request, worker_id):
     }
     
     return render(request, 'jobs/worker_service_details.html', context)
+
+
+def filter_services_ajax(worker, search_query, price_filter, category_filter):
+    """AJAX endpoint for filtering services"""
+    try:
+        # Get worker services with pricing from database
+        worker_services = WorkerService.objects.filter(
+            worker=worker, 
+            is_available=True
+        ).select_related('service', 'service__category').prefetch_related(
+            'pricing__subtask'
+        )
+        
+        # Organize services by category
+        categories_dict = {}
+        
+        for worker_service in worker_services:
+            category = worker_service.service.category
+            
+            # Apply category filter
+            if category_filter != 'all' and str(category.id) != category_filter:
+                continue
+                
+            if category.id not in categories_dict:
+                categories_dict[category.id] = {
+                    'id': str(category.id),
+                    'name': category.name,
+                    'description': category.description or '',
+                    'icon': get_category_icon(category.name),
+                    'services': []
+                }
+            
+            # Get pricing for each subtask of this service
+            pricing_entries = WorkerSubTaskPricing.objects.filter(
+                worker_service=worker_service
+            ).select_related('subtask')
+            
+            for pricing in pricing_entries:
+                subtask = pricing.subtask
+                
+                # Get base price for filtering
+                try:
+                    base_price = float(pricing.price) if pricing.price else 0.0
+                except (ValueError, TypeError):
+                    base_price = 0.0
+                
+                # Apply price filter
+                matches_price = True
+                if price_filter != 'all':
+                    if price_filter == '0-500':
+                        matches_price = base_price > 0 and base_price < 500
+                    elif price_filter == '500-1000':
+                        matches_price = base_price >= 500 and base_price <= 1000
+                    elif price_filter == '1000+':
+                        matches_price = base_price > 1000
+                    elif price_filter == 'consultation':
+                        matches_price = base_price == 0
+                
+                # Apply search filter
+                matches_search = True
+                if search_query:
+                    searchable_text = f"{subtask.name} {subtask.description} {getattr(subtask, 'detailed_description', '')}".lower()
+                    matches_search = search_query in searchable_text
+                
+                if matches_price and matches_search:
+                    # Build service data (similar to main function)
+                    service_data = {
+                        'id': str(pricing.id),
+                        'name': str(getattr(subtask, 'name', 'Service')),
+                        'description': str(getattr(subtask, 'description', 'Professional service')),
+                        'price_display': f"₹{base_price:.2f}" if base_price > 0 else "Contact for pricing",
+                        'base_price': base_price,
+                        'image': str(worker_service.service.image.url) if worker_service.service.image else None,
+                    }
+                    categories_dict[category.id]['services'].append(service_data)
+        
+        # Convert to list and remove empty categories
+        filtered_categories = [cat for cat in categories_dict.values() if cat['services']]
+        total_services = sum(len(cat['services']) for cat in filtered_categories)
+        
+        return JsonResponse({
+            'categories': filtered_categories,
+            'total_services': total_services,
+            'has_results': total_services > 0
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in filter_services_ajax: {str(e)}")
+        return JsonResponse({'error': 'Server error'}, status=500)
+
 
 def get_category_icon(category_name):
     """Helper function to get appropriate icon based on category name"""

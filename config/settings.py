@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+from decouple import config 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -179,17 +180,14 @@ PHONENUMBER_DEFAULT_REGION = "NP"  # Nepal
 PHONENUMBER_DB_FORMAT = 'INTERNATIONAL'  # Use INTERNATIONAL or NATIONAL
 PHONENUMBER_DEFAULT_VALIDATION = True
 
-
-# Email configuration for Gmail SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'alina.csit2078@nistcollege.edu.np'  # Your college Gmail
-EMAIL_HOST_PASSWORD = 'Nist@12345'               # Generated App Password
-DEFAULT_FROM_EMAIL = 'BlueCaller <alina.csit2078@nistcollege.edu.np>'
-SITE_URL = 'http://localhost:8000'  # Change to your domain in production
-
+EMAIL_HOST_USER = 'rubythapa506@gmail.com'  # Your Gmail
+EMAIL_HOST_PASSWORD = 'uvds iesn ktpa vixu'  # Use environment variable
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Should be same as HOST_USER
+SITE_URL = 'http://localhost:8000'
 SITE_ID = 1
 
 # CRISPY FORMS SETTINGS

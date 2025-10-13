@@ -305,6 +305,18 @@ class Worker(models.Model):
         """Get count of unread notifications for this worker"""
         return self.notifications.filter(is_read=False).count()
 
+
+    @property
+    def services(self):
+        """Property to access services through worker_services"""
+        return Service.objects.filter(
+            workerservice__worker=self,
+            workerservice__is_available=True
+        ).distinct()
+    
+    def get_available_services(self):
+        """Get available services with their WorkerService objects"""
+        return self.worker_services.filter(is_available=True).select_related('service')
     def __str__(self):
         return f"{self.name} - {self.tagline}"
 

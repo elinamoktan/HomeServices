@@ -106,5 +106,6 @@ urlpatterns = [
     path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     path('get-notification-count/', views.get_notification_count, name='get_notification_count'),
     path('workers/', views.workers_redirect, name='workers-direct'),
+    path('worker/<int:worker_id>/services/filter/', views.worker_service_details, name='filter_worker_services'),
 
 ]

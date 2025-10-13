@@ -245,7 +245,7 @@
   </div>
 </div>
 
-<div class="min-h-screen bg-gradient-to-tr from-indigo-50 via-purple-50 to-pink-50 py-12 px-6">
+<div class="min-h-screen bg-gradient-to-tr from-indigo-50 via-purple-50 to-pink-50 py-8 px-4">
 
   <div class="max-w-7xl mx-auto mb-12 px-4">
     {% if user.is_authenticated %}
@@ -437,7 +437,7 @@
     {% else %}
     <!-- Search and Filter Section for non-authenticated users -->
     <div class="w-full">
-      <div class="flex flex-col gap-8 w-full">
+      <div class="flex flex-col gap-6 w-full">
         
         <!-- Search and Filter Section -->
         <div class="bg-white rounded-2xl shadow-xl p-6">
@@ -461,37 +461,20 @@
               </div>
             </form>
 
-            <!-- Service Filter -->
-            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              <form method="get" class="flex items-center gap-3">
-                <select
-                  name="service"
-                  class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg min-w-[200px]"
-                  onchange="this.form.submit()"
-                >
-                  <option value="">All Services</option>
-                  {% for service in all_services %}
-                  <option value="{{ service.id }}" {% if selected_service == service.id|stringformat:"s" %}selected{% endif %}>
-                    {{ service.name }}
-                  </option>
-                  {% endfor %}
-                </select>
-                
-                <!-- Clear filters -->
-                {% if query or selected_service %}
-                <a href="{% url 'worker-list' %}" class="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-semibold">
-                  Clear Filters
-                </a>
-                {% endif %}
-              </form>
+            <!-- Clear filters button -->
+            {% if query %}
+            <div class="flex items-center">
+              <a href="{% url 'worker-list' %}" class="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-semibold">
+                Clear Filters
+              </a>
             </div>
+            {% endif %}
           </div>
 
           <!-- Distance Filter for non-authenticated users -->
           <div class="mt-6 pt-6 border-t border-gray-200">
             <form id="distanceForm" method="get" class="flex flex-col lg:flex-row items-center gap-6">
               <input type="hidden" name="q" value="{{ query|default:'' }}">
-              <input type="hidden" name="service" value="{{ selected_service|default:'' }}">
               
               <div class="flex items-center gap-4 flex-1 min-w-0">
                 <label for="distanceSlider" class="text-indigo-700 font-semibold whitespace-nowrap text-lg min-w-[120px]">
@@ -519,28 +502,35 @@
               </button>
             </form>
           </div>
-          </div>
         </div>
       </div>
     </div>
     {% endif %}
   </div>
 
+  <!-- Search Results Header -->
   {% if q %}
-  <h1 class="mb-8 text-4xl font-extrabold text-indigo-800 font-serif text-center">Search results for "{{ q }}"</h1>
+  <div class="max-w-7xl mx-auto px-4 mb-8">
+    <h1 class="text-4xl font-extrabold text-indigo-800 font-serif text-center">Search results for "{{ q }}"</h1>
+  </div>
   {% endif %}
 
+  <!-- Location/Distance Info -->
   {% if max_distance %}
-  <div class="mb-6 text-center">
-    <p class="text-lg text-indigo-700 font-semibold">
-      Showing workers within <span class="text-indigo-900 font-bold">{{ max_distance }} km</span> of your location
-    </p>
+  <div class="max-w-7xl mx-auto px-4 mb-6">
+    <div class="text-center">
+      <p class="text-lg text-indigo-700 font-semibold">
+        Showing workers within <span class="text-indigo-900 font-bold">{{ max_distance }} km</span> of your location
+      </p>
+    </div>
   </div>
   {% elif customer_location %}
-  <div class="mb-6 text-center">
-    <p class="text-lg text-indigo-700 font-semibold">
-      Workers sorted by distance from your location
-    </p>
+  <div class="max-w-7xl mx-auto px-4 mb-6">
+    <div class="text-center">
+      <p class="text-lg text-indigo-700 font-semibold">
+        Workers sorted by distance from your location
+      </p>
+    </div>
   </div>
   {% endif %}
 
@@ -705,134 +695,134 @@
   </div>
   {% else %}
   <!-- Worker list for non-authenticated users -->
-  <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-    {% for worker in object_list %}
-    <div class="group relative">
-      <a href="{% url 'worker_service_details' worker.id %}" class="block">
-        <div
-          class="bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full"
-        >
-          <!-- Worker Image -->
-          <div class="relative h-48 overflow-hidden">
-            {% if worker.profile_pic %}
-            <img
-              src="{{ worker.profile_pic.url }}"
-              alt="{{ worker.name }}"
-              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-            />
-            {% else %}
-            <div class="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-              <i class="fas fa-user text-white text-6xl"></i>
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="worker-grid">
+      {% for worker in object_list %}
+      <div class="group relative">
+        <a href="{% url 'worker_service_details' worker.id %}" class="block">
+          <div class="worker-card bg-white rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full">
+            <!-- Worker Image -->
+            <div class="relative h-48 overflow-hidden">
+              {% if worker.profile_pic %}
+              <img
+                src="{{ worker.profile_pic.url }}"
+                alt="{{ worker.name }}"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              />
+              {% else %}
+              <div class="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                <i class="fas fa-user text-white text-6xl"></i>
+              </div>
+              {% endif %}
+              
+              <!-- Verified Badge -->
+              {% if worker.verified %}
+              <div class="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                <i class="fas fa-check-circle"></i>
+                Verified
+              </div>
+              {% endif %}
             </div>
-            {% endif %}
-            
-            <!-- Verified Badge -->
-            {% if worker.verified %}
-            <div class="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-              <i class="fas fa-check-circle"></i>
-              Verified
-            </div>
-            {% endif %}
-          </div>
 
-          <!-- Worker Info -->
-          <div class="p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
-              {{ worker.name }}
-            </h3>
-            
-            <p class="text-gray-600 mb-3 text-sm line-clamp-2">
-              {{ worker.tagline|default:"Professional service provider" }}
-            </p>
+            <!-- Worker Info -->
+            <div class="p-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
+                {{ worker.name }}
+              </h3>
+              
+              <p class="text-gray-600 mb-3 text-sm line-clamp-2">
+                {{ worker.tagline|default:"Professional service provider" }}
+              </p>
 
-            <!-- Rating with Stars -->
-            <div class="flex flex-col items-center space-y-2 mb-3">
-              <div class="flex items-center justify-center space-x-1">
-                {# Full Stars - using Bayesian rating #}
-                {% with stars=worker.get_star_breakdown %}
-                  {% for _ in stars.full_stars %}
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
-                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                    </svg>
+              <!-- Rating with Stars -->
+              <div class="flex flex-col items-center space-y-2 mb-3">
+                <div class="flex items-center justify-center space-x-1">
+                  {# Full Stars - using Bayesian rating #}
+                  {% with stars=worker.get_star_breakdown %}
+                    {% for _ in stars.full_stars %}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                    {% endfor %}
+
+                    {# Half Star - using Bayesian rating #}
+                    {% if stars.half_star %}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
+                        <defs>
+                          <linearGradient id="half-gradient-{{ worker.id }}">
+                            <stop offset="50%" stop-color="gold" />
+                            <stop offset="50%" stop-color="gray" />
+                          </linearGradient>
+                        </defs>
+                        <path fill="url(#half-gradient-{{ worker.id }})"
+                              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                      </svg>
+                    {% endif %}
+
+                    {# Empty Stars - using Bayesian rating #}
+                    {% for _ in stars.empty_stars %}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray" class="drop-shadow-sm">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                    {% endfor %}
+                  {% endwith %}
+                </div>
+
+                <div class="text-center">
+                  {# Display Bayesian rating instead of simple average #}
+                  <span class="text-gray-900 font-bold text-lg">{{ worker.bayesian_average_rating|floatformat:1 }} / 5</span>
+                  <br>
+                  <span class="text-gray-600 font-medium text-sm">({{ worker.ratings.count }} reviews)</span>
+                </div>
+              </div>
+
+              <!-- Distance (if available) -->
+              {% if worker.distance_km %}
+              <div class="flex items-center justify-center gap-1 text-sm text-indigo-600 mb-3">
+                <i class="fas fa-map-marker-alt"></i>
+                <span class="font-semibold">{{ worker.distance_km }} km away</span>
+              </div>
+              {% endif %}
+
+              <!-- Services -->
+              <div class="mb-4">
+                <div class="flex flex-wrap gap-1 justify-center">
+                  {% for service in worker.services.all|slice:":3" %}
+                  <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-medium">
+                    {{ service.service.name }}
+                  </span>
                   {% endfor %}
-
-                  {# Half Star - using Bayesian rating #}
-                  {% if stars.half_star %}
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
-                      <defs>
-                        <linearGradient id="half-gradient-{{ worker.id }}">
-                          <stop offset="50%" stop-color="gold" />
-                          <stop offset="50%" stop-color="gray" />
-                        </linearGradient>
-                      </defs>
-                      <path fill="url(#half-gradient-{{ worker.id }})"
-                            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                    </svg>
+                  {% if worker.services.count > 3 %}
+                  <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
+                    +{{ worker.services.count|add:"-3" }} more
+                  </span>
                   {% endif %}
-
-                  {# Empty Stars - using Bayesian rating #}
-                  {% for _ in stars.empty_stars %}
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray" class="drop-shadow-sm">
-                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                    </svg>
-                  {% endfor %}
-                {% endwith %}
+                </div>
               </div>
 
+              <!-- View Details Button -->
               <div class="text-center">
-                {# Display Bayesian rating instead of simple average #}
-                <span class="text-gray-900 font-bold text-lg">{{ worker.bayesian_average_rating|floatformat:1 }} / 5</span>
-                <br>
-                <span class="text-gray-600 font-medium text-sm">({{ worker.ratings.count }} reviews)</span>
-              </div>
-            </div>
-
-            <!-- Distance (if available) -->
-            {% if worker.distance_km %}
-            <div class="flex items-center justify-center gap-1 text-sm text-indigo-600 mb-3">
-              <i class="fas fa-map-marker-alt"></i>
-              <span class="font-semibold">{{ worker.distance_km }} km away</span>
-            </div>
-            {% endif %}
-
-            <!-- Services -->
-            <div class="mb-4">
-              <div class="flex flex-wrap gap-1">
-                {% for service in worker.services.all|slice:":3" %}
-                <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-medium">
-                  {{ service.service.name }}
+                <span class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                  View Details
+                  <i class="fas fa-arrow-right ml-2"></i>
                 </span>
-                {% endfor %}
-                {% if worker.services.count > 3 %}
-                <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
-                  +{{ worker.services.count|add:"-3" }} more
-                </span>
-                {% endif %}
               </div>
-            </div>
-
-            <!-- View Details Button -->
-            <div class="text-center">
-              <span class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
-                View Details
-                <i class="fas fa-arrow-right ml-2"></i>
-              </span>
             </div>
           </div>
-        </div>
-      </a>
+        </a>
+      </div>
+      {% empty %}
+      <div class="col-span-full text-center py-12">
+        <p class="text-xl text-indigo-700 font-semibold">
+          {% if max_distance %}
+            No workers found within {{ max_distance }} km of your location.
+          {% else %}
+            No workers found matching your search criteria.
+          {% endif %}
+        </p>
+      </div>
+      {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-span-full text-center py-12">
-      <p class="text-xl text-indigo-700 font-semibold">
-        {% if max_distance %}
-          No workers found within {{ max_distance }} km of your location.
-        {% else %}
-          No workers found matching your search criteria.
-        {% endif %}
-      </p>
-    </div>
-    {% endfor %}
   </div>
   {% endif %}
 
@@ -887,6 +877,41 @@
     50% { transform: scale(1); }
     75% { transform: scale(1.2); }
     100% { transform: scale(1); }
+  }
+
+  /* Enhanced card styling */
+  .worker-card {
+    transition: all 0.3s ease;
+  }
+
+  .worker-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Improved grid layout */
+  .worker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+  }
+
+  @media (min-width: 640px) {
+    .worker-grid {
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .worker-grid {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .worker-grid {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
   }
 </style>
 {% endblock content %}
