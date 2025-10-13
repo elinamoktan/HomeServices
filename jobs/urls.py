@@ -107,5 +107,8 @@ urlpatterns = [
     path('get-notification-count/', views.get_notification_count, name='get_notification_count'),
     path('workers/', views.workers_redirect, name='workers-direct'),
     path('worker/<int:worker_id>/services/filter/', views.worker_service_details, name='filter_worker_services'),
+    path('worker/add-subtask/<int:worker_service_id>/', views.add_custom_subtask, name='add_custom_subtask'),
+    path('worker/services/', views.get_worker_services_for_subtask, name='get_worker_services'),
+    path('api/get-worker-address/', views.get_worker_address, name='get_worker_address'),
 
 ]

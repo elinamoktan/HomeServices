@@ -31,7 +31,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import threading
-
+import requests 
 # ✅ FIXED: Import CustomUser instead of User
 try:
     from accounts.models import CustomUser
@@ -4081,4 +4081,203 @@ BlueCaller Team
         
     except Exception as e:
         logger.error(f"Failed to send worker confirmation email to customer {customer.name}: {str(e)}")
-        # Don't raise exception to avoid breaking the main functionality
+
+@login_required
+def add_custom_subtask(request, worker_service_id):
+    """View for workers to add custom subtasks to their services"""
+    try:
+        worker_service = get_object_or_404(WorkerService, id=worker_service_id, worker__owner=request.user)
+    except WorkerService.DoesNotExist:
+        return JsonResponse({'error': 'Worker service not found or access denied'}, status=404)
+
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Create new subtask
+            subtask = SubTask.objects.create(
+                service=worker_service.service,
+                name=data.get('name'),
+                description=data.get('description', ''),
+                detailed_description=data.get('detailed_description', ''),
+                default_pricing_type=data.get('pricing_type', 'fixed'),
+                duration=data.get('duration', ''),
+                materials_included=data.get('materials_included', False),
+                requirements=data.get('requirements', ''),
+                created_by=request.user,
+                is_custom=True
+            )
+            
+            # Create pricing for this subtask
+            pricing = WorkerSubTaskPricing.objects.create(
+                worker_service=worker_service,
+                subtask=subtask,
+                pricing_type=data.get('pricing_type', 'fixed'),
+                price=data.get('price', 0),
+                experience_level=data.get('experience_level', 'intermediate'),
+                night_shift_extra=data.get('night_shift_extra', 0),
+                min_hours=data.get('min_hours', 1)
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Custom subtask added successfully',
+                'subtask_id': subtask.id,
+                'pricing_id': pricing.id
+            })
+            
+        except Exception as e:
+            logger.error(f"Error creating custom subtask: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@login_required
+def get_worker_services_for_subtask(request):
+    """Get worker's services for adding custom subtasks"""
+    try:
+        worker = request.user.worker
+        worker_services = WorkerService.objects.filter(
+            worker=worker, 
+            is_available=True
+        ).select_related('service', 'service__category')
+        
+        services_data = []
+        for ws in worker_services:
+            services_data.append({
+                'id': ws.id,
+                'service_name': ws.service.name,
+                'category_name': ws.service.category.name,
+                'category_id': ws.service.category.id
+            })
+        
+        return JsonResponse({'services': services_data})
+        
+    except Worker.DoesNotExist:
+        return JsonResponse({'error': 'Worker profile not found'}, status=404)
+
+@csrf_exempt
+@require_POST
+def get_worker_address(request):
+    """Get human-readable address from worker coordinates using reverse geocoding"""
+    try:
+        worker_id = request.POST.get('worker_id')
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
+        
+        print(f"🔍 DEBUG: Processing worker {worker_id} - Lat: {latitude}, Lon: {longitude}")
+        
+        if not all([worker_id, latitude, longitude]):
+            return JsonResponse({'error': 'Missing required parameters'}, status=400)
+        
+        # Convert to float
+        try:
+            lat = float(latitude)
+            lon = float(longitude)
+        except (ValueError, TypeError):
+            print(f"❌ DEBUG: Invalid coordinates for worker {worker_id}")
+            return JsonResponse({'error': 'Invalid coordinates'}, status=400)
+        
+        # Validate coordinate ranges
+        if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+            print(f"❌ DEBUG: Coordinate out of range for worker {worker_id}")
+            return JsonResponse({'error': 'Invalid coordinate ranges'}, status=400)
+        
+        # Check for default/invalid coordinates
+        if lat == 0.0 and lon == 0.0:
+            print(f"❌ DEBUG: Default coordinates (0,0) for worker {worker_id}")
+            return JsonResponse({'error': 'Default coordinates not valid'}, status=400)
+        
+        # Use OpenStreetMap Nominatim for reverse geocoding
+        url = "https://nominatim.openstreetmap.org/reverse"
+        params = {
+            'lat': lat,
+            'lon': lon,
+            'format': 'json',
+            'addressdetails': 1,
+            'zoom': 18
+        }
+        
+        headers = {
+            'User-Agent': 'BlueCaller/1.0 (contact@bluecaller.com)'
+        }
+        
+        print(f"🔍 DEBUG: Making API request for worker {worker_id}")
+        
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        
+        print(f"🔍 DEBUG: API Response Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Check if we got a valid response
+            if data.get('error'):
+                print(f"❌ DEBUG: API returned error for worker {worker_id}: {data.get('error')}")
+                return JsonResponse({'error': data.get('error')}, status=400)
+            
+            address = data.get('display_name', 'Address not available')
+            
+            # Use the helper function to format address
+            address_components = data.get('address', {})
+            simplified_address = format_simplified_address(address_components)
+            
+            print(f"✅ DEBUG: Success for worker {worker_id}: {simplified_address}")
+            
+            return JsonResponse({
+                'success': True,
+                'address': simplified_address or address,
+                'full_address': address,
+                'worker_id': worker_id
+            })
+        else:
+            print(f"❌ DEBUG: API failed with status {response.status_code} for worker {worker_id}")
+            return JsonResponse({
+                'error': 'Geocoding service unavailable',
+                'status_code': response.status_code
+            }, status=500)
+            
+    except requests.exceptions.Timeout:
+        print(f"❌ DEBUG: Timeout for worker {worker_id}")
+        logger.error("Reverse geocoding request timed out")
+        return JsonResponse({'error': 'Geocoding service timeout'}, status=500)
+    except requests.exceptions.RequestException as e:
+        print(f"❌ DEBUG: Request exception for worker {worker_id}: {str(e)}")
+        logger.error(f"Reverse geocoding request failed: {str(e)}")
+        return JsonResponse({'error': f'Geocoding service error: {str(e)}'}, status=500)
+    except Exception as e:
+        print(f"❌ DEBUG: Unexpected error for worker {worker_id}: {str(e)}")
+        logger.error(f"Unexpected error in get_worker_address: {str(e)}")
+        return JsonResponse({'error': f'Internal server error: {str(e)}'}, status=500)
+
+def format_simplified_address(address_components):
+    """Format a simplified address from address components"""
+    parts = []
+    
+    # Add house number and road (street address)
+    if address_components.get('house_number'):
+        parts.append(address_components['house_number'])
+    if address_components.get('road'):
+        parts.append(address_components['road'])
+    
+    # Add suburb or neighbourhood
+    if address_components.get('suburb'):
+        parts.append(address_components['suburb'])
+    elif address_components.get('neighbourhood'):
+        parts.append(address_components['neighbourhood'])
+    
+    # Add city/town
+    if address_components.get('city'):
+        parts.append(address_components['city'])
+    elif address_components.get('town'):
+        parts.append(address_components['town'])
+    elif address_components.get('village'):
+        parts.append(address_components['village'])
+    
+    # Add state and postcode
+    if address_components.get('state'):
+        parts.append(address_components['state'])
+    if address_components.get('postcode'):
+        parts.append(address_components['postcode'])
+    
+    return ', '.join(parts) if parts else None

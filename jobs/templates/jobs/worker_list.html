@@ -127,6 +127,83 @@
     // Initialize favorite status on page load
     checkFavoriteStatus();
 
+    // Function to get worker address from coordinates
+// Function to get worker address from coordinates
+function getWorkerAddress(workerId, latitude, longitude) {
+  if (!latitude || !longitude) {
+    console.log(`No coordinates for worker ${workerId}`);
+    return;
+  }
+
+  console.log(`🔍 Getting address for worker ${workerId}: ${latitude}, ${longitude}`);
+
+  $.ajax({
+    url: '{% url "get_worker_address" %}',
+    type: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    data: {
+      worker_id: workerId,
+      latitude: latitude,
+      longitude: longitude
+    },
+    success: function(response) {
+      console.log(`✅ Address response for worker ${workerId}:`, response);
+      
+      if (response.success && response.address) {
+        // Update the address element for this worker
+        const addressElement = $(`#worker-address-${workerId}`);
+        addressElement.text(response.address);
+        addressElement.removeClass('hidden');
+        console.log(`✅ Updated address for worker ${workerId}: ${response.address}`);
+      } else {
+        console.log(`❌ No address for worker ${workerId}:`, response.error);
+        const addressElement = $(`#worker-address-${workerId}`);
+        addressElement.text(response.error || 'Address not available');
+        addressElement.removeClass('hidden');
+        addressElement.addClass('text-red-500');
+      }
+    },
+    error: function(xhr, status, error) {
+      console.error(`❌ Error getting address for worker ${workerId}:`, error);
+      const addressElement = $(`#worker-address-${workerId}`);
+      addressElement.text('Address service unavailable');
+      addressElement.removeClass('hidden');
+      addressElement.addClass('text-red-500');
+    }
+  });
+}
+
+ // Initialize worker addresses on page load with rate limiting
+function initializeWorkerAddresses() {
+  const workerCards = $('.worker-card');
+  let delay = 0;
+  
+  workerCards.each(function() {
+    const card = $(this);
+    const workerId = card.data('worker-id');
+    const latitude = card.data('latitude');
+    const longitude = card.data('longitude');
+    
+    if (workerId && latitude && longitude) {
+      // Stagger requests to avoid hitting API limits
+      setTimeout(() => {
+        console.log(`🕒 Making request for worker ${workerId} after ${delay}ms delay`);
+        getWorkerAddress(workerId, latitude, longitude);
+      }, delay);
+      delay += 2000; // 2 seconds between requests to respect API limits
+    } else {
+      console.log(`❌ No coordinates for worker ${workerId}`);
+    }
+  });
+  
+  console.log(`📊 Total workers with coordinates: ${workerCards.filter('[data-latitude][data-longitude]').length}`);
+}
+    // Initialize addresses when page loads
+    initializeWorkerAddresses();
+
     function showMessage(message, type) {
       const messageDiv = $('<div class="fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-opacity duration-300"></div>');
       
@@ -551,7 +628,10 @@
       
       <a href="{% url 'worker_service_details' worker.id %}" class="block">
         <div
-          class="bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full"
+          class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full"
+          data-worker-id="{{ worker.id }}"
+          data-latitude="{{ worker.latitude|default:'' }}"
+          data-longitude="{{ worker.longitude|default:'' }}"
         >
           <div class="p-6 flex flex-col items-center text-center space-y-4">
             <div class="flex-shrink-0">
@@ -599,6 +679,19 @@
               <p class="text-gray-700 italic text-base leading-relaxed">{{ worker.tagline }}</p>
 
               <div class="space-y-2">
+                <!-- Worker Address Display -->
+                {% if worker.latitude and worker.longitude %}
+                <div id="worker-address-{{ worker.id }}" class="hidden">
+                  <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-sm text-blue-600 font-semibold">Loading address...</span>
+                  </p>
+                </div>
+                {% endif %}
+
                 {% if worker.location %}
                 <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -700,7 +793,10 @@
       {% for worker in object_list %}
       <div class="group relative">
         <a href="{% url 'worker_service_details' worker.id %}" class="block">
-          <div class="worker-card bg-white rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full">
+          <div class="worker-card bg-white rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full"
+               data-worker-id="{{ worker.id }}"
+               data-latitude="{{ worker.latitude|default:'' }}"
+               data-longitude="{{ worker.longitude|default:'' }}">
             <!-- Worker Image -->
             <div class="relative h-48 overflow-hidden">
               {% if worker.profile_pic %}
@@ -733,6 +829,19 @@
               <p class="text-gray-600 mb-3 text-sm line-clamp-2">
                 {{ worker.tagline|default:"Professional service provider" }}
               </p>
+
+              <!-- Worker Address Display for Non-Authenticated Users -->
+              {% if worker.latitude and worker.longitude %}
+              <div id="worker-address-{{ worker.id }}" class="hidden mb-3">
+                <p class="text-gray-600 font-medium flex items-center justify-start space-x-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span class="text-xs text-blue-600 font-semibold">Loading address...</span>
+                </p>
+              </div>
+              {% endif %}
 
               <!-- Rating with Stars -->
               <div class="flex flex-col items-center space-y-2 mb-3">

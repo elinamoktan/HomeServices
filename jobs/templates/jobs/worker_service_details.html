@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/gsap/3.12.2/gsap.min.js"></script>
 <!-- Add Leaflet CSS and JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -120,6 +120,82 @@ body {
     margin: 0.5rem 0 0 0;
     font-size: 1rem;
     font-weight: 500;
+}
+
+/* ================== ADD CUSTOM SERVICE SECTION ================== */
+.custom-service-section {
+    max-width: 1200px;
+    margin: 0 auto 2rem auto;
+    padding: 0 1rem;
+    animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.custom-service-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+    border: 2px dashed var(--light-gray);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--gray);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 /* ================== SEARCH AND FILTER SECTION ================== */
@@ -1127,6 +1203,10 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
     .location-controls {
         flex-direction: column;
     }
+    
+    .custom-service-card {
+        padding: 1.5rem;
+    }
 }
 </style>
 
@@ -1159,6 +1239,113 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
         </div>
     </div>
 </div>
+
+<!-- ================== ADD CUSTOM SERVICE SECTION ================== -->
+{% if user.is_authenticated and user.worker and user.worker.id == worker.id %}
+<div class="custom-service-section">
+    <div class="custom-service-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.5rem; font-weight: 700; color: #1f2937; margin: 0;">
+                <i class="fas fa-plus-circle" style="color: #3b82f6; margin-right: 0.5rem;"></i>
+                Add Custom Service
+            </h3>
+            <button id="toggleCustomServiceForm" class="btn-primary">
+                <i class="fas fa-plus mr-2"></i>Add New Service
+            </button>
+        </div>
+        
+        <div id="customServiceForm" style="display: none; background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-top: 1rem;">
+            <form id="addSubtaskForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label for="serviceSelect" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Select Service Category</label>
+                        <select id="serviceSelect" class="form-select">
+                            <option value="">Loading services...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subtaskName" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Service Name *</label>
+                        <input type="text" id="subtaskName" required style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem;" placeholder="e.g., Deep Cleaning, Emergency Repair">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="subtaskDescription" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Description *</label>
+                    <textarea id="subtaskDescription" required style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem; min-height: 80px;" placeholder="Describe what this service includes..."></textarea>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label for="pricingType" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Pricing Type</label>
+                        <select id="pricingType" class="form-select">
+                            <option value="fixed">Fixed Price</option>
+                            <option value="hourly">Hourly Rate</option>
+                            <option value="sqft">Per Square Foot</option>
+                            <option value="unit">Per Unit</option>
+                            <option value="shift">Shift-based</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subtaskPrice" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Price (₹) *</label>
+                        <input type="number" id="subtaskPrice" required step="0.01" min="0" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem;" placeholder="0.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subtaskDuration" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Duration</label>
+                        <input type="text" id="subtaskDuration" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem;" placeholder="e.g., 2 hours, 1 day">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label for="experienceLevel" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Experience Level</label>
+                        <select id="experienceLevel" class="form-select">
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate" selected>Intermediate</option>
+                            <option value="expert">Expert</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nightShiftExtra" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Night Shift Extra (₹)</label>
+                        <input type="number" id="nightShiftExtra" step="0.01" min="0" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem;" value="0" placeholder="0.00">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="materialsIncluded" style="width: 18px; height: 18px;">
+                        <span style="font-weight: 600; color: #374151;">Materials Included</span>
+                    </label>
+                    
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="specialOffer" style="width: 18px; height: 18px;">
+                        <span style="font-weight: 600; color: #374151;">Special Offer</span>
+                    </label>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="subtaskRequirements" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Requirements</label>
+                    <textarea id="subtaskRequirements" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem; min-height: 60px;" placeholder="Any specific requirements or notes..."></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" id="cancelSubtask" class="btn-secondary">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-primary" style="background: #059669;">
+                        <i class="fas fa-save mr-2"></i>Save Service
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="customServiceMessage" style="display: none; margin-top: 1rem; padding: 1rem; border-radius: 8px;"></div>
+    </div>
+</div>
+{% endif %}
 
 <!-- ================== SEARCH AND FILTER SECTION ================== -->
 <div class="search-filter-section">
@@ -1609,6 +1796,145 @@ let map = null;
 let marker = null;
 let selectedLocation = null;
 
+// ================== CUSTOM SERVICE FUNCTIONS ==================
+function initializeCustomServiceForm() {
+    const toggleBtn = document.getElementById('toggleCustomServiceForm');
+    const form = document.getElementById('customServiceForm');
+    const cancelBtn = document.getElementById('cancelSubtask');
+    const addSubtaskForm = document.getElementById('addSubtaskForm');
+    const serviceSelect = document.getElementById('serviceSelect');
+    const messageDiv = document.getElementById('customServiceMessage');
+    
+    if (toggleBtn && form) {
+        // Load worker services
+        loadWorkerServices();
+        
+        toggleBtn.addEventListener('click', function() {
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            toggleBtn.innerHTML = form.style.display === 'block' 
+                ? '<i class="fas fa-times mr-2"></i>Cancel' 
+                : '<i class="fas fa-plus mr-2"></i>Add New Service';
+        });
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                form.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fas fa-plus mr-2"></i>Add New Service';
+                addSubtaskForm.reset();
+                hideMessage();
+            });
+        }
+        
+        if (addSubtaskForm) {
+            addSubtaskForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                addCustomSubtask();
+            });
+        }
+    }
+    
+    function loadWorkerServices() {
+        fetch('/worker/services/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.services && data.services.length > 0) {
+                    serviceSelect.innerHTML = '<option value="">Select a service category</option>';
+                    data.services.forEach(service => {
+                        const option = document.createElement('option');
+                        option.value = service.id;
+                        option.textContent = `${service.category_name} - ${service.service_name}`;
+                        serviceSelect.appendChild(option);
+                    });
+                } else {
+                    serviceSelect.innerHTML = '<option value="">No services available</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading services:', error);
+                serviceSelect.innerHTML = '<option value="">Error loading services</option>';
+            });
+    }
+    
+    function addCustomSubtask() {
+        const serviceId = document.getElementById('serviceSelect').value;
+        const name = document.getElementById('subtaskName').value;
+        const description = document.getElementById('subtaskDescription').value;
+        const pricingType = document.getElementById('pricingType').value;
+        const price = document.getElementById('subtaskPrice').value;
+        const duration = document.getElementById('subtaskDuration').value;
+        const experienceLevel = document.getElementById('experienceLevel').value;
+        const nightShiftExtra = document.getElementById('nightShiftExtra').value;
+        const materialsIncluded = document.getElementById('materialsIncluded').checked;
+        const requirements = document.getElementById('subtaskRequirements').value;
+        
+        if (!serviceId || !name || !description || !price) {
+            showMessage('Please fill in all required fields', 'error');
+            return;
+        }
+        
+        const formData = {
+            name: name,
+            description: description,
+            pricing_type: pricingType,
+            price: parseFloat(price),
+            duration: duration,
+            experience_level: experienceLevel,
+            night_shift_extra: parseFloat(nightShiftExtra) || 0,
+            materials_included: materialsIncluded,
+            requirements: requirements
+        };
+        
+        fetch(`/worker/add-subtask/${serviceId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage('Custom service added successfully! The page will refresh...', 'success');
+                addSubtaskForm.reset();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showMessage('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error adding subtask:', error);
+            showMessage('Error adding service. Please try again.', 'error');
+        });
+    }
+    
+    function showMessage(message, type) {
+        const messageDiv = document.getElementById('customServiceMessage');
+        messageDiv.textContent = message;
+        messageDiv.style.display = 'block';
+        messageDiv.style.padding = '1rem';
+        messageDiv.style.borderRadius = '8px';
+        messageDiv.style.marginTop = '1rem';
+        
+        if (type === 'success') {
+            messageDiv.style.background = '#d1fae5';
+            messageDiv.style.color = '#065f46';
+            messageDiv.style.border = '1px solid #a7f3d0';
+        } else {
+            messageDiv.style.background = '#fee2e2';
+            messageDiv.style.color = '#991b1b';
+            messageDiv.style.border = '1px solid #fecaca';
+        }
+    }
+    
+    function hideMessage() {
+        const messageDiv = document.getElementById('customServiceMessage');
+        messageDiv.style.display = 'none';
+    }
+}
+
 // ================== MAP FUNCTIONS ==================
 function initializeMap() {
     // Default coordinates (center of India)
@@ -1618,7 +1944,7 @@ function initializeMap() {
     // Initialize the map
     map = L.map('locationMap').setView([defaultLat, defaultLng], 5);
     
-    // Add OpenStreetMap tiles
+     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
@@ -1914,15 +2240,6 @@ function initializePhoneValidation() {
                     return false;
                 }
                 
-                // Validate address name
-                const addressName = document.getElementById('addressName').value.trim();
-                if (!addressName) {
-                    e.preventDefault();
-                    alert('Please enter an address name');
-                    document.getElementById('addressName').focus();
-                    return false;
-                }
-                
                 const phoneValue = phoneInput.value.replace(/\D/g, '');
                 
                 if (phoneValue.length !== 10) {
@@ -2119,14 +2436,35 @@ function updateServiceSummary(name, price, duration) {
     if (durationElement) durationElement.textContent = duration || 'Varies';
 }
 
+// ================== UTILITY FUNCTIONS ==================
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 // ================== INITIALIZATION ==================
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize everything
     initializeSearchAndFilter();
     initializeModal();
     initializeEventListeners();
-    initializeFormElements(); // This now includes phone validation
-    initializePhoneValidation(); // Extra safety
+    initializeFormElements();
+    initializePhoneValidation();
+    
+    // Initialize custom service form if worker is viewing their own profile
+    {% if user.is_authenticated and user.worker and user.worker.id == worker.id %}
+    initializeCustomServiceForm();
+    {% endif %}
     
     // Close login modal when clicking outside
     const loginModal = document.getElementById('loginRequiredModal');
@@ -2137,6 +2475,46 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Initialize service navigation
+    const serviceNavItems = document.querySelectorAll('.service-nav-item');
+    serviceNavItems.forEach(item => {
+        item.addEventListener('click', function() {
+            // Remove active class from all items
+            serviceNavItems.forEach(navItem => navItem.classList.remove('active'));
+            // Add active class to clicked item
+            this.classList.add('active');
+            
+            // Update header
+            const categoryName = this.getAttribute('data-category-name');
+            const categoryIcon = this.getAttribute('data-category-icon');
+            const serviceTitle = document.getElementById('service-title');
+            const serviceIcon = document.getElementById('service-icon');
+            
+            if (serviceTitle) {
+                serviceTitle.textContent = categoryName;
+            }
+            if (serviceIcon) {
+                serviceIcon.textContent = categoryIcon;
+            }
+            
+            // Filter services by category
+            const categoryId = this.getAttribute('data-category-id');
+            filterServicesByCategory(categoryId);
+        });
+    });
 });
+
+function filterServicesByCategory(categoryId) {
+    const serviceCards = document.querySelectorAll('.service-card');
+    serviceCards.forEach(card => {
+        const cardCategory = card.getAttribute('data-category');
+        if (cardCategory === categoryId) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
 </script>
 {% endblock content %}
