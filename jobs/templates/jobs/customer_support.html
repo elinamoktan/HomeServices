@@ -7,24 +7,38 @@
 <style>
   /* Modern Glassmorphism Design */
   :root {
-    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Blue to Purple */
     --card-gradient: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
-    --accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    --accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); /* Pink to Red */
+    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); /* Light Blue to Cyan */
+    --faq-active-border: linear-gradient(45deg, #a770ef, #cf8bf3, #fcc2ff); /* Softer purple/pink gradient */
+    --text-dark: #2d3748; /* For main titles and strong text */
+    --text-medium: #4a5568; /* For body text */
+    --text-light: #718096; /* For descriptive text, less prominent */
+    --border-light: rgba(255, 255, 255, 0.4);
+    --border-dark: rgba(255, 255, 255, 0.6);
+  }
+
+  body {
+    font-family: 'Poppins', sans-serif; /* A modern, clean sans-serif font */
   }
 
   .glass-card {
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.2); /* More transparent for true glass effect */
+    backdrop-filter: blur(25px) saturate(180%); /* Stronger blur */
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid var(--border-light); /* Softer border */
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15); /* More pronounced shadow */
+    border-radius: 24px; /* Consistent rounded corners */
   }
 
   .gradient-bg {
     background: var(--primary-gradient);
     position: relative;
     overflow: hidden;
+    display: flex; /* Use flex to center content vertically if needed */
+    align-items: center; /* Vertically center */
+    justify-content: center; /* Horizontally center */
   }
 
   .gradient-bg::before {
@@ -35,51 +49,68 @@
     right: 0;
     bottom: 0;
     background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    animation: float 20s ease-in-out infinite;
+    animation: floatBackground 25s linear infinite; /* Renamed to avoid conflict */
+    opacity: 0.8; /* More visible pattern */
+    pointer-events: none; /* Ensure clicks pass through */
   }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(180deg); }
+  @keyframes floatBackground {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
   }
 
   /* Enhanced Support Styles */
   .support-hero {
-    background: var(--card-gradient);
-    border-radius: 24px;
-    padding: 3rem;
-    margin-bottom: 2rem;
+    background: var(--card-gradient); /* Keep the white-ish gradient for the hero */
+    border-radius: 28px; /* Slightly more rounded */
+    padding: 3.5rem; /* More padding */
+    margin-bottom: 3rem;
     position: relative;
     overflow: hidden;
+    z-index: 10; /* Ensure hero content is above background pattern */
   }
 
   .support-hero::before {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 200%;
+    top: -60%; /* Adjusted for better coverage */
+    right: -60%;
+    width: 120%; /* Larger swirl */
+    height: 240%;
     background: var(--accent-gradient);
-    opacity: 0.05;
+    opacity: 0.07; /* Slightly more opaque */
     border-radius: 50%;
-    animation: rotate 20s linear infinite;
+    animation: rotate 25s linear infinite; /* Slower rotation */
+    z-index: 0;
   }
 
   @keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from { transform: rotate(0deg) scale(1); }
+    to { transform: rotate(360deg) scale(1.05); } /* Subtle scaling effect */
+  }
+
+  .support-hero h1 {
+    color: var(--text-dark);
+    font-size: 3.5rem; /* Larger hero title */
+    letter-spacing: -0.05em;
+  }
+
+  .support-hero p {
+    color: var(--text-medium);
+    font-size: 1.15rem;
   }
 
   .feature-card {
     background: var(--card-gradient);
-    border-radius: 20px;
-    padding: 2.5rem;
+    border-radius: 24px; /* Consistent with other elements */
+    padding: 3rem; /* More generous padding */
     text-align: center;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); /* Smoother transition */
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    z-index: 10;
   }
 
   .feature-card::before {
@@ -89,8 +120,9 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    transition: left 0.5s;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent); /* Stronger hover shimmer */
+    transition: left 0.6s ease-out; /* Slower, smoother shimmer */
+    z-index: 0;
   }
 
   .feature-card:hover::before {
@@ -98,19 +130,20 @@
   }
 
   .feature-card:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    transform: translateY(-15px) scale(1.03); /* More pronounced lift and scale */
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
   }
 
   .icon-wrapper {
-    width: 80px;
-    height: 80px;
+    width: 90px; /* Larger icons */
+    height: 90px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 1.5rem;
+    margin: 0 auto 2rem; /* More space below icon */
     position: relative;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Shadow for the icon circle */
   }
 
   .icon-wrapper::after {
@@ -120,91 +153,110 @@
     height: 100%;
     border-radius: 50%;
     background: inherit;
-    filter: blur(15px);
-    opacity: 0.6;
+    filter: blur(20px); /* Stronger blur for glow */
+    opacity: 0.7;
     z-index: -1;
+    animation: pulseGlow 2s infinite alternate; /* Pulsing glow effect */
   }
 
+  @keyframes pulseGlow {
+    0% { transform: scale(0.9); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 0.7; }
+  }
+
+  .icon-wrapper i {
+    font-size: 3.5rem; /* Larger icon itself */
+    color: white; /* Ensure icons are white on gradient background */
+    text-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Subtle shadow for depth */
+  }
+
+  /* FAQ Specific Styling */
   .faq-item {
-    background: var(--card-gradient);
-    border-radius: 16px;
-    margin-bottom: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.15); /* More transparent background for items */
+    border-radius: 20px;
+    margin-bottom: 1.25rem; /* Slightly more space */
+    border: 1px solid var(--border-light);
+    transition: all 0.4s ease-in-out; /* Slower, smoother transitions */
+    overflow: hidden; /* Important for border-radius */
   }
 
-  .faq-item:hover {
-    border-color: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  .faq-item.active {
+    border-image: var(--faq-active-border);
+    border-image-slice: 1;
+    background: rgba(255, 255, 255, 0.3); /* Slightly brighter when active */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 4px rgba(167, 112, 239, 0.3); /* Highlight with border glow */
+  }
+
+  .faq-item:hover:not(.active) {
+    border-color: var(--border-dark);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px); /* Subtle lift on hover */
   }
 
   .faq-header {
-    padding: 1.5rem 2rem;
+    padding: 1.75rem 2.25rem; /* More padding */
     cursor: pointer;
     display: flex;
-    justify-content: between;
+    justify-content: space-between;
     align-items: center;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, padding 0.3s ease;
   }
 
   .faq-header:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15); /* Lighter hover background */
+  }
+
+  .faq-header h3 {
+    font-size: 1.35rem; /* Larger FAQ question text */
+    font-weight: 600;
+    color: var(--text-dark);
+    line-height: 1.4;
+  }
+
+  .faq-header i {
+    font-size: 1.5rem; /* Larger chevron icon */
+    color: var(--text-light); /* Softer color for icon */
+    transition: transform 0.4s ease-in-out; /* Smoother rotation */
+    margin-left: 1rem; /* Space between text and icon */
+  }
+
+  .faq-header i.rotate-180 {
+    transform: rotate(180deg);
   }
 
   .faq-content {
-    padding: 0 2rem 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0 2.25rem 1.75rem; /* Match header padding */
+    border-top: 1px solid rgba(255, 255, 255, 0.2); /* Softer divider */
+    color: var(--text-medium);
+    line-height: 1.7;
+    font-size: 1.05rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.6s ease-out, padding 0.6s ease-out, opacity 0.6s ease-out; /* Smooth slide transition */
+    opacity: 0;
   }
 
-  .contact-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
+  .faq-content.open {
+    max-height: 500px; /* Arbitrary large value for smooth transition */
+    opacity: 1;
+    padding-top: 1.5rem; /* Add padding when open */
   }
 
-  .contact-item {
-    background: var(--card-gradient);
-    border-radius: 16px;
-    padding: 2rem;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    transition: all 0.3s ease;
-  }
-
-  .contact-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-  }
-
-  /* Form Styles */
-  .form-input {
-    background: rgba(255, 255, 255, 0.9);
-    border: 2px solid transparent;
-    border-radius: 12px;
-    padding: 1rem 1.5rem;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-  }
-
-  .form-input:focus {
-    background: rgba(255, 255, 255, 0.95);
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    outline: none;
-  }
 
   .btn-primary {
     background: var(--accent-gradient);
     border: none;
-    border-radius: 12px;
-    padding: 1rem 2rem;
+    border-radius: 14px; /* Slightly more rounded */
+    padding: 1.1rem 2.5rem; /* More padding */
     color: white;
-    font-weight: 600;
+    font-weight: 700; /* Bolder text */
+    font-size: 1.05rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s ease-out;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 8px 25px rgba(245, 87, 108, 0.3); /* Shadow reflecting accent color */
+    z-index: 1;
   }
 
   .btn-primary::before {
@@ -214,8 +266,9 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    transition: left 0.5s;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); /* Brighter shimmer */
+    transition: left 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); /* Smoother shimmer */
+    z-index: 0;
   }
 
   .btn-primary:hover::before {
@@ -223,8 +276,8 @@
   }
 
   .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(245, 87, 108, 0.4); /* Stronger shadow on hover */
   }
 
   /* Floating Animation */
@@ -240,49 +293,56 @@
   /* Responsive Design */
   @media (max-width: 768px) {
     .support-hero {
-      padding: 2rem 1.5rem;
+      padding: 2.5rem 1.5rem;
     }
-    
+    .support-hero h1 {
+      font-size: 2.5rem;
+    }
+    .support-hero p {
+      font-size: 1rem;
+    }
     .feature-card {
       padding: 2rem 1.5rem;
     }
-    
     .faq-header {
       padding: 1.25rem 1.5rem;
     }
-    
+    .faq-header h3 {
+      font-size: 1.15rem;
+    }
     .faq-content {
       padding: 0 1.5rem 1.25rem;
+      font-size: 0.95rem;
+    }
+    .icon-wrapper {
+      width: 70px;
+      height: 70px;
+      margin-bottom: 1.5rem;
+    }
+    .icon-wrapper i {
+      font-size: 2.5rem;
     }
   }
 
-  /* Loading Animation */
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  /* Messages Styling (Adjusted for glassmorphism) */
+  .glass-card.message-alert {
+    background: rgba(255, 255, 255, 0.9); /* More solid for alerts */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    color: var(--text-dark);
   }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="gradient-bg min-h-screen py-8 px-4">
-  <div class="max-w-6xl mx-auto">
-    <!-- Hero Section -->
+  <div class="max-w-4xl mx-auto">
     <div class="support-hero glass-card mb-12">
       <div class="text-center relative z-10">
         <h1 class="text-5xl font-bold text-gray-800 mb-4">Help & Support</h1>
         <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Get instant help and find answers to all your questions. We're here to make your experience seamless.
+          Get instant help and find answers to all your questions in our comprehensive FAQ.
         </p>
         <div class="w-24 h-1 bg-gradient-to-r from-purple-400 to-pink-500 mx-auto rounded-full"></div>
       </div>
@@ -291,7 +351,7 @@
     {% if messages %}
     <div class="mb-8">
       {% for message in messages %}
-      <div class="glass-card p-4 rounded-2xl mb-3 border-l-4 {% if message.tags == 'success' %}border-green-500{% elif message.tags == 'error' %}border-red-500{% else %}border-blue-500{% endif %}">
+      <div class="glass-card message-alert p-4 rounded-2xl mb-3 border-l-4 {% if message.tags == 'success' %}border-green-500{% elif message.tags == 'error' %}border-red-500{% else %}border-blue-500{% endif %}">
         <div class="flex items-center">
           <i class="fas {% if message.tags == 'success' %}fa-check-circle text-green-500{% elif message.tags == 'error' %}fa-exclamation-triangle text-red-500{% else %}fa-info-circle text-blue-500{% endif %} mr-3 text-xl"></i>
           <span class="text-gray-800 font-medium">{{ message }}</span>
@@ -301,216 +361,103 @@
     </div>
     {% endif %}
 
-    <!-- Quick Help Section -->
     <div class="mb-12">
-      <h2 class="text-3xl font-bold text-white text-center mb-8">How Can We Help You?</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- FAQ Card -->
-        <div class="feature-card floating" style="animation-delay: 0s;">
+      <h2 class="text-3xl font-bold text-white text-center mb-8">How Can We Help You Today?</h2>
+      <div class="grid grid-cols-1">
+        <div class="feature-card floating max-w-lg mx-auto" style="animation-delay: 0s;">
           <div class="icon-wrapper" style="background: var(--success-gradient);">
             <i class="fas fa-question-circle text-white text-3xl"></i>
           </div>
-          <h3 class="text-2xl font-bold text-gray-800 mb-4">FAQs & Guides</h3>
-          <p class="text-gray-600 mb-6">Find instant answers to common questions in our comprehensive knowledge base.</p>
+          <h3 class="text-2xl font-bold text-gray-800 mb-4">Explore Our FAQs</h3>
+          <p class="text-gray-600 mb-6">Find instant answers to common questions and learn more about AppointMate.</p>
           <a href="#faq-section" class="btn-primary inline-block">
             <i class="fas fa-book-open mr-2"></i>
-            Browse FAQs
+            Dive In
           </a>
-        </div>
-
-        <!-- Contact Card -->
-        <div class="feature-card floating" style="animation-delay: 0.2s;">
-          <div class="icon-wrapper" style="background: var(--accent-gradient);">
-            <i class="fas fa-headset text-white text-3xl"></i>
-          </div>
-          <h3 class="text-2xl font-bold text-gray-800 mb-4">Contact Support</h3>
-          <p class="text-gray-600 mb-6">Can't find what you're looking for? Our support team is ready to help you.</p>
-          <button onclick="scrollToContact()" class="btn-primary">
-            <i class="fas fa-paper-plane mr-2"></i>
-            Get Help
-          </button>
         </div>
       </div>
     </div>
 
-    <!-- FAQ Section -->
     <div id="faq-section" class="mb-12">
       <div class="text-center mb-8">
         <h2 class="text-3xl font-bold text-white mb-4">Frequently Asked Questions</h2>
-        <p class="text-gray-200 text-lg">Quick answers to common questions</p>
+        <p class="text-gray-200 text-lg">Click on any question to get a detailed answer</p>
       </div>
 
       <div class="space-y-4">
-        <!-- FAQ Item 1 -->
-        <div class="faq-item glass-card">
+        <div class="faq-item glass-card" id="faq-item-1">
           <div class="faq-header" onclick="toggleFAQ(1)">
             <h3 class="text-xl font-semibold text-gray-800 flex-1">How do I book an appointment with a service provider?</h3>
             <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300" id="faq-icon-1"></i>
           </div>
-          <div class="faq-content hidden" id="faq-content-1">
+          <div class="faq-content" id="faq-content-1">
             <p class="text-gray-600 leading-relaxed">
-              To book an appointment, simply browse our verified service providers, select the one that matches your needs, 
-              choose your preferred date and time slot, and confirm your booking. You'll receive instant confirmation and 
-              reminders as your appointment approaches.
+              To book an appointment, simply browse our verified service providers using the search bar or categories. 
+              Once you find a suitable provider, select their profile to view their services, availability, and pricing. 
+              Choose your preferred date and time slot from the calendar, add any specific notes for the provider, and 
+              confirm your booking. You'll receive instant email confirmation and reminders as your appointment approaches.
             </p>
           </div>
         </div>
 
-        <!-- FAQ Item 2 -->
-        <div class="faq-item glass-card">
+        <div class="faq-item glass-card" id="faq-item-2">
           <div class="faq-header" onclick="toggleFAQ(2)">
             <h3 class="text-xl font-semibold text-gray-800 flex-1">Can I reschedule or cancel my appointment?</h3>
             <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300" id="faq-icon-2"></i>
           </div>
-          <div class="faq-content hidden" id="faq-content-2">
+          <div class="faq-content" id="faq-content-2">
             <p class="text-gray-600 leading-relaxed">
-              Yes! You can reschedule or cancel your appointment up to 2 hours before the scheduled time. 
-              Go to your appointments page, select the appointment you wish to modify, and choose your preferred option. 
-              For urgent cancellations, contact our support team.
+              Yes, absolutely! You can easily reschedule or cancel your appointment directly from your "My Appointments" 
+              dashboard. We allow modifications up to 2 hours before the scheduled time without any penalty. 
+              Simply navigate to your appointment, click on the "Reschedule" or "Cancel" button, and follow the prompts. 
+              For urgent cancellations within the 2-hour window or any issues, please contact our support team immediately.
             </p>
           </div>
         </div>
 
-        <!-- FAQ Item 3 -->
-        <div class="faq-item glass-card">
+        <div class="faq-item glass-card" id="faq-item-3">
           <div class="faq-header" onclick="toggleFAQ(3)">
             <h3 class="text-xl font-semibold text-gray-800 flex-1">How are service providers verified?</h3>
             <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300" id="faq-icon-3"></i>
           </div>
-          <div class="faq-content hidden" id="faq-content-3">
+          <div class="faq-content" id="faq-content-3">
             <p class="text-gray-600 leading-relaxed">
-              All our service providers undergo a rigorous verification process including background checks, 
-              document verification, and skill assessments. We also monitor customer ratings and reviews to 
-              ensure consistent quality service.
+              At AppointMate, we prioritize your safety and satisfaction. All our service providers undergo a stringent 
+              multi-step verification process. This includes comprehensive background checks, verification of professional 
+              licenses and certifications (where applicable), and skill assessments. We also continuously monitor 
+              customer ratings and reviews to ensure consistent quality and adherence to our high standards.
             </p>
           </div>
         </div>
 
-        <!-- FAQ Item 4 -->
-        <div class="faq-item glass-card">
+        <div class="faq-item glass-card" id="faq-item-4">
           <div class="faq-header" onclick="toggleFAQ(4)">
             <h3 class="text-xl font-semibold text-gray-800 flex-1">What if I'm not satisfied with the service?</h3>
             <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300" id="faq-icon-4"></i>
           </div>
-          <div class="faq-content hidden" id="faq-content-4">
+          <div class="faq-content" id="faq-content-4">
             <p class="text-gray-600 leading-relaxed">
-              Your satisfaction is our priority. If you're not happy with the service, contact us within 24 hours 
-              of the appointment completion. We'll work with you and the service provider to resolve the issue, 
-              which may include a partial refund or arranging a re-service.
+              Your satisfaction is paramount to us. If you are not completely happy with a service you received, 
+              please contact our support team within 24 hours of the appointment completion. We will thoroughly 
+              investigate your concerns and work collaboratively with you and the service provider to resolve the issue 
+              to your satisfaction, which may involve a partial refund, re-service arrangements, or other appropriate actions.
             </p>
           </div>
         </div>
 
-        <!-- FAQ Item 5 -->
-        <div class="faq-item glass-card">
+        <div class="faq-item glass-card" id="faq-item-5">
           <div class="faq-header" onclick="toggleFAQ(5)">
             <h3 class="text-xl font-semibold text-gray-800 flex-1">How do I rate and review a service provider?</h3>
             <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300" id="faq-icon-5"></i>
           </div>
-          <div class="faq-content hidden" id="faq-content-5">
+          <div class="faq-content" id="faq-content-5">
             <p class="text-gray-600 leading-relaxed">
-              After your appointment is completed, you'll receive a notification to rate your experience. 
-              You can provide a star rating and detailed feedback. Your reviews help other customers make 
-              informed decisions and help us maintain service quality.
+              After your appointment is successfully completed, you will receive a notification prompting you to rate 
+              and review your experience. You can provide a star rating (from 1 to 5) and leave detailed feedback about 
+              the service provider's professionalism, quality of work, and punctuality. Your valuable reviews help 
+              other customers make informed decisions and contribute to maintaining our platform's high service standards.
             </p>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Contact Form Section -->
-    <div id="contact-section" class="mb-12">
-      <div class="glass-card rounded-3xl p-8">
-        <div class="text-center mb-8">
-          <h2 class="text-3xl font-bold text-gray-800 mb-4">Get In Touch</h2>
-          <p class="text-gray-600 text-lg">Can't find what you're looking for? Send us a message!</p>
-        </div>
-
-        <form id="supportForm" class="space-y-6 max-w-2xl mx-auto">
-          {% csrf_token %}
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">Your Name</label>
-              <input type="text" id="name" name="name" value="{{ customer.name }}" 
-                     class="form-input w-full" required>
-            </div>
-            
-            <div>
-              <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-              <input type="email" id="email" name="email" value="{{ customer.owner.email }}" 
-                     class="form-input w-full" required>
-            </div>
-          </div>
-
-          <div>
-            <label for="subject" class="block text-sm font-semibold text-gray-700 mb-2">What do you need help with?</label>
-            <select id="subject" name="subject" class="form-input w-full" required>
-              <option value="">Select a topic</option>
-              <option value="booking_issue">Booking Issue</option>
-              <option value="payment_problem">Payment Problem</option>
-              <option value="service_quality">Service Quality</option>
-              <option value="account_help">Account Help</option>
-              <option value="technical_issue">Technical Issue</option>
-              <option value="suggestion">Suggestion</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="message" class="block text-sm font-semibold text-gray-700 mb-2">Describe your issue</label>
-            <textarea id="message" name="message" rows="6" 
-                      class="form-input w-full resize-none"
-                      placeholder="Please provide detailed information about your issue or question. The more details you provide, the better we can help you..."
-                      required></textarea>
-          </div>
-
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <input type="checkbox" id="urgent" name="urgent" class="h-5 w-5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
-              <label for="urgent" class="ml-3 text-sm font-medium text-gray-700">This is urgent</label>
-            </div>
-            
-            <button type="submit" class="btn-primary px-8">
-              <i class="fas fa-paper-plane mr-2"></i>
-              Send Message
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Contact Information -->
-    <div class="glass-card rounded-3xl p-8 text-center">
-      <h2 class="text-3xl font-bold text-gray-800 mb-2">Still Need Help?</h2>
-      <p class="text-gray-600 text-lg mb-8">We're always here to assist you</p>
-      
-      <div class="contact-grid max-w-4xl mx-auto">
-        <div class="contact-item">
-          <div class="icon-wrapper mx-auto mb-4" style="background: var(--success-gradient);">
-            <i class="fas fa-envelope text-white text-2xl"></i>
-          </div>
-          <h3 class="font-bold text-gray-800 text-lg mb-2">Email Support</h3>
-          <p class="text-gray-600">support@appointmate.com</p>
-          <p class="text-sm text-gray-500 mt-2">Typically replies within 2 hours</p>
-        </div>
-        
-        <div class="contact-item">
-          <div class="icon-wrapper mx-auto mb-4" style="background: var(--accent-gradient);">
-            <i class="fas fa-phone text-white text-2xl"></i>
-          </div>
-          <h3 class="font-bold text-gray-800 text-lg mb-2">Phone Support</h3>
-          <p class="text-gray-600">+1 (555) 123-4567</p>
-          <p class="text-sm text-gray-500 mt-2">Mon-Fri, 9 AM - 6 PM EST</p>
-        </div>
-        
-        <div class="contact-item">
-          <div class="icon-wrapper mx-auto mb-4" style="background: var(--warning-gradient);">
-            <i class="fas fa-clock text-white text-2xl"></i>
-          </div>
-          <h3 class="font-bold text-gray-800 text-lg mb-2">Response Time</h3>
-          <p class="text-gray-600">Within 24 Hours</p>
-          <p class="text-sm text-gray-500 mt-2">Guaranteed response time</p>
         </div>
       </div>
     </div>
@@ -518,140 +465,51 @@
 </div>
 
 <script>
-// FAQ Toggle Function
+// FAQ Toggle Function with Smooth Transition and Active State
 function toggleFAQ(faqNumber) {
   const content = document.getElementById(`faq-content-${faqNumber}`);
   const icon = document.getElementById(`faq-icon-${faqNumber}`);
-  
-  if (content.classList.contains('hidden')) {
-    content.classList.remove('hidden');
-    icon.classList.add('rotate-180');
-  } else {
-    content.classList.add('hidden');
+  const faqItem = document.getElementById(`faq-item-${faqNumber}`); // Get the entire FAQ item
+
+  // Close other open FAQs and remove active state
+  document.querySelectorAll('.faq-content').forEach((c, index) => {
+    if (c.id !== `faq-content-${faqNumber}`) {
+      c.classList.remove('open'); // Remove 'open' class
+      document.getElementById(`faq-icon-${index + 1}`).classList.remove('rotate-180');
+      document.getElementById(`faq-item-${index + 1}`).classList.remove('active'); // Remove 'active' class
+    }
+  });
+
+  if (content.classList.contains('open')) {
+    content.classList.remove('open');
     icon.classList.remove('rotate-180');
+    faqItem.classList.remove('active'); // Remove active state
+  } else {
+    content.classList.add('open');
+    icon.classList.add('rotate-180');
+    faqItem.classList.add('active'); // Add active state
   }
 }
 
-// Scroll to Contact Form
-function scrollToContact() {
-  document.getElementById('contact-section').scrollIntoView({
-    behavior: 'smooth',
-    block: 'start'
-  });
-}
-
-// Form Submission with Enhanced UI
-document.getElementById('supportForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  
-  const formData = new FormData(this);
-  const submitButton = this.querySelector('button[type="submit"]');
-  const originalContent = submitButton.innerHTML;
-  
-  // Show loading state
-  submitButton.innerHTML = '<div class="loading-spinner"></div>';
-  submitButton.disabled = true;
-  
-  // Simulate API call (replace with actual API call)
-  setTimeout(() => {
-    // Show success message
-    showSuccessMessage();
-    
-    // Reset form
-    this.reset();
-    
-    // Restore button
-    submitButton.innerHTML = originalContent;
-    submitButton.disabled = false;
-  }, 2000);
-});
-
-// Show Success Message
-function showSuccessMessage() {
-  // Create success notification
-  const notification = document.createElement('div');
-  notification.className = 'fixed top-4 right-4 glass-card p-4 rounded-2xl border-l-4 border-green-500 z-50 transform translate-x-full transition-transform duration-500';
-  notification.innerHTML = `
-    <div class="flex items-center">
-      <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-        <i class="fas fa-check text-green-600"></i>
-      </div>
-      <div>
-        <div class="font-semibold text-gray-800">Message Sent!</div>
-        <div class="text-sm text-gray-600">We'll get back to you within 24 hours.</div>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(notification);
-  
-  // Animate in
-  setTimeout(() => {
-    notification.classList.remove('translate-x-full');
-  }, 100);
-  
-  // Animate out and remove
-  setTimeout(() => {
-    notification.classList.add('translate-x-full');
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 500);
-  }, 4000);
-}
-
-// Add some interactive effects
 document.addEventListener('DOMContentLoaded', function() {
   // Add hover effects to FAQ items
   const faqItems = document.querySelectorAll('.faq-item');
   faqItems.forEach(item => {
     item.addEventListener('mouseenter', function() {
-      this.style.transform = 'translateY(-2px)';
+      // Already handled by CSS transition
     });
     
     item.addEventListener('mouseleave', function() {
-      this.style.transform = 'translateY(0)';
+      // Already handled by CSS transition
     });
   });
 
-  // Animate form inputs on focus
-  const formInputs = document.querySelectorAll('.form-input');
-  formInputs.forEach(input => {
-    input.addEventListener('focus', function() {
-      this.parentElement.classList.add('transform', 'scale-105');
-    });
-    
-    input.addEventListener('blur', function() {
-      this.parentElement.classList.remove('transform', 'scale-105');
-    });
+  // Initialize content max-height to 0 and opacity to 0
+  document.querySelectorAll('.faq-content').forEach(content => {
+    content.style.maxHeight = '0';
+    content.style.opacity = '0';
+    content.style.paddingTop = '0'; // Ensure no padding when closed
   });
-});
-
-// Enhanced textarea auto-resize
-document.getElementById('message').addEventListener('input', function() {
-  this.style.height = 'auto';
-  this.style.height = (this.scrollHeight) + 'px';
-});
-
-// Add character counter for message
-document.getElementById('message').addEventListener('input', function() {
-  const charCount = this.value.length;
-  let counter = this.parentElement.querySelector('.char-counter');
-  
-  if (!counter) {
-    counter = document.createElement('div');
-    counter.className = 'char-counter text-sm text-gray-500 mt-1 text-right';
-    this.parentElement.appendChild(counter);
-  }
-  
-  counter.textContent = `${charCount} characters`;
-  
-  if (charCount > 500) {
-    counter.classList.add('text-red-500');
-  } else {
-    counter.classList.remove('text-red-500');
-  }
 });
 </script>
 {% endblock %}

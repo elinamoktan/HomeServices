@@ -111,30 +111,52 @@ def _haversine_km(lat1, lon1, lat2, lon2):
     r = 6371  # Radius of earth in kilometers
     return c * r
 
-# Worker Model
+# Worker Model# Worker Model
 class Worker(models.Model):
     owner = models.OneToOneField(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)  # ✅ Changed from 100 to 255
     phone_number = PhoneNumberField(region="NP")
     tagline = models.CharField(max_length=200, blank=True, null=True)
     bio = models.TextField(blank=True)
     profile_pic = models.ImageField(upload_to="worker_profiles/", blank=True, null=True)
+    
+    # Verification fields - ✅ ADDED verification_status
     verified = models.BooleanField(default=False)
+    verification_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected')
+        ],
+        default='pending'
+    )
+    rejection_reason = models.TextField(blank=True, null=True)
+    
+    # Documents
     citizenship_image = models.ImageField(upload_to='citizenship/', blank=True, null=True)
     certificate_file = models.FileField(upload_to='certificates/', blank=True, null=True)
+    
+    # Appointment fields
     appointed = models.BooleanField(default=False)
     appointment_date = models.DateTimeField(null=True, blank=True)
+    
+    # Rating fields
     average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     total_ratings = models.PositiveIntegerField(default=0)
     rating_count = models.PositiveIntegerField(default=0)
+    
+    # Availability
     shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, default=SHIFT_ALL)
+    is_available = models.BooleanField(default=True)
 
+    # Location tracking - previous location
     previous_latitude = models.FloatField(null=True, blank=True)
     previous_longitude = models.FloatField(null=True, blank=True)
     previous_location_address = models.TextField(blank=True, null=True)
     previous_location_updated_at = models.DateTimeField(null=True, blank=True)
     
-    # Enhanced location fields (without GIS)
+    # Enhanced location fields (current location)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     location_address = models.TextField(blank=True, null=True)
@@ -151,16 +173,40 @@ class Worker(models.Model):
         default='unknown'
     )
     
-    is_available = models.BooleanField(default=True)
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['name']
 
+    def __str__(self):
+        return f"{self.name} - {self.tagline if self.tagline else 'Worker'}"
+
+    def save(self, *args, **kwargs):
+        """Override save to sync verification status"""
+        # Auto-set verification status based on verified field
+        if self.verified:
+            self.verification_status = 'approved'
+        elif not self.verified and self.verification_status == 'approved':
+            self.verification_status = 'pending'
+        
+        # Sync total_ratings with rating_count
+        self.total_ratings = self.rating_count
+        
+        super().save(*args, **kwargs)
+
     def update_location(self, latitude, longitude, accuracy=None, source='browser', address=None):
         """Update worker location with coordinates"""
         try:
+            # Store previous location before updating
+            if self.latitude and self.longitude:
+                self.previous_latitude = self.latitude
+                self.previous_longitude = self.longitude
+                self.previous_location_address = self.location_address
+                self.previous_location_updated_at = self.location_updated_at
+            
+            # Update current location
             self.latitude = float(latitude)
             self.longitude = float(longitude)
             self.location_accuracy = accuracy
@@ -217,17 +263,18 @@ class Worker(models.Model):
             
         return _haversine_km(self.latitude, self.longitude, other_lat, other_lon)
 
-    def bayesian_average_rating(self, confidence=5.0, default_rating=3.0):
+    def bayesian_average_rating(self, confidence=5.0, default_rating=0.0):
         """
         Calculate Bayesian average rating for a worker.
         confidence: number of "dummy" ratings to consider
-        default_rating: the default rating to use when there are few ratings
+        default_rating: the default rating to use when there are no ratings (0 means no rating)
         """
         try:
             # Get all ratings for this worker
             ratings = self.ratings.all()
             total_ratings = ratings.count()
 
+            # If no ratings, return 0 (no rating)
             if total_ratings == 0:
                 return default_rating
 
@@ -236,13 +283,12 @@ class Worker(models.Model):
             if avg_rating is None:
                 return default_rating
 
-            # Calculate global average (across all workers) - cache this if possible
-            from .models import WorkerRating
+            # Calculate global average (across all workers)
             global_stats = WorkerRating.objects.aggregate(
                 global_avg=Avg('rating'),
                 global_count=Count('id')
             )
-            global_avg = global_stats['global_avg'] or default_rating
+            global_avg = global_stats['global_avg'] or 3.0  # Use 3.0 as global average
 
             # Apply Bayesian formula:
             # (confidence * global_avg + total_ratings * actual_avg) / (confidence + total_ratings)
@@ -254,6 +300,23 @@ class Worker(models.Model):
         except Exception as e:
             logger.error(f"Error calculating Bayesian average for worker {self.id}: {e}")
             return default_rating
+
+    def get_rating_display_data(self):
+        """✅ ADDED: Get rating display data for templates"""
+        bayesian_rating = self.bayesian_average_rating()
+        
+        full_stars = int(bayesian_rating)
+        half_star = 1 if bayesian_rating % 1 >= 0.5 else 0
+        empty_stars = 5 - (full_stars + half_star)
+        
+        return {
+            'bayesian_rating': bayesian_rating,
+            'total_ratings': self.rating_count,
+            'has_ratings': self.rating_count > 0,
+            'full_stars': full_stars,
+            'half_star': half_star,
+            'empty_stars': empty_stars
+        }
 
     def get_bayesian_rating_display(self):
         """Get Bayesian rating for display with rating count"""
@@ -311,7 +374,6 @@ class Worker(models.Model):
         """Get count of unread notifications for this worker"""
         return self.notifications.filter(is_read=False).count()
 
-
     @property
     def services(self):
         """Property to access services through worker_services"""
@@ -323,8 +385,65 @@ class Worker(models.Model):
     def get_available_services(self):
         """Get available services with their WorkerService objects"""
         return self.worker_services.filter(is_available=True).select_related('service')
-    def __str__(self):
-        return f"{self.name} - {self.tagline}"
+
+    def verify_worker(self):
+        """Verify worker and update status"""
+        self.verified = True
+        self.verification_status = 'approved'
+        self.save()
+        
+        # Create notification for worker
+        Notification.objects.create(
+            worker=self,
+            notification_type='worker_verified',
+            title='Profile Verified!',
+            message='Your worker profile has been verified by admin. You can now receive appointments.',
+            appointment=None
+        )
+        
+        # Log the verification
+        try:
+            from admin_dashboard.models import AdminActivityLog
+            AdminActivityLog.objects.create(
+                admin_user=None,  # System action
+                action='UPDATE',
+                model_name='Worker',
+                object_id=self.id,
+                description=f'Worker {self.name} verified via email link'
+            )
+        except:
+            pass  # Skip if admin dashboard not available
+        
+        return True
+
+    def reject_worker(self, reason="Profile does not meet requirements"):
+        """Reject worker with reason"""
+        self.verified = False
+        self.verification_status = 'rejected'
+        self.rejection_reason = reason
+        self.save()
+        
+        # Create notification for worker
+        Notification.objects.create(
+            worker=self,
+            notification_type='worker_rejected',
+            title='Profile Verification Failed',
+            message=f'Your worker profile verification was rejected. Reason: {reason}',
+            appointment=None
+        )
+        
+        return True
+    
+    # Add this class method to your Worker model
+    @classmethod
+    def get_visible_workers(cls):
+        """Get all workers that should be visible to customers"""
+        return cls.objects.filter(
+            verified=True,
+            verification_status='approved',
+            is_available=True
+        ).select_related('owner').prefetch_related('ratings')
+
 
 # Worker Services (Many-to-Many through model)
 class WorkerService(models.Model):
@@ -736,20 +855,26 @@ class Appointment(models.Model):
             return False
         return self.appointment_date > timezone.now()
 
-# Worker Rating Model
+
 class WorkerRating(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='ratings')
-    appointment = models.OneToOneField(Appointment, on_delete=models.CASCADE)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='given_ratings')
     rating = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     comment = models.TextField(blank=True, null=True)
+    appointment = models.ForeignKey(
+        Appointment, 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,  # Make it optional
+        related_name='ratings'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('appointment', 'customer')
+        unique_together = ('customer', 'worker')  # One rating per customer per worker
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
@@ -759,6 +884,7 @@ class WorkerRating(models.Model):
 
     def __str__(self):
         return f"Rating {self.rating} by {self.customer.name} for {self.worker.name}"
+
 
 # Notification Model
 class Notification(models.Model):

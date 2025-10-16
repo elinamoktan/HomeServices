@@ -128,6 +128,110 @@
     </div>
 </div>
 
+<!-- Pending Worker Verifications Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-user-check me-2"></i>Pending Worker Verifications</h6>
+                <span class="badge bg-light text-dark">{{ pending_workers }}</span>
+            </div>
+            <div class="card-body">
+                {% if pending_workers > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>Worker Name</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Registered</th>
+                                <th>Documents</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for worker in pending_workers_list %}
+                            <tr id="worker-{{ worker.id }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if worker.profile_pic %}
+                                        <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" 
+                                             class="rounded-circle me-2" width="32" height="32">
+                                        {% else %}
+                                        <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" 
+                                             style="width: 32px; height: 32px;">
+                                            <i class="fas fa-user text-white"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ worker.name }}</strong>
+                                            {% if worker.tagline %}
+                                            <br><small class="text-muted">{{ worker.tagline }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ worker.phone_number }}</td>
+                                <td>{{ worker.owner.email }}</td>
+                                <td>{{ worker.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        {% if worker.citizenship_image %}
+                                        <a href="{{ worker.citizenship_image.url }}" target="_blank" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-id-card"></i> Citizenship
+                                        </a>
+                                        {% else %}
+                                        <span class="badge bg-warning">No Doc</span>
+                                        {% endif %}
+                                        
+                                        {% if worker.certificate_file %}
+                                        <a href="{{ worker.certificate_file.url }}" target="_blank" 
+                                           class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-certificate"></i> Certificate
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <!-- Approve Form -->
+                                        <form method="POST" action="{% url 'admin_dashboard:verify_worker_dashboard' worker.id %}" 
+                                              class="d-inline verify-form" data-worker-id="{{ worker.id }}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" class="btn btn-success btn-verify">
+                                                <i class="fas fa-check"></i> Approve
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- Reject Button (opens modal) -->
+                                        <button type="button" class="btn btn-danger btn-reject" 
+                                                data-worker-id="{{ worker.id }}" 
+                                                data-worker-name="{{ worker.name }}"
+                                                data-bs-toggle="modal" data-bs-target="#rejectionModal">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5>No Pending Verifications</h5>
+                    <p class="text-muted">All worker profiles have been verified.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Recent Appointments -->
 <div class="card">
     <div class="card-header">
@@ -171,39 +275,6 @@
     </div>
 </div>
 
-<!-- Worker Verification Modal -->
-<div class="modal fade" id="verificationModal" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title text-white" id="verificationModalLabel">
-                    <i class="fas fa-user-check me-2"></i>Verify Worker Profile
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="workerVerificationContent">
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-warning" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-2">Loading worker details...</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Skip for Now</button>
-                <button type="button" class="btn btn-danger" id="rejectWorkerBtn" disabled>
-                    <i class="fas fa-times me-1"></i>Reject
-                </button>
-                <button type="button" class="btn btn-success" id="verifyWorkerBtn" disabled>
-                    <i class="fas fa-check me-1"></i>Verify
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Rejection Reason Modal -->
 <div class="modal fade" id="rejectionModal" tabindex="-1" aria-labelledby="rejectionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -214,9 +285,11 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="rejectWorkerId">
+                <p>You are about to reject <strong id="rejectWorkerName"></strong></p>
                 <div class="mb-3">
                     <label for="rejectionReason" class="form-label">Reason for Rejection:</label>
-                    <textarea class="form-control" id="rejectionReason" rows="4" placeholder="Please provide a reason for rejecting this worker profile..."></textarea>
+                    <textarea class="form-control" id="rejectionReason" rows="4" 
+                              placeholder="Please provide a reason for rejecting this worker profile..."></textarea>
                     <div class="form-text">This reason will be shared with the worker.</div>
                 </div>
             </div>
@@ -227,6 +300,18 @@
                 </button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong id="toastTitle" class="me-auto">Notification</strong>
+            <small>Just now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div id="toastMessage" class="toast-body"></div>
     </div>
 </div>
 {% endblock %}
@@ -262,203 +347,286 @@
         }
     });
 
-    // Worker Verification Popup Functionality
+    // Worker Verification Functionality
     document.addEventListener('DOMContentLoaded', function() {
-        const verificationModal = new bootstrap.Modal(document.getElementById('verificationModal'));
         const rejectionModal = new bootstrap.Modal(document.getElementById('rejectionModal'));
-        let currentWorkerId = null;
         
-        // Check for pending verifications when dashboard loads
-        checkPendingVerifications();
-        
-        // Check every 2 minutes for new pending workers
-        setInterval(checkPendingVerifications, 120000);
-        
-        function checkPendingVerifications() {
-            fetch('{% url "admin_dashboard:pending_workers_count" %}')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.pending_count > 0) {
-                        showVerificationPopup();
-                    }
-                })
-                .catch(error => console.error('Error checking pending verifications:', error));
-        }
-        
-        function showVerificationPopup() {
-            fetch('{% url "admin_dashboard:next_pending_worker" %}')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.worker) {
-                        currentWorkerId = data.worker.id;
-                        loadWorkerVerificationData(data.worker);
-                        verificationModal.show();
-                    }
-                })
-                .catch(error => console.error('Error loading worker data:', error));
-        }
-        
-        function loadWorkerVerificationData(worker) {
-            const content = document.getElementById('workerVerificationContent');
-            content.innerHTML = `
-                <div class="row">
-                    <div class="col-md-4 text-center">
-                        <img src="${worker.profile_pic}" 
-                             class="img-fluid rounded mb-3" alt="${worker.name}" 
-                             style="max-height: 200px; object-fit: cover;">
-                        <div class="mt-2">
-                            ${worker.citizenship_image ? 
-                                `<a href="${worker.citizenship_image}" target="_blank" class="btn btn-sm btn-outline-primary me-1">
-                                    <i class="fas fa-id-card"></i> Citizenship
-                                </a>` : 
-                                '<span class="badge bg-warning">No Citizenship</span>'}
-                            
-                            ${worker.certificate_file ? 
-                                `<a href="${worker.certificate_file}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-certificate"></i> Certificate
-                                </a>` : 
-                                '<span class="badge bg-warning">No Certificate</span>'}
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <h4 class="text-primary">${worker.name}</h4>
-                        <div class="row mb-2">
-                            <div class="col-6">
-                                <strong><i class="fas fa-phone text-muted me-1"></i> Phone:</strong>
-                                <div>${worker.phone_number}</div>
-                            </div>
-                            <div class="col-6">
-                                <strong><i class="fas fa-envelope text-muted me-1"></i> Email:</strong>
-                                <div>${worker.email}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-2">
-                            <strong><i class="fas fa-tag text-muted me-1"></i> Tagline:</strong>
-                            <div class="fst-italic">"${worker.tagline}"</div>
-                        </div>
-                        
-                        <div class="mb-2">
-                            <strong><i class="fas fa-info-circle text-muted me-1"></i> Bio:</strong>
-                            <div>${worker.bio}</div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-6">
-                                <strong><i class="fas fa-clock text-muted me-1"></i> Shift:</strong>
-                                <div>${worker.shift}</div>
-                            </div>
-                            <div class="col-6">
-                                <strong><i class="fas fa-calendar text-muted me-1"></i> Registered:</strong>
-                                <div>${worker.created_at}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Enable buttons
-            document.getElementById('verifyWorkerBtn').disabled = false;
-            document.getElementById('rejectWorkerBtn').disabled = false;
-        }
-        
-        // Verify worker
-        document.getElementById('verifyWorkerBtn').addEventListener('click', function() {
-            if (!currentWorkerId) return;
-            verifyWorker(currentWorkerId, 'verify');
+        // Handle reject buttons
+        document.querySelectorAll('.btn-reject').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const workerId = this.dataset.workerId;
+                const workerName = this.dataset.workerName;
+                
+                document.getElementById('rejectWorkerId').value = workerId;
+                document.getElementById('rejectWorkerName').textContent = workerName;
+                document.getElementById('rejectionReason').value = '';
+                
+                console.log('Setting up rejection for worker:', workerId, workerName);
+            });
         });
         
-        // Reject worker - show reason modal
-        document.getElementById('rejectWorkerBtn').addEventListener('click', function() {
-            if (!currentWorkerId) return;
-            document.getElementById('rejectWorkerId').value = currentWorkerId;
-            document.getElementById('rejectionReason').value = '';
-            rejectionModal.show();
-        });
-        
-        // Confirm rejection
+        // Confirm rejection - FIXED VERSION
         document.getElementById('confirmRejectBtn').addEventListener('click', function() {
-            const workerId = document.getElementById('rejectWorkerId').value;
-            const reason = document.getElementById('rejectionReason').value || 'Profile does not meet requirements';
-            verifyWorker(workerId, 'reject', reason);
-            rejectionModal.hide();
-        });
-        
-        function verifyWorker(workerId, action, reason = '') {
-            const formData = new FormData();
-            formData.append('action', action);
-            if (reason) {
-                formData.append('reason', reason);
+            // CORRECTED: Get the value properly
+            const workerIdInput = document.getElementById('rejectWorkerId');
+            const workerId = workerIdInput ? workerIdInput.value : null;
+            const reason = document.getElementById('rejectionReason').value.trim() || 
+                          'Profile does not meet our verification requirements';
+            
+            console.log('Rejecting worker ID:', workerId, 'Reason:', reason);
+            
+            if (!workerId) {
+                alert('No worker selected');
+                return;
             }
             
-            // Show loading state
-            const verifyBtn = document.getElementById('verifyWorkerBtn');
-            const rejectBtn = document.getElementById('rejectWorkerBtn');
-            const originalVerifyText = verifyBtn.innerHTML;
-            const originalRejectText = rejectBtn.innerHTML;
+            // Create form and submit via AJAX
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            formData.append('action', 'reject');
+            formData.append('reason', reason);
             
-            verifyBtn.disabled = true;
-            rejectBtn.disabled = true;
-            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
-            
-            fetch(`/admin-dashboard/workers/${workerId}/quick-verify/`, {
+            // CORRECTED: Use proper URL
+            fetch(`/bluecollar-admin/verify-worker-dashboard/${workerId}/`, {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Rejection response:', data);
                 if (data.success) {
                     showToast('Success', data.message, 'success');
-                    verificationModal.hide();
+                    // Remove the worker row from table
+                    const workerRow = document.getElementById(`worker-${workerId}`);
+                    if (workerRow) {
+                        workerRow.remove();
+                    }
+                    rejectionModal.hide();
                     
-                    // Reset buttons
-                    verifyBtn.innerHTML = originalVerifyText;
-                    rejectBtn.innerHTML = originalRejectText;
-                    
-                    // Check if there are more pending workers after a delay
-                    setTimeout(() => {
-                        checkPendingVerifications();
-                    }, 3000);
+                    // Update pending workers count
+                    updatePendingCount();
                 } else {
                     showToast('Error', data.error, 'error');
-                    verifyBtn.disabled = false;
-                    rejectBtn.disabled = false;
-                    verifyBtn.innerHTML = originalVerifyText;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 showToast('Error', 'An error occurred while processing your request', 'error');
-                verifyBtn.disabled = false;
-                rejectBtn.disabled = false;
-                verifyBtn.innerHTML = originalVerifyText;
             });
+        });
+        
+        // Handle approve forms with AJAX - FIXED VERSION
+        document.querySelectorAll('.verify-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission
+                
+                // CORRECTED: Get workerId from form data attribute
+                const workerId = this.dataset.workerId;
+                const submitBtn = this.querySelector('.btn-verify');
+                const rejectBtn = document.querySelector(`.btn-reject[data-worker-id="${workerId}"]`);
+                
+                console.log('Approving worker ID:', workerId);
+                
+                // Show loading state
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                submitBtn.disabled = true;
+                if (rejectBtn) {
+                    rejectBtn.disabled = true;
+                    rejectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                }
+                
+                // Submit via AJAX
+                const formData = new FormData(this);
+                
+                // CORRECTED: Use the proper URL construction
+                fetch(`/bluecollar-admin/verify-worker-dashboard/${workerId}/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        showToast('Success', data.message, 'success');
+                        // Remove the worker row from table
+                        const workerRow = document.getElementById(`worker-${workerId}`);
+                        if (workerRow) {
+                            workerRow.remove();
+                        }
+                        // Update pending workers count
+                        updatePendingCount();
+                    } else {
+                        showToast('Error', data.error, 'error');
+                        // Reset buttons
+                        submitBtn.innerHTML = '<i class="fas fa-check"></i> Approve';
+                        submitBtn.disabled = false;
+                        if (rejectBtn) {
+                            rejectBtn.innerHTML = '<i class="fas fa-times"></i> Reject';
+                            rejectBtn.disabled = false;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error', 'An error occurred while processing your request', 'error');
+                    // Reset buttons
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Approve';
+                    submitBtn.disabled = false;
+                    if (rejectBtn) {
+                        rejectBtn.innerHTML = '<i class="fas fa-times"></i> Reject';
+                        rejectBtn.disabled = false;
+                    }
+                });
+            });
+        });
+    });
+
+    // Function to update pending count
+    function updatePendingCount() {
+        // Update the badge count
+        const pendingBadge = document.querySelector('.card-header .badge');
+        if (pendingBadge) {
+            const currentCount = parseInt(pendingBadge.textContent);
+            if (currentCount > 0) {
+                pendingBadge.textContent = currentCount - 1;
+            }
         }
         
-        // Utility functions
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+        // Update the pending workers alert count
+        const pendingAlert = document.querySelector('.alert-warning h4');
+        if (pendingAlert) {
+            const currentAlertCount = parseInt(pendingAlert.textContent);
+            if (currentAlertCount > 0) {
+                pendingAlert.textContent = currentAlertCount - 1;
+            }
+        }
+        
+        // If no more pending workers, show the empty state
+        const pendingTable = document.querySelector('tbody');
+        if (pendingTable && pendingTable.children.length === 0) {
+            const emptyState = `
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <h5>No Pending Verifications</h5>
+                        <p class="text-muted">All worker profiles have been verified.</p>
+                    </td>
+                </tr>
+            `;
+            pendingTable.innerHTML = emptyState;
+        }
+    }
+
+    // Utility functions
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
             }
-            return cookieValue;
         }
+        return cookieValue;
+    }
+    
+    function showToast(title, message, type = 'info') {
+        const toastEl = document.getElementById('liveToast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
         
-        function showToast(title, message, type) {
-            // You can implement a toast notification here
-            // For now, we'll use alert
-            alert(`${title}: ${message}`);
+        // Set toast color based on type
+        toastEl.className = `toast ${getToastClass(type)}`;
+        
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+        
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+    }
+    
+    function getToastClass(type) {
+        switch(type) {
+            case 'success':
+                return 'bg-success text-white';
+            case 'error':
+                return 'bg-danger text-white';
+            case 'warning':
+                return 'bg-warning text-dark';
+            default:
+                return 'bg-info text-white';
         }
-    });
+    }
 </script>
+
+<style>
+.stat-card {
+    transition: transform 0.2s ease-in-out;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+.verify-form {
+    display: inline;
+}
+.toast {
+    min-width: 300px;
+}
+
+/* Button styles for verification actions */
+.btn-verify, .btn-reject {
+    min-width: 80px;
+}
+
+/* Responsive table adjustments */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Animation for status changes */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+/* Loading spinner for buttons */
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 {% endblock %}

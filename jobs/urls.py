@@ -2,7 +2,7 @@ from django.urls import path, include
 from . import views
 from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
-from .views import CustomLoginView  # ✅ NEW: Import custom login view
+from .views import CustomLoginView
 
 urlpatterns = [
     # Landing page
@@ -11,16 +11,19 @@ urlpatterns = [
     # Location storage
     path('store-landing-location/', views.store_landing_location, name='store_landing_location'),
 
-    # ✅ NEW: Override allauth's default login with custom view (must come BEFORE allauth urls)
+    # ✅ NEW: Override allauth's default login with custom view
     path('accounts/login/', CustomLoginView.as_view(), name='account_login'),
     
-    # Worker URLs
+    # Worker URLs - ✅ FIXED: Remove duplicate worker/create URL
     path('worker/<int:pk>/', views.WorkerDetailView.as_view(), name='worker-detail'),
-    path('get-started/', views.WorkerListView.as_view(), name='worker-list'),
     path('account-setup/', views.handle_login, name='handle-login'),
     path('logout/', views.custom_logout, name='logout'),
-    path('worker/create/', views.WorkerCreateView.as_view(), name='worker-create'),
+    
+    # ✅ CORRECT: Only one worker/create URL - use the function-based view with email
+    path('worker/create/', views.create_worker_profile, name='worker-create'),
+    
     path('worker/dashboard/', views.worker_dashboard, name='worker_dashboard'),
+    path('get-started/', views.WorkerListView.as_view(), name='worker-list'),
 
     # Customer URLs
     path('customer/create/', views.CustomerCreateView.as_view(), name='customer-create'),
@@ -46,7 +49,7 @@ urlpatterns = [
     path('appointment/<int:appointment_id>/complete/', views.complete_appointment, name='complete_appointment'),
     path('appointment/<int:appointment_id>/delete/', views.delete_appointment, name='delete_appointment'),
     path('appointment/<int:appointment_id>/request-new/', views.request_new_worker, name='request_new_worker'),
-     path('appointments/<int:appointment_id>/details/', views.appointment_request_details, name='appointment_request_details'),
+    path('appointments/<int:appointment_id>/details/', views.appointment_request_details, name='appointment_request_details'),
 
     # Rating and completion URLs
     path('rate-worker/<int:appointment_id>/', views.rate_worker, name='rate_worker'),
@@ -72,21 +75,20 @@ urlpatterns = [
     
     # Location updates
     path('worker/update-location/', views.update_worker_location, name='worker-update-location'),
-    path('appointment/<int:pk>/customer-complete/', views.mark_customer_completed, name='mark_customer_completed'),
+    
     # Support
     path('help-support/', views.customer_support, name='help_support'),
 
-    # OTP Authentication (must come AFTER custom login override)
+    # OTP Authentication
     path('otp-auth/', include('otp_auth.urls')),
     
-    # ✅ IMPORTANT: Allauth URLs must come AFTER custom login override
+    # Allauth URLs
     path('accounts/', include('allauth.urls')),
 
     # Favorite URLs
     path('favorite-workers/', views.favorite_workers_list, name='favorite_workers_list'),
     path('toggle-favorite-worker/<int:worker_id>/', views.toggle_favorite_worker, name='toggle_favorite_worker'),
     path('check-favorite-status/<int:worker_id>/', views.check_favorite_status, name='check_favorite_status'),
-
 
     # Worker section URLs
     path('worker/calendar/', views.worker_calendar, name='worker_calendar'),
@@ -96,19 +98,29 @@ urlpatterns = [
     path('worker/earnings/', views.worker_earnings, name='worker_earnings'),
     path('worker/settings/', views.worker_settings, name='worker_settings'),
 
+    # ✅ FIXED: Corrected delete review URL
     path('delete-worker-review/', views.delete_worker_review, name='delete_worker_review'),
 
-    # Add these to your urlpatterns in urls.py
-
+    # Notification URLs
     path('customer/notifications/', views.customer_notifications, name='customer_notifications'),
     path('customer/check-appointment-updates/', views.check_appointment_updates, name='check_appointment_updates'),
     path('notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
     path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     path('get-notification-count/', views.get_notification_count, name='get_notification_count'),
+    
+    # Redirect and service URLs
     path('workers/', views.workers_redirect, name='workers-direct'),
     path('worker/<int:worker_id>/services/filter/', views.worker_service_details, name='filter_worker_services'),
     path('worker/add-subtask/<int:worker_service_id>/', views.add_custom_subtask, name='add_custom_subtask'),
     path('worker/services/', views.get_worker_services_for_subtask, name='get_worker_services'),
     path('api/get-worker-address/', views.get_worker_address, name='get_worker_address'),
-
+    
+    # ✅ FIXED: Correct completion URLs
+    path('customer/appointments/mark-completed/<int:pk>/', views.mark_customer_completed, name='mark_customer_completed'),
+    path('worker/appointments/mark-completed/<int:pk>/', views.mark_worker_completed, name='mark_worker_completed'),
+    
+    
+    # ✅ NEW: Cache management URLs
+    path('api/clear-location-cache/', views.clear_location_cache, name='clear_location_cache'),
+    path('api/get-cached-location/', views.get_cached_location, name='get_cached_location'),
 ]

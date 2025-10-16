@@ -42,6 +42,14 @@
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
         }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fadeIn {
+            animation: fadeIn 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-50 to-purple-100 min-h-screen flex items-center justify-center py-8 px-4">
@@ -70,29 +78,43 @@
                         <!-- Worker Current Rating Display -->
                         <div class="bg-white bg-opacity-20 rounded-lg p-4 mt-4">
                             <h3 class="font-semibold mb-2 text-white">Current Rating</h3>
-                            <div class="flex items-center justify-center space-x-1 mb-2">
-                                {% with bayesian_rating=appointment.worker.bayesian_average_rating %}
-                                {% for i in "12345" %}
-                                    {% if forloop.counter <= bayesian_rating %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                        </svg>
-                                    {% else %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                        </svg>
-                                    {% endif %}
-                                {% endfor %}
-                                {% endwith %}
-                            </div>
-                            <p class="text-sm text-indigo-100">
-                                <span class="font-bold">{{ appointment.worker.bayesian_average_rating|floatformat:1 }}</span> / 5.0 
-                                <span class="text-indigo-200">({{ appointment.worker.ratings.count }} reviews)</span>
-                            </p>
-                            <div class="text-xs text-green-300 mt-1 flex items-center justify-center">
-                                <i class="fas fa-robot mr-1"></i>
-                                Bayesian Rating System
-                            </div>
+                            {% if appointment.worker.ratings.count > 0 %}
+                                <div class="flex items-center justify-center space-x-1 mb-2">
+                                    {% with bayesian_rating=appointment.worker.bayesian_average_rating %}
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= bayesian_rating %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                            </svg>
+                                        {% else %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                            </svg>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% endwith %}
+                                </div>
+                                <p class="text-sm text-indigo-100">
+                                    <span class="font-bold">{{ appointment.worker.bayesian_average_rating|floatformat:1 }}</span> / 5.0 
+                                    <span class="text-indigo-200">({{ appointment.worker.ratings.count }} reviews)</span>
+                                </p>
+                                <div class="text-xs text-green-300 mt-1 flex items-center justify-center">
+                                    <i class="fas fa-robot mr-1"></i>
+                                    Bayesian Rating System
+                                </div>
+                            {% else %}
+                                <div class="text-center">
+                                    <p class="text-indigo-200 text-sm mb-2">No ratings yet</p>
+                                    <div class="flex items-center justify-center space-x-1">
+                                        {% for i in "12345" %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                            </svg>
+                                        {% endfor %}
+                                    </div>
+                                    <p class="text-xs text-indigo-300 mt-2">Be the first to rate this worker!</p>
+                                </div>
+                            {% endif %}
                         </div>
 
                         <div class="bg-white bg-opacity-20 rounded-lg p-4 mt-6">
@@ -161,6 +183,10 @@
                                         <span class="font-bold">{{ appointment.worker.bayesian_average_rating|floatformat:2 }}</span>
                                     </div>
                                     <div class="flex justify-between">
+                                        <span>Total Ratings:</span>
+                                        <span class="font-bold">{{ appointment.worker.ratings.count }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
                                         <span>Your Rating:</span>
                                         <span id="preview-user-rating" class="font-bold">-</span>
                                     </div>
@@ -170,7 +196,7 @@
                                     </div>
                                     <div class="text-xs text-blue-600 mt-2">
                                         <i class="fas fa-info-circle mr-1"></i>
-                                        Bayesian system considers all ratings for fair scoring
+                                        Bayesian system considers all ratings and global average for fair scoring
                                     </div>
                                 </div>
                             </div>
@@ -270,11 +296,13 @@
             const previewUserRating = document.getElementById('preview-user-rating');
             const previewNewRating = document.getElementById('preview-new-rating');
             
-            // Current worker stats
-            const currentBayesianRating = {{ appointment.worker.bayesian_average_rating|default:"0" }};
-            const currentRatingCount = {{ appointment.worker.ratings.count|default:"0" }};
-            const globalAverage = 3.5; // This should ideally come from your backend
-            const confidence = 5.0; // Bayesian confidence factor
+            // Current worker stats - using actual values from template
+            const currentBayesianRating = parseFloat('{{ appointment.worker.bayesian_average_rating|default:"0" }}');
+            const currentRatingCount = parseInt('{{ appointment.worker.ratings.count|default:"0" }}');
+            
+            // Use the same parameters as backend Bayesian calculation
+            const confidence = 5.0;
+            const globalAverage = 3.0;
             
             let currentRating = 0;
             
@@ -286,18 +314,18 @@
                 5: 'Excellent - Outstanding service!'
             };
             
-            // Function to calculate projected Bayesian rating
+            // Function to calculate projected Bayesian rating - FIXED VERSION
             function calculateProjectedRating(userRating) {
                 if (currentRatingCount === 0) {
-                    // If no ratings yet, Bayesian will be closer to user rating
-                    return ((confidence * globalAverage) + (1 * userRating)) / (confidence + 1);
+                    // If no ratings yet, new rating becomes the average
+                    return ((confidence * globalAverage) + userRating) / (confidence + 1);
                 }
                 
-                // Bayesian formula: (confidence * global_avg + total_ratings * current_avg + new_rating) / (confidence + total_ratings + 1)
-                const totalRatings = currentRatingCount;
-                const currentTotal = currentBayesianRating * totalRatings;
+                // CORRECT Bayesian formula:
+                // (confidence * global_avg + sum_of_all_ratings + new_rating) / (confidence + total_ratings + 1)
+                const currentTotal = currentBayesianRating * currentRatingCount;
                 const newTotal = currentTotal + userRating;
-                const newBayesian = ((confidence * globalAverage) + newTotal) / (confidence + totalRatings + 1);
+                const newBayesian = ((confidence * globalAverage) + newTotal) / (confidence + currentRatingCount + 1);
                 
                 return Math.min(5, Math.max(1, newBayesian)); // Clamp between 1 and 5
             }
@@ -336,6 +364,12 @@
                     setTimeout(() => {
                         bayesianPreview.style.animation = 'fadeIn 0.5s ease-in-out';
                     }, 10);
+                    
+                    // Debug info (remove in production)
+                    console.log('Current Bayesian:', currentBayesianRating);
+                    console.log('Current Ratings:', currentRatingCount);
+                    console.log('Your Rating:', rating);
+                    console.log('Projected Rating:', projectedRating);
                 } else {
                     bayesianPreview.classList.add('hidden');
                 }
@@ -404,19 +438,6 @@
                     }, 3000);
                 }
             });
-
-            // Add CSS for fadeIn animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(-10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .fadeIn {
-                    animation: fadeIn 0.5s ease-in-out;
-                }
-            `;
-            document.head.appendChild(style);
         });
 
         // Add smooth scrolling for better UX

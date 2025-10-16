@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'accounts',
     'phonenumber_field',
     'payments',
-    'admin_dashboard',  
+    'admin_dashboard',
 
     #3rd party apps
     'crispy_forms',

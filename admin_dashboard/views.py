@@ -5,18 +5,24 @@ from django.db.models import Count, Sum, Avg, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
+from django.conf import settings
+from django.utils.html import strip_tags
 from datetime import datetime, timedelta
 import json
 import csv
-# import logger
+import logging
+
 from jobs.models import (
     Worker, Customer, Appointment, WorkerRating, Service, 
     WorkerService, WorkerSubTaskPricing, ServiceCategory, SubTask,
     Notification, FavoriteWorker
 )
 from .models import AdminDashboardSettings, AdminActivityLog
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 def admin_required(user):
     """Check if user is admin/staff"""
@@ -39,6 +45,9 @@ def admin_dashboard(request):
     pending_workers = Worker.objects.filter(verified=False).count()
     pending_appointments = Appointment.objects.filter(status='pending').count()
     
+    # Get pending workers list for the table
+    pending_workers_list = Worker.objects.filter(verified=False).select_related('owner').order_by('-created_at')[:10]
+    
     # Revenue statistics
     completed_appointments = Appointment.objects.filter(status='completed')
     total_revenue = sum(app.total_price or 0 for app in completed_appointments if app.total_price)
@@ -53,11 +62,309 @@ def admin_dashboard(request):
         'total_services': total_services,
         'pending_workers': pending_workers,
         'pending_appointments': pending_appointments,
+        'pending_workers_list': pending_workers_list,
         'total_revenue': total_revenue,
         'recent_appointments': recent_appointments,
         'status_counts': status_counts,
     }
     return render(request, 'admin_dashboard/dashboard.html', context)
+
+@login_required
+@user_passes_test(admin_required)
+def verify_worker_dashboard(request, worker_id):
+    """Handle worker verification from dashboard - SUPER DEBUG VERSION"""
+    print("="*80)
+    print(f"🔍 VERIFY WORKER DASHBOARD CALLED")
+    print(f"🔍 Worker ID: {worker_id}")
+    print(f"🔍 Method: {request.method}")
+    print(f"🔍 POST Data: {dict(request.POST)}")
+    print(f"🔍 User: {request.user}")
+    print("="*80)
+    
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False, 
+            'error': 'Only POST method allowed'
+        }, status=405)
+    
+    try:
+        # Step 1: Get worker
+        print(f"🔍 Step 1: Fetching worker with id {worker_id}")
+        try:
+            worker = Worker.objects.get(id=worker_id)
+            print(f"✅ Worker found: {worker.name}")
+        except Worker.DoesNotExist:
+            print(f"❌ Worker with id {worker_id} does not exist")
+            return JsonResponse({
+                'success': False, 
+                'error': 'Worker not found'
+            }, status=404)
+        
+        # Step 2: Get action
+        action = request.POST.get('action')
+        print(f"🔍 Step 2: Action = '{action}'")
+        
+        if not action:
+            print(f"❌ No action provided in POST data")
+            return JsonResponse({
+                'success': False, 
+                'error': 'No action provided'
+            }, status=400)
+        
+        # Step 3: Process action
+        if action == 'approve':
+            print(f"🔍 Step 3: Processing APPROVE for {worker.name}")
+            
+            try:
+                print(f"🔍 Step 3.1: Setting verified=True")
+                worker.verified = True
+                worker.save()
+                print(f"✅ Worker verified and saved successfully")
+            except Exception as e:
+                print(f"❌ Failed to save worker: {e}")
+                import traceback
+                traceback.print_exc()
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'Failed to save worker: {str(e)}'
+                }, status=500)
+            
+            # Try to send notification (optional - don't fail if this fails)
+            try:
+                print(f"🔍 Step 3.2: Creating notification")
+                Notification.objects.create(
+                    worker=worker,
+                    notification_type='worker_verified',
+                    title='Profile Verified!',
+                    message='Your worker profile has been verified by admin. You can now receive appointments.',
+                    appointment=None
+                )
+                print(f"✅ Notification created")
+            except Exception as e:
+                print(f"⚠️ Notification creation failed (non-critical): {e}")
+            
+            # Try to send email (optional - don't fail if this fails)
+            try:
+                print(f"🔍 Step 3.3: Sending email")
+                send_worker_verification_email(worker, True)
+                print(f"✅ Email sent")
+            except Exception as e:
+                print(f"⚠️ Email sending failed (non-critical): {e}")
+            
+            # Try to log activity (optional - don't fail if this fails)
+            try:
+                print(f"🔍 Step 3.4: Logging admin activity")
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='update',  # ✅ FIXED: Changed to lowercase
+                    model_name='Worker',
+                    object_id=worker.id,
+                    description=f'Verified worker {worker.name} from dashboard'
+                )
+                print(f"✅ Admin activity logged")
+            except Exception as e:
+                print(f"⚠️ Admin activity logging failed (non-critical): {e}")
+            
+            print(f"🎉 SUCCESS: Worker {worker.name} approved!")
+            print("="*80)
+            return JsonResponse({
+                'success': True, 
+                'message': f'Worker {worker.name} approved successfully!',
+                'worker_id': worker.id
+            })
+            
+        elif action == 'reject':
+            reason = request.POST.get('reason', 'Profile does not meet our verification requirements')
+            print(f"🔍 Step 3: Processing REJECT for {worker.name}")
+            print(f"🔍 Reason: {reason}")
+            
+            # Try to send notification (optional)
+            try:
+                print(f"🔍 Step 3.1: Creating rejection notification")
+                Notification.objects.create(
+                    worker=worker,
+                    notification_type='worker_rejected',
+                    title='Profile Verification Failed',
+                    message=f'Your worker profile verification was rejected. Reason: {reason}',
+                    appointment=None
+                )
+                print(f"✅ Rejection notification created")
+            except Exception as e:
+                print(f"⚠️ Notification creation failed (non-critical): {e}")
+            
+            # Try to send email (optional)
+            try:
+                print(f"🔍 Step 3.2: Sending rejection email")
+                send_worker_verification_email(worker, False, reason)
+                print(f"✅ Email sent")
+            except Exception as e:
+                print(f"⚠️ Email sending failed (non-critical): {e}")
+            
+            # Try to log activity (optional)
+            try:
+                print(f"🔍 Step 3.3: Logging admin activity")
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Worker',
+                    object_id=worker.id,
+                    description=f'Rejected worker {worker.name}. Reason: {reason}'
+                )
+                print(f"✅ Admin activity logged")
+            except Exception as e:
+                print(f"⚠️ Admin activity logging failed (non-critical): {e}")
+            
+            print(f"🎉 SUCCESS: Worker {worker.name} rejected!")
+            print("="*80)
+            return JsonResponse({
+                'success': True, 
+                'message': f'Worker {worker.name} rejected successfully',
+                'worker_id': worker.id,
+                'reason': reason
+            })
+            
+        else:
+            print(f"❌ Invalid action: {action}")
+            return JsonResponse({
+                'success': False, 
+                'error': f'Invalid action: {action}'
+            }, status=400)
+            
+    except Exception as e:
+        print(f"❌ UNEXPECTED ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        print("="*80)
+        return JsonResponse({
+            'success': False, 
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
+@login_required
+@user_passes_test(admin_required)
+@require_http_methods(["POST"])
+def quick_verify_worker(request, worker_id):
+    """Quick verify/reject worker from the popup"""
+    logger.info(f"quick_verify_worker called with worker_id: {worker_id}")
+    
+    try:
+        worker = get_object_or_404(Worker, id=worker_id)
+        action = request.POST.get('action')
+        
+        logger.info(f"Action received: '{action}' for worker: {worker.name}")
+        
+        if action == 'approve' or action == 'verify':
+            logger.info(f"Processing approval for {worker.name}")
+            
+            worker.verified = True
+            worker.save()
+            logger.info(f"Worker {worker.name} marked as verified")
+            
+            # Send notification to worker
+            try:
+                Notification.objects.create(
+                    worker=worker,
+                    notification_type='worker_verified',
+                    title='Profile Verified!',
+                    message='Your worker profile has been verified by admin. You can now receive appointments.',
+                    appointment=None
+                )
+                logger.info(f"Notification created for {worker.name}")
+            except Exception as e:
+                logger.error(f"Failed to create notification: {e}")
+            
+            # Send email notification to worker
+            try:
+                send_worker_verification_email(worker, True)
+                logger.info(f"Verification email sent to {worker.name}")
+            except Exception as e:
+                logger.error(f"Failed to send verification email: {e}")
+            
+            # Log admin activity
+            try:
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Worker',
+                    object_id=worker.id,
+                    description=f'Verified worker {worker.name} from quick verification'
+                )
+                logger.info(f"Admin activity logged")
+            except Exception as e:
+                logger.error(f"Failed to log admin activity: {e}")
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Worker {worker.name} verified successfully',
+                'worker_id': worker.id
+            })
+            
+        elif action == 'reject':
+            reason = request.POST.get('reason', 'Profile does not meet requirements')
+            logger.info(f"Processing rejection for {worker.name}, reason: {reason}")
+            
+            # Send notification to worker
+            try:
+                Notification.objects.create(
+                    worker=worker,
+                    notification_type='worker_rejected',
+                    title='Profile Verification Failed',
+                    message=f'Your worker profile verification was rejected. Reason: {reason}',
+                    appointment=None
+                )
+                logger.info(f"Rejection notification created for {worker.name}")
+            except Exception as e:
+                logger.error(f"Failed to create rejection notification: {e}")
+            
+            # Send email notification to worker
+            try:
+                send_worker_verification_email(worker, False, reason)
+                logger.info(f"Rejection email sent to {worker.name}")
+            except Exception as e:
+                logger.error(f"Failed to send rejection email: {e}")
+            
+            # Log admin activity
+            try:
+                AdminActivityLog.objects.create(
+                    admin_user=request.user,
+                    action='UPDATE',
+                    model_name='Worker',
+                    object_id=worker.id,
+                    description=f'Rejected worker {worker.name} from quick verification. Reason: {reason}'
+                )
+                logger.info(f"Rejection admin activity logged")
+            except Exception as e:
+                logger.error(f"Failed to log rejection admin activity: {e}")
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Worker {worker.name} rejected successfully',
+                'worker_id': worker.id
+            })
+            
+        else:
+            logger.error(f"Invalid action received: {action}")
+            return JsonResponse({
+                'success': False, 
+                'error': f'Invalid action: {action}'
+            }, status=400)
+            
+    except Worker.DoesNotExist:
+        logger.error(f"Worker with id {worker_id} not found")
+        return JsonResponse({
+            'success': False, 
+            'error': 'Worker not found'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Exception occurred: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return JsonResponse({
+            'success': False, 
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
 
 @login_required
 @user_passes_test(admin_required)
@@ -115,7 +422,6 @@ def worker_management(request):
 
 @login_required
 @user_passes_test(admin_required)
-@csrf_exempt
 def edit_worker(request, worker_id):
     """Edit worker directly in the template"""
     worker = get_object_or_404(Worker, id=worker_id)
@@ -193,7 +499,7 @@ def edit_worker(request, worker_id):
                 'longitude': str(worker.longitude) if worker.longitude else None,
                 'location_address': worker.location_address or 'Browser Geolocation',
                 'location_updated_at': location_updated_at,
-                'location_accuracy': '12/0',  # Default value as shown in screenshot
+                'location_accuracy': '12/0',
                 'location_source': 'Browser Geolocation',
                 
                 # Documents
@@ -208,7 +514,6 @@ def edit_worker(request, worker_id):
 
 @login_required
 @user_passes_test(admin_required)
-@csrf_exempt
 def delete_worker(request, worker_id):
     """Delete worker directly in the template"""
     if request.method == 'POST':
@@ -236,7 +541,6 @@ def delete_worker(request, worker_id):
 
 @login_required
 @user_passes_test(admin_required)
-@csrf_exempt
 def create_worker(request):
     """Create new worker directly in the template"""
     if request.method == 'POST':
@@ -366,7 +670,6 @@ def customer_management(request):
 
 @login_required
 @user_passes_test(admin_required)
-@csrf_exempt
 def edit_customer(request, customer_id):
     """Edit customer directly in the template"""
     customer = get_object_or_404(Customer, id=customer_id)
@@ -422,7 +725,6 @@ def edit_customer(request, customer_id):
 
 @login_required
 @user_passes_test(admin_required)
-@csrf_exempt
 def delete_customer(request, customer_id):
     """Delete customer directly in the template"""
     if request.method == 'POST':
@@ -450,7 +752,6 @@ def delete_customer(request, customer_id):
 
 @login_required
 @user_passes_test(admin_required)
-@csrf_exempt
 def create_customer(request):
     """Create new customer directly in the template"""
     if request.method == 'POST':
@@ -561,7 +862,7 @@ def service_management(request):
         )
         worker_count_dict = {s.id: s.worker_count for s in services_with_counts}
     except Exception as e:
-        print(f"Error getting worker counts: {e}")
+        logger.error(f"Error getting worker counts: {e}")
         worker_count_dict = {}
     
     # Add counts to services
@@ -805,10 +1106,6 @@ def quick_stats_api(request):
 @user_passes_test(admin_required)
 def export_data(request, model_type):
     """Export data to various formats"""
-    from django.http import HttpResponse
-    import csv
-    import json
-    
     format_type = request.GET.get('format', 'csv')
     
     if model_type == 'workers':
@@ -854,7 +1151,6 @@ def export_data(request, model_type):
 
 @login_required
 @user_passes_test(admin_required)
-@csrf_exempt
 def verify_worker(request, worker_id):
     """Verify/Unverify worker"""
     if request.method == 'POST':
@@ -887,7 +1183,6 @@ def verify_worker(request, worker_id):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
-# NEW: Worker Verification Popup Views
 @login_required
 @user_passes_test(admin_required)
 def pending_worker_verifications(request):
@@ -919,100 +1214,6 @@ def pending_worker_verifications(request):
         'search_query': search_query,
     }
     return render(request, 'admin_dashboard/pending_verifications.html', context)
-
-@login_required
-@user_passes_test(admin_required)
-@csrf_exempt
-def quick_verify_worker(request, worker_id):
-    """Quick verify/reject worker from the popup"""
-    if request.method == 'POST':
-        try:
-            worker = get_object_or_404(Worker, id=worker_id)
-            action = request.POST.get('action')
-            
-            if action == 'verify':
-                worker.verified = True
-                worker.save()
-                
-                # Send notification to worker
-                Notification.objects.create(
-                    worker=worker,
-                    notification_type='worker_verified',
-                    title='Profile Verified!',
-                    message='Your worker profile has been verified by admin. You can now receive appointments.',
-                    appointment=None
-                )
-                
-                # Send email notification to worker
-                try:
-                    send_worker_verification_email(worker, True)
-                except Exception as e:
-                    logger.error(f"Failed to send verification email: {e}")
-                
-                # Log admin activity
-                AdminActivityLog.objects.create(
-                    admin_user=request.user,
-                    action='UPDATE',
-                    model_name='Worker',
-                    object_id=worker.id,
-                    description=f'Verified worker {worker.name} from quick verification'
-                )
-                
-                return JsonResponse({
-                    'success': True, 
-                    'message': f'Worker {worker.name} verified successfully',
-                    'worker_id': worker.id
-                })
-                
-            elif action == 'reject':
-                reason = request.POST.get('reason', 'Profile does not meet requirements')
-                
-                # Send notification to worker
-                Notification.objects.create(
-                    worker=worker,
-                    notification_type='worker_rejected',
-                    title='Profile Verification Failed',
-                    message=f'Your worker profile verification was rejected. Reason: {reason}',
-                    appointment=None
-                )
-                
-                # Send email notification to worker
-                try:
-                    send_worker_verification_email(worker, False, reason)
-                except Exception as e:
-                    logger.error(f"Failed to send rejection email: {e}")
-                
-                # Log admin activity
-                AdminActivityLog.objects.create(
-                    admin_user=request.user,
-                    action='UPDATE',
-                    model_name='Worker',
-                    object_id=worker.id,
-                    description=f'Rejected worker {worker.name} from quick verification. Reason: {reason}'
-                )
-                
-                return JsonResponse({
-                    'success': True, 
-                    'message': f'Worker {worker.name} rejected successfully',
-                    'worker_id': worker.id
-                })
-                
-            else:
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'Invalid action'
-                }, status=400)
-                
-        except Exception as e:
-            return JsonResponse({
-                'success': False, 
-                'error': str(e)
-            }, status=400)
-    
-    return JsonResponse({
-        'success': False, 
-        'error': 'Invalid request method'
-    }, status=405)
 
 @login_required
 @user_passes_test(admin_required)
@@ -1051,12 +1252,12 @@ def get_next_pending_worker(request):
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-# Email function for worker verification
 def send_worker_verification_email(worker, approved, rejection_reason=None):
     """Send email notification to worker about verification status"""
     try:
         if approved:
-            subject = "Worker Profile Verified - BlueCaller"
+            subject = "Worker Profile Verified - BlueCollar"
+            site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
             html_message = f"""
             <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -1075,7 +1276,7 @@ def send_worker_verification_email(worker, approved, rejection_reason=None):
                     </div>
                     
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="{settings.SITE_URL}/worker/dashboard/" 
+                        <a href="{site_url}/worker/dashboard/" 
                            style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
                             Go to Dashboard
                         </a>
@@ -1085,7 +1286,8 @@ def send_worker_verification_email(worker, approved, rejection_reason=None):
             </html>
             """
         else:
-            subject = "Worker Profile Verification Update - BlueCaller"
+            subject = "Worker Profile Verification Update - BlueCollar"
+            site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
             html_message = f"""
             <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -1098,12 +1300,12 @@ def send_worker_verification_email(worker, approved, rejection_reason=None):
                     
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                         <p>Your worker profile requires additional verification.</p>
-                        <p><strong>Reason:</strong> {rejection_reason}</p>
+                        <p><strong>Reason:</strong> {rejection_reason or 'Profile information needs verification'}</p>
                         <p>Please update your profile and ensure all documents are clear and valid.</p>
                     </div>
                     
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="{settings.SITE_URL}/worker/settings/" 
+                        <a href="{site_url}/worker/settings/" 
                            style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
                             Update Profile
                         </a>
@@ -1116,48 +1318,23 @@ def send_worker_verification_email(worker, approved, rejection_reason=None):
         # Plain text version
         plain_message = strip_tags(html_message)
         
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecollar.com')
         recipients = [worker.owner.email]
         
-        # Send email asynchronously
-        send_email_async(subject, plain_message, from_email, recipients, html_message)
+        # Send email
+        from django.core.mail import send_mail
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=from_email,
+            recipient_list=recipients,
+            html_message=html_message,
+            fail_silently=True
+        )
         
-        logger.info(f"Worker verification email sent to {worker.name} ({worker.owner.email})")
+        logger.info(f"Email sent successfully to {worker.owner.email}")
+        return True
         
     except Exception as e:
-        logger.error(f"Failed to send worker verification email: {str(e)}")
-
-# Helper function for async email sending
-def send_email_async(subject, plain_message, from_email, recipients, html_message=None):
-    """Send email in a separate thread to avoid blocking"""
-    import threading
-    from django.core.mail import EmailMultiAlternatives
-    
-    def send_email():
-        try:
-            if html_message:
-                email = EmailMultiAlternatives(
-                    subject=subject,
-                    body=plain_message,
-                    from_email=from_email,
-                    to=recipients
-                )
-                email.attach_alternative(html_message, "text/html")
-                email.send()
-            else:
-                from django.core.mail import send_mail
-                send_mail(
-                    subject=subject,
-                    message=plain_message,
-                    from_email=from_email,
-                    recipient_list=recipients,
-                    fail_silently=False
-                )
-            logger.info(f"Email sent successfully to {recipients}")
-        except Exception as e:
-            logger.error(f"Failed to send email to {recipients}: {str(e)}")
-    
-    # Start email sending in background thread
-    thread = threading.Thread(target=send_email)
-    thread.daemon = True
-    thread.start()
+        logger.error(f"Failed to send email: {str(e)}")
+        return False

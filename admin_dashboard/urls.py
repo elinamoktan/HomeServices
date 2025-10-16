@@ -1,3 +1,4 @@
+# In admin_dashboard/urls.py
 from django.urls import path
 from . import views
 
@@ -19,6 +20,9 @@ urlpatterns = [
     path('workers/<int:worker_id>/quick-verify/', views.quick_verify_worker, name='quick_verify_worker'),
     path('api/pending-workers-count/', views.get_pending_workers_count, name='pending_workers_count'),
     path('api/next-pending-worker/', views.get_next_pending_worker, name='next_pending_worker'),
+
+    # ✅ FIXED: URL pattern that accepts worker_id parameter
+    path('verify-worker-dashboard/<int:worker_id>/', views.quick_verify_worker, name='verify_worker_dashboard'),
 
     path('customers/', views.customer_management, name='customer_management'),
     path('customers/<int:customer_id>/edit/', views.edit_customer, name='edit_customer'),

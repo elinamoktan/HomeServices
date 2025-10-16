@@ -3,7 +3,7 @@ from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.views.generic import ListView, DetailView, CreateView
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
-from jobs.models import Worker, Customer, Appointment, WorkerRating, Service, WorkerService, WorkerSubTaskPricing, ServiceCategory, SubTask
+from jobs.models import Worker, Customer, Appointment, WorkerRating, Service, WorkerService, WorkerSubTaskPricing, ServiceCategory, SubTask,  User 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib import messages
@@ -32,6 +32,13 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import threading
 import requests 
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
+import hashlib
+import json
+from django.contrib.auth.decorators import login_required, user_passes_test
+from admin_dashboard.models import AdminActivityLog
+from django.db.models import Q 
 # ✅ FIXED: Import CustomUser instead of User
 try:
     from accounts.models import CustomUser
@@ -46,26 +53,39 @@ from otp_auth.utils import send_otp_via_email
 # Configure logging for email failures
 logger = logging.getLogger(__name__)
 
-
-# Add these helper functions after the imports
 def get_client_ip(request):
-    """Get client IP address for geolocation fallback"""
+    """Get client IP address for geolocation fallback with cache consideration"""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0]
     else:
         ip = request.META.get('REMOTE_ADDR')
+    
+    # Log cache status
+    cached_ip_location = get_cached_ip_location(ip)
+    if cached_ip_location:
+        logger.debug(f"IP {ip} has cached location data")
+    
     return ip
 
+def admin_required(user):
+    """Check if user is staff/admin"""
+    return user.is_authenticated and user.is_staff
+
+
+# MODIFIED: Enhanced update_user_location_with_coords with caching
 def update_user_location_with_coords(user, latitude, longitude, accuracy=None, source='browser'):
     """
-    Update user location with coordinates - REPLACES old location
+    Update user location with coordinates - REPLACES old location with caching
     """
     try:
-        # Try worker profile first
+        # Cache the location first
+        if user.is_authenticated:
+            cache_user_location(user.id, latitude, longitude, accuracy, source)
+        
+        # Then update the database
         if hasattr(user, 'worker'):
             worker = user.worker
-            # Replace old location with new location
             worker.latitude = latitude
             worker.longitude = longitude
             worker.location_accuracy = accuracy
@@ -74,10 +94,8 @@ def update_user_location_with_coords(user, latitude, longitude, accuracy=None, s
             worker.save(update_fields=['latitude', 'longitude', 'location_accuracy', 'location_source', 'location_updated_at'])
             logger.info(f"Updated worker {worker.name} location to ({latitude}, {longitude}) from {source}")
         
-        # Try customer profile
         elif hasattr(user, 'customer'):
             customer = user.customer
-            # Replace old location with new location
             customer.latitude = latitude
             customer.longitude = longitude
             customer.location_accuracy = accuracy
@@ -89,11 +107,25 @@ def update_user_location_with_coords(user, latitude, longitude, accuracy=None, s
     except Exception as e:
         logger.error(f"Error updating location with coordinates: {e}")
 
+# MODIFIED: Enhanced update_user_location_with_ip with caching
 def update_user_location_with_ip(user, ip_address):
     """
-    Update user location using IP geolocation (fallback) - REPLACES old location
+    Update user location using IP geolocation (fallback) - REPLACES old location with caching
     """
     try:
+        # Check cache first
+        cached_location = get_cached_ip_location(ip_address)
+        if cached_location:
+            logger.info(f"Using cached IP location for {ip_address}")
+            update_user_location_with_coords(
+                user, 
+                cached_location['latitude'], 
+                cached_location['longitude'], 
+                cached_location['accuracy'], 
+                'ip_cached'
+            )
+            return
+
         # Try to import geocoder
         try:
             import geocoder
@@ -109,35 +141,26 @@ def update_user_location_with_ip(user, ip_address):
             if g.ok and g.latlng:
                 latitude, longitude = g.latlng
                 
-                if hasattr(user, 'worker'):
-                    worker = user.worker
-                    worker.latitude = latitude
-                    worker.longitude = longitude
-                    worker.location_accuracy = 5000  # IP geolocation is less accurate
-                    worker.location_source = 'ip'
-                    worker.location_updated_at = timezone.now()
-                    worker.save(update_fields=['latitude', 'longitude', 'location_accuracy', 'location_source', 'location_updated_at'])
-                    
-                elif hasattr(user, 'customer'):
-                    customer = user.customer
-                    customer.latitude = latitude
-                    customer.longitude = longitude
-                    customer.location_accuracy = 5000
-                    customer.location_source = 'ip'
-                    customer.location_updated_at = timezone.now()
-                    customer.save(update_fields=['latitude', 'longitude', 'location_accuracy', 'location_source', 'location_updated_at'])
-                    
-                logger.info(f"Updated {user.username} location via IP to ({latitude}, {longitude})")
+                # Cache the IP location
+                cache_ip_location(ip_address, latitude, longitude)
+                
+                # Update user location
+                update_user_location_with_coords(
+                    user, latitude, longitude, 5000, 'ip'
+                )
+                
+                logger.info(f"Updated {user.username} location via IP to ({latitude}, {longitude}) and cached it")
                 
     except Exception as e:
         logger.error(f"Error updating location via IP: {e}")
+
 def index(request):
     return HttpResponse("<h1>BlueCaller</h1>")
 
 @csrf_exempt
 def store_landing_location(request):
     """
-    Store location captured on landing page in session for later use
+    Store location captured on landing page in session and cache for later use
     """
     if request.method == 'POST':
         try:
@@ -158,7 +181,12 @@ def store_landing_location(request):
                 'timestamp': timezone.now().isoformat()
             }
             
-            logger.info(f"Landing location stored in session: ({latitude}, {longitude})")
+            # Also cache for anonymous users
+            if not request.user.is_authenticated:
+                ip_address = get_client_ip(request)
+                cache_ip_location(ip_address, latitude, longitude, accuracy)
+            
+            logger.info(f"Landing location stored in session and cache: ({latitude}, {longitude})")
             
             return JsonResponse({
                 'success': True,
@@ -170,6 +198,7 @@ def store_landing_location(request):
             return JsonResponse({'error': str(e)}, status=400)
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 
 def service_categories(request):
     """
@@ -510,9 +539,113 @@ def _haversine_km(lat1, lon1, lat2, lon2):
     except (ValueError, TypeError):
         return float('inf')
 
+def get_recommended_workers(request, limit=8):
+    """
+    Get recommended workers using Bayesian algorithm
+    """
+    try:
+        # Get all available, verified workers
+        workers = Worker.objects.filter(
+            is_available=True,
+            verified=True
+        ).select_related('owner').prefetch_related('ratings')
+        
+        # Calculate Bayesian rating for each and create a list of tuples
+        worker_ratings = []
+        for worker in workers:
+            bayesian_rating = worker.bayesian_average_rating()
+            rating_count = worker.ratings.count()
+            
+            # Only include workers that have ratings
+            if rating_count > 0:
+                worker_ratings.append((worker, bayesian_rating, rating_count))
+        
+        # ✅ Sort by Bayesian rating (highest first), then by number of ratings
+        worker_ratings.sort(key=lambda x: (x[1], x[2]), reverse=True)
+        
+        # Prepare the top workers for template
+        recommended_workers = []
+        for worker, bayesian_rating, rating_count in worker_ratings[:limit]:
+            worker.average_rating = bayesian_rating
+            worker.total_ratings = rating_count
+            worker.has_ratings = True
+            
+            # Add star breakdown
+            full_stars = int(bayesian_rating)
+            half_star = 1 if bayesian_rating % 1 >= 0.5 else 0
+            empty_stars = 5 - (full_stars + half_stars)
+            
+            worker.full_stars = range(full_stars)
+            worker.half_star = half_star
+            worker.empty_stars = range(empty_stars)
+            
+            recommended_workers.append(worker)
+        
+        # If we don't have enough rated workers, add some unrated but verified workers
+        if len(recommended_workers) < limit:
+            additional_workers = workers.filter(ratings__isnull=True)[:limit - len(recommended_workers)]
+            for worker in additional_workers:
+                worker.average_rating = 0
+                worker.total_ratings = 0
+                worker.has_ratings = False
+                worker.full_stars = range(0)
+                worker.half_star = 0
+                worker.empty_stars = range(5)
+                recommended_workers.append(worker)
+        
+        return recommended_workers
+        
+    except Exception as e:
+        logger.error(f"Error in get_recommended_workers: {e}")
+        # Fallback: return any available verified workers
+        fallback_workers = Worker.objects.filter(
+            is_available=True,
+            verified=True
+        )[:limit]
+        
+        for worker in fallback_workers:
+            worker.average_rating = 0
+            worker.total_ratings = 0
+            worker.has_ratings = False
+            worker.full_stars = range(0)
+            worker.half_star = 0
+            worker.empty_stars = range(5)
+            
+        return fallback_workers
+
+def calculate_recommendation_score(worker, bayesian_rating):
+    """
+    Calculate a recommendation score from 0-1 based on multiple factors
+    """
+    try:
+        score = 0.0
+        
+        # 1. Bayesian Rating Weight (40%)
+        rating_weight = (bayesian_rating / 5.0) * 0.4
+        
+        # 2. Rating Count Weight (30%)
+        rating_count = worker.ratings.count()
+        count_weight = min(rating_count / 20.0, 1.0) * 0.3  # Cap at 20 ratings
+        
+        # 3. Verification Bonus (15%)
+        verification_bonus = 0.15 if worker.verified else 0.0
+        
+        # 4. Response Rate (15%) - You'll need to track this
+        response_bonus = 0.15  # Placeholder
+        
+        score = rating_weight + count_weight + verification_bonus + response_bonus
+        
+        return min(score, 1.0)  # Cap at 1.0
+        
+    except Exception as e:
+        logger.error(f"Error calculating recommendation score: {e}")
+        return 0.0
+
 class WorkerListView(ListView):
     model = Worker
     template_name = 'jobs/worker_list.html'
+    context_object_name = 'workers'
+    paginate_by = 12
 
     def get_queryset(self):
         query = self.request.GET.get('q')
@@ -520,187 +653,344 @@ class WorkerListView(ListView):
         service_filter = self.request.GET.get('service')
         max_distance = self.request.GET.get('max_distance')
 
-        queryset = Worker.objects.all()
+        # ✅ FIXED: Only show verified and available workers
+        queryset = Worker.objects.filter(
+            is_available=True,
+            verified=True,  # Only show verified workers
+            verification_status='approved'  # Only show approved workers
+        ).select_related('owner').prefetch_related('ratings')
 
         if query:
-            queryset = queryset.filter(tagline__icontains=query)
+            queryset = queryset.filter(
+                Q(tagline__icontains=query) | 
+                Q(name__icontains=query) |
+                Q(bio__icontains=query)
+            )
             
         if service_filter:
-            # Filter workers who offer this service
             queryset = queryset.filter(services__service__id=service_filter)
+
+        # Get customer location for distance calculation
+        customer_location = None
+        if hasattr(self.request.user, 'customer'):
+            customer = self.request.user.customer
+            customer_location = customer.get_current_location()
+
+        # Calculate distances if customer has location
+        workers_with_distance = []
+        for worker in queryset:
+            distance_km = None
+            if customer_location and worker.latitude and worker.longitude:
+                try:
+                    distance_km = _haversine_km(
+                        float(worker.latitude), float(worker.longitude),
+                        float(customer_location['latitude']), float(customer_location['longitude'])
+                    )
+                    distance_km = round(distance_km, 2)
+                except (ValueError, TypeError):
+                    distance_km = None
+            
+            worker.distance_km = distance_km
+            workers_with_distance.append(worker)
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        query = self.request.GET.get('q')
-        context['q'] = query
-        filter_param = self.request.GET.get('filter')
-        service_filter = self.request.GET.get('service')
-        max_distance = self.request.GET.get('max_distance')
+        # Add recommended workers (highest rated)
+        recommended_workers = get_recommended_workers(self.request, limit=8)
+        context['recommended_workers'] = recommended_workers
         
-        # Add services for filtering
-        context['all_services'] = Service.objects.all()
-        context['selected_service'] = service_filter
-        context['max_distance'] = max_distance
-
-        # Get the base queryset
-        workers_qs = context.get('object_list', self.get_queryset())
-
-        # Get customer info if available (only if user is authenticated)
-        customer = None
-        cust_lat = None
-        cust_lon = None
-        current_lat = None
-        current_lon = None
-        location_source = None
+        # Add search query
+        context['q'] = self.request.GET.get('q', '')
+        context['max_distance'] = self.request.GET.get('max_distance', 50)
         
-        if self.request.user.is_authenticated:
-            customer = getattr(self.request.user, 'customer', None)
-        
-        # PRIORITY 1: Check for landing page location (most recent)
-        landing_location = self.request.session.get('landing_location')
-        if landing_location:
-            try:
-                cust_lat = float(landing_location['latitude'])
-                cust_lon = float(landing_location['longitude'])
-                location_source = 'landing'
-                logger.info("Using landing page location for worker sorting")
-            except (ValueError, TypeError, KeyError):
-                cust_lat = None
-                cust_lon = None
-        
-        # PRIORITY 2: Check session location (from login/updates)
-        if cust_lat is None:
-            current_lat = self.request.session.get('current_latitude')
-            current_lon = self.request.session.get('current_longitude')
-            
-            if current_lat and current_lon:
-                cust_lat = current_lat
-                cust_lon = current_lon
-                location_source = 'session'
-                logger.info("Using session location for worker sorting")
-        
-        # PRIORITY 3: Fallback to database location (only if user is authenticated)
-        if cust_lat is None and customer:
-            if customer.latitude and customer.longitude:
-                try:
-                    cust_lat = float(customer.latitude)
-                    cust_lon = float(customer.longitude)
-                    location_source = 'database'
-                    logger.info("Using database location for worker sorting")
-                except (ValueError, TypeError):
-                    cust_lat = None
-                    cust_lon = None
-
-        # Create a list of dictionaries with worker and distance info
-        workers_with_distance = []
-        
-        for w in workers_qs:
-            distance_km = None
-            
-            # Calculate distance if customer has coordinates and worker has coordinates
-            if cust_lat is not None and cust_lon is not None and w.latitude and w.longitude:
-                try:
-                    worker_lat = float(w.latitude)
-                    worker_lon = float(w.longitude)
-                    distance_km = _haversine_km(worker_lat, worker_lon, cust_lat, cust_lon)
-                    if distance_km == float('inf'):
-                        distance_km = None
-                    else:
-                        distance_km = round(distance_km, 2)
-                except (ValueError, TypeError):
-                    distance_km = None
-            
-            # Create a dictionary with worker and distance info
-            worker_info = {
-                'worker': w,
-                'distance_km': distance_km
-            }
-            workers_with_distance.append(worker_info)
-        
-        # ✅ NEW: Apply distance filtering if max_distance is provided
-        if max_distance and cust_lat is not None and cust_lon is not None:
-            try:
-                max_distance_float = float(max_distance)
-                # Filter workers within the specified distance
-                workers_with_distance = [
-                    worker_info for worker_info in workers_with_distance 
-                    if worker_info['distance_km'] is not None and worker_info['distance_km'] <= max_distance_float
-                ]
-            except (ValueError, TypeError):
-                # If max_distance is invalid, ignore the filter
-                pass
-        
-        # Apply filters - DEFAULT SORTING BY DISTANCE
-        if filter_param == 'rating':
-            # First, annotate each worker with their average rating
-            for worker_info in workers_with_distance:
-                w = worker_info['worker']
-                # ✅ FIXED: Use Bayesian average for sorting
-                average_rating = w.bayesian_average_rating()
-                worker_info['average_rating'] = average_rating
-                worker_info['total_ratings'] = w.ratings.count()
-            
-            # Then sort by average rating (descending)
-            workers_with_distance.sort(key=lambda x: x.get('average_rating', 0), reverse=True)
-        
-        else:
-            # DEFAULT: Sort by distance (nearest first) when customer has location
-            # This will apply by default AND when filter_param == 'distance'
-            if cust_lat is not None and cust_lon is not None:
-                # Sort by distance (nearest first), workers without distance go to the end
-                workers_with_distance.sort(key=lambda x: 
-                    x['distance_km'] if x['distance_km'] is not None else float('inf'))
-            else:
-                # If no customer location, sort by rating as fallback
-                for worker_info in workers_with_distance:
-                    w = worker_info['worker']
-                    # ✅ FIXED: Use Bayesian average for sorting
-                    average_rating = w.bayesian_average_rating()
-                    worker_info['average_rating'] = average_rating
-                
-                workers_with_distance.sort(key=lambda x: x.get('average_rating', 0), reverse=True)
-        
-        # ✅ FIXED: Add rating information to each worker for display using Bayesian average
-        for worker_info in workers_with_distance:
-            w = worker_info['worker']
-            
-            # ✅ FIXED: Use Bayesian average for display instead of simple average
-            average_rating = w.bayesian_average_rating()
-            w.average_rating = average_rating  # This ensures template uses Bayesian average
-            w.total_ratings = w.ratings.count()
-            breakdown = w.get_rating_breakdown()
-            w.rating_breakdown = breakdown
-
-            # Star breakdown calculations based on Bayesian average
-            full_stars = int(average_rating)
-            half_star = 1 if average_rating % 1 >= 0.5 else 0
-            empty_stars = 5 - (full_stars + half_star)
-
-            w.full_stars = range(full_stars)
-            w.half_star = half_star
-            w.empty_stars = range(empty_stars)
-            
-            # Add distance to worker object for template access
-            w.distance_km = worker_info['distance_km']
-
-        # Replace the object_list with our sorted list of workers
-        context['object_list'] = [worker_info['worker'] for worker_info in workers_with_distance]
-        context['workers_with_distance'] = workers_with_distance
-        
-        # Add location context for template
-        context['customer_location'] = {
-            'latitude': cust_lat,
-            'longitude': cust_lon,
-            'source': location_source
-        } if cust_lat and cust_lon else None
-        
-        # Add filter context for template
-        context['current_filter'] = filter_param or 'distance'  # default to distance
+        # Add customer location info
+        if hasattr(self.request.user, 'customer'):
+            customer = self.request.user.customer
+            customer_location = customer.get_current_location()
+            context['customer_location'] = customer_location
         
         return context
+
+def send_worker_verification_email(worker, approved, rejection_reason=None):
+    """Send email notification to worker about verification status"""
+    try:
+        if approved:
+            subject = "🎉 Your BlueCaller Worker Profile Has Been Verified!"
+            html_message = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f4f4f4;
+                    }}
+                    .container {{
+                        max-width: 600px;
+                        margin: 20px auto;
+                        background-color: #ffffff;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    }}
+                    .header {{
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        color: white;
+                        padding: 40px 20px;
+                        text-align: center;
+                    }}
+                    .content {{
+                        padding: 30px;
+                    }}
+                    .success-badge {{
+                        background: #d4edda;
+                        color: #155724;
+                        padding: 15px;
+                        border-radius: 8px;
+                        text-align: center;
+                        margin: 20px 0;
+                        border-left: 4px solid #28a745;
+                    }}
+                    .button {{
+                        display: inline-block;
+                        background: #10b981;
+                        color: white;
+                        padding: 14px 28px;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        margin: 10px 0;
+                    }}
+                    .footer {{
+                        background: #f8f9fa;
+                        padding: 20px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #6b7280;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>✅ Profile Verified!</h1>
+                        <p>Congratulations! Your worker profile has been approved</p>
+                    </div>
+                    
+                    <div class="content">
+                        <h2>Hello {worker.name},</h2>
+                        
+                        <div class="success-badge">
+                            <h3>Your BlueCaller worker profile has been successfully verified!</h3>
+                        </div>
+                        
+                        <p>Great news! Your profile is now active and visible to customers. You can start receiving appointment requests immediately.</p>
+                        
+                        <h3>What's Next?</h3>
+                        <ul>
+                            <li>✅ Your profile is now visible in search results</li>
+                            <li>✅ Customers can book appointments with you</li>
+                            <li>✅ Start building your reputation with reviews</li>
+                            <li>✅ Manage your appointments from your dashboard</li>
+                        </ul>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="{settings.SITE_URL}/worker/dashboard/" class="button">
+                                Go to Your Dashboard
+                            </a>
+                        </div>
+                        
+                        <p>If you have any questions, please don't hesitate to contact our support team.</p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>Best regards,<br>The BlueCaller Team</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+        else:
+            subject = "Update on Your BlueCaller Worker Profile Verification"
+            html_message = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f4f4f4;
+                    }}
+                    .container {{
+                        max-width: 600px;
+                        margin: 20px auto;
+                        background-color: #ffffff;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    }}
+                    .header {{
+                        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                        color: white;
+                        padding: 40px 20px;
+                        text-align: center;
+                    }}
+                    .content {{
+                        padding: 30px;
+                    }}
+                    .warning-badge {{
+                        background: #fef2f2;
+                        color: #dc2626;
+                        padding: 15px;
+                        border-radius: 8px;
+                        margin: 20px 0;
+                        border-left: 4px solid #ef4444;
+                    }}
+                    .button {{
+                        display: inline-block;
+                        background: #3b82f6;
+                        color: white;
+                        padding: 14px 28px;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        margin: 10px 0;
+                    }}
+                    .footer {{
+                        background: #f8f9fa;
+                        padding: 20px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #6b7280;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>📋 Verification Required</h1>
+                        <p>Additional information needed for your profile</p>
+                    </div>
+                    
+                    <div class="content">
+                        <h2>Hello {worker.name},</h2>
+                        
+                        <div class="warning-badge">
+                            <h3>Your profile needs additional verification</h3>
+                        </div>
+                        
+                        <p>We've reviewed your worker profile application and need some additional information to complete the verification process.</p>
+                        
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                            <strong>Reason:</strong> {rejection_reason or 'Profile information needs verification'}
+                        </div>
+                        
+                        <h3>What to Do Next?</h3>
+                        <ul>
+                            <li>📝 Update your profile with the required information</li>
+                            <li>📎 Ensure all documents are clear and valid</li>
+                            <li>✅ Resubmit your profile for review</li>
+                            <li>💬 Contact support if you need assistance</li>
+                        </ul>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="{settings.SITE_URL}/worker/profile/" class="button">
+                                Update Your Profile
+                            </a>
+                        </div>
+                        
+                        <p>Once you've made the necessary updates, your profile will be reviewed again within 24-48 hours.</p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>Best regards,<br>The BlueCaller Team</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+        
+        # Plain text version
+        plain_message = strip_tags(html_message)
+        
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
+        recipients = [worker.owner.email]
+        
+        # Send email asynchronously
+        send_email_async(subject, plain_message, from_email, recipients, html_message)
+        
+        logger.info(f"Worker verification email sent to {worker.name} ({worker.owner.email}) - Approved: {approved}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send worker verification email: {str(e)}")
+        return False
+
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def public_verify_worker(request, worker_id):
+    """
+    Public verification endpoint for email links
+    This allows verification without requiring admin login
+    """
+    worker = get_object_or_404(Worker, id=worker_id)
+    
+    action = request.GET.get('action')
+    token = request.GET.get('token')  # Simple security token
+    
+    # Generate expected token (you can make this more secure)
+    import hashlib
+    expected_token = hashlib.md5(f"verify_{worker.id}_{worker.created_at}".encode()).hexdigest()
+    
+    if token != expected_token:
+        messages.error(request, "Invalid verification link.")
+        return redirect('landing-page')
+    
+    if action == 'approve':
+        worker.verify_worker()
+        
+        # Send email notification to worker
+        try:
+            send_worker_verification_email(worker, True)
+            messages.success(request, f"Worker {worker.name} has been verified successfully! They are now visible to customers.")
+        except Exception as e:
+            logger.error(f"Failed to send verification email: {e}")
+            messages.success(request, f"Worker {worker.name} has been verified successfully! (Email notification failed)")
+        
+    elif action == 'reject':
+        reason = request.GET.get('reason', 'Profile does not meet verification requirements')
+        worker.reject_worker(reason)
+        
+        # Send email notification to worker
+        try:
+            send_worker_verification_email(worker, False, reason)
+            messages.info(request, f"Worker {worker.name} has been rejected. Notification sent.")
+        except Exception as e:
+            logger.error(f"Failed to send rejection email: {e}")
+            messages.info(request, f"Worker {worker.name} has been rejected.")
+    
+    else:
+        messages.error(request, "Invalid action specified.")
+    
+    # Redirect to admin login or landing page
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect('admin_dashboard:dashboard')
+    else:
+        return redirect('landing-page')
 
 def workers_redirect(request):
     """Redirect to worker list"""
@@ -722,17 +1012,24 @@ class WorkerDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         worker = self.get_object()
 
-        average_rating = worker.bayesian_average_rating()
+        bayesian_rating = worker.bayesian_average_rating()
         total_ratings = worker.ratings.count()
+        has_ratings = total_ratings > 0
         
-        full_stars = int(average_rating)
-        half_star = 1 if average_rating % 1 >= 0.5 else 0
-        empty_stars = 5 - (full_stars + half_star)
+        if has_ratings:
+            full_stars = int(bayesian_rating)
+            half_star = 1 if bayesian_rating % 1 >= 0.5 else 0
+            empty_stars = 5 - (full_stars + half_star)
+        else:
+            full_stars = 0
+            half_star = 0
+            empty_stars = 5
         
-        # Get rating breakdown
+        # Get rating breakdown only if there are ratings
         rating_breakdown = {}
-        for i in range(1, 6):
-            rating_breakdown[i] = WorkerRating.objects.filter(worker=worker, rating=i).count()
+        if has_ratings:
+            for i in range(1, 6):
+                rating_breakdown[i] = WorkerRating.objects.filter(worker=worker, rating=i).count()
         
         # Get services with pricing for this worker
         services_with_pricing = []
@@ -784,8 +1081,9 @@ class WorkerDetailView(DetailView):
                     distance_km = None
 
         context.update({
-            'average_rating': average_rating,
+            'average_rating': bayesian_rating,
             'total_ratings': total_ratings,
+            'has_ratings': has_ratings,  # ✅ NEW: Add this flag
             'full_stars': range(full_stars),
             'half_star': half_star,
             'empty_stars': range(empty_stars),
@@ -798,7 +1096,6 @@ class WorkerDetailView(DetailView):
         })
         
         return context
-
 # ENHANCED: API endpoint for worker services with detailed information
 # Add this to your views.py - Fixed worker_services_api function
 
@@ -1052,55 +1349,62 @@ class CustomLoginView(AllauthLoginView):
 
 @login_required
 def handle_login(request):
-    """Enhanced login handler with automatic location tracking"""
+    """Enhanced login handler with cached location tracking"""
     
     if not request.user.is_authenticated:
         return redirect('account_login')
     
-    # Get client IP for fallback geolocation
     client_ip = get_client_ip(request)
     
-    # Check for pending location data from login form
-    pending_location = request.session.get('pending_location')
+    # Check cache first for existing location
+    cached_location = get_cached_user_location(request.user.id)
+    if cached_location:
+        logger.info(f"Using cached location for user {request.user.username}")
+        # Update session from cache
+        request.session['current_latitude'] = cached_location['latitude']
+        request.session['current_longitude'] = cached_location['longitude']
+        request.session['location_accuracy'] = cached_location.get('accuracy')
+        request.session['location_updated_at'] = cached_location.get('timestamp')
     
-    if pending_location and isinstance(pending_location, dict):
-        # Browser geolocation was captured
-        try:
-            lat_float = float(pending_location['latitude'])
-            lon_float = float(pending_location['longitude'])
-            acc_float = pending_location.get('accuracy')
-            
-            # Store in session for immediate use
-            request.session['current_latitude'] = lat_float
-            request.session['current_longitude'] = lon_float
-            request.session['location_accuracy'] = acc_float
-            request.session['location_updated_at'] = timezone.now().isoformat()
-            
-            # Update user profile location
-            update_user_location_with_coords(
-                request.user, lat_float, lon_float, acc_float, 'browser'
-            )
-            logger.info(f"User {request.user.username} location updated from browser: ({lat_float}, {lon_float})")
-            
-            # Clear pending location
-            del request.session['pending_location']
-            
-        except (ValueError, TypeError, KeyError) as e:
-            logger.warning(f"Error processing pending location for user {request.user.username}: {e}")
-            # Fallback to IP-based location
-            update_user_location_with_ip(request.user, client_ip)
     else:
-        # No browser location - use IP-based geolocation as fallback
-        logger.info(f"No browser location for user {request.user.username}, trying IP-based location")
-        update_user_location_with_ip(request.user, client_ip)
+        # Check for pending location data from login form
+        pending_location = request.session.get('pending_location')
+        
+        if pending_location and isinstance(pending_location, dict):
+            try:
+                lat_float = float(pending_location['latitude'])
+                lon_float = float(pending_location['longitude'])
+                acc_float = pending_location.get('accuracy')
+                
+                # Store in session and cache
+                request.session['current_latitude'] = lat_float
+                request.session['current_longitude'] = lon_float
+                request.session['location_accuracy'] = acc_float
+                request.session['location_updated_at'] = timezone.now().isoformat()
+                
+                # Update user profile with caching
+                update_user_location_with_coords(
+                    request.user, lat_float, lon_float, acc_float, 'browser'
+                )
+                
+                # Clear pending location
+                del request.session['pending_location']
+                
+            except (ValueError, TypeError, KeyError) as e:
+                logger.warning(f"Error processing pending location for user {request.user.username}: {e}")
+                # Fallback to IP-based location with caching
+                update_user_location_with_ip(request.user, client_ip)
+        else:
+            # No browser location - use IP-based geolocation as fallback with caching
+            logger.info(f"No browser location for user {request.user.username}, trying IP-based location")
+            update_user_location_with_ip(request.user, client_ip)
     
-    # Check if user needs OTP verification for login
+    # Rest of the handle_login function remains the same...
     if request.session.get('needs_login_otp'):
         user_id = request.session.get('login_user_id')
         if user_id:
             return redirect('verify_login_otp', user_id=user_id)
     
-    # Try to detect worker profile
     try:
         worker = request.user.worker
         messages.success(request, f"Welcome back, {worker.name}! Your location has been updated.")
@@ -1108,7 +1412,6 @@ def handle_login(request):
     except Worker.DoesNotExist:
         pass
 
-    # Try to detect customer profile
     try:
         customer = request.user.customer
         messages.success(request, f"Welcome back, {customer.name}! Your location has been updated.")
@@ -1116,7 +1419,6 @@ def handle_login(request):
     except Customer.DoesNotExist:
         pass
 
-    # If neither exists, show account setup screen
     return render(request, 'jobs/choose_account.html', {})
 
 def update_user_location_on_login(request, client_ip=None):
@@ -1137,12 +1439,11 @@ def update_user_location_on_login(request, client_ip=None):
     except Exception as e:
         logger.error(f"Error updating user location on login: {e}")
 
-
 @csrf_exempt
 @login_required
 def update_current_location(request):
     """
-    API endpoint to update user's current location from browser - REPLACES old location
+    API endpoint to update user's current location from browser - with caching
     """
     if request.method == 'POST':
         try:
@@ -1155,13 +1456,13 @@ def update_current_location(request):
             if not latitude or not longitude:
                 return JsonResponse({'error': 'Latitude and longitude required'}, status=400)
             
-            # Update session for immediate use (replaces old session data)
+            # Update session for immediate use
             request.session['current_latitude'] = float(latitude)
             request.session['current_longitude'] = float(longitude)
             request.session['location_accuracy'] = float(accuracy) if accuracy else None
             request.session['location_updated_at'] = timezone.now().isoformat()
             
-            # Update user profile (replaces old database location)
+            # Update user profile with caching
             update_user_location_with_coords(
                 request.user, latitude, longitude, accuracy, 'browser'
             )
@@ -1171,7 +1472,8 @@ def update_current_location(request):
                 'message': 'Location updated successfully',
                 'latitude': latitude,
                 'longitude': longitude,
-                'accuracy': accuracy
+                'accuracy': accuracy,
+                'cached': True  # Indicate that location was cached
             })
             
         except Exception as e:
@@ -1179,6 +1481,51 @@ def update_current_location(request):
             return JsonResponse({'error': str(e)}, status=400)
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+# NEW: Cache management views
+@login_required
+def clear_location_cache(request):
+    """Clear cached location data for the current user"""
+    try:
+        cache_key = get_location_cache_key(request.user.id)
+        cache.delete(cache_key)
+        
+        # Also clear session location
+        if 'current_latitude' in request.session:
+            del request.session['current_latitude']
+        if 'current_longitude' in request.session:
+            del request.session['current_longitude']
+        if 'landing_location' in request.session:
+            del request.session['landing_location']
+            
+        return JsonResponse({
+            'success': True,
+            'message': 'Location cache cleared successfully'
+        })
+    except Exception as e:
+        logger.error(f"Error clearing location cache: {e}")
+        return JsonResponse({'error': str(e)}, status=400)
+
+@login_required
+def get_cached_location(request):
+    """Get cached location data for the current user"""
+    try:
+        cached_location = get_cached_user_location(request.user.id)
+        if cached_location:
+            return JsonResponse({
+                'success': True,
+                'location': cached_location
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'No cached location found'
+            })
+    except Exception as e:
+        logger.error(f"Error getting cached location: {e}")
+        return JsonResponse({'error': str(e)}, status=400)
+
+
 
 @login_required
 def get_nearby_workers(request):
@@ -3069,6 +3416,285 @@ def check_favorite_status(request, worker_id):
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+from .forms import WorkerProfileForm as WorkerForm
+
+@login_required
+def create_worker_profile(request):
+    """DEBUG VERSION - Track exactly what's happening with email"""
+    print("🔍 DEBUG: create_worker_profile CALLED")
+    print(f"🔍 DEBUG: User: {request.user}, Method: {request.method}")
+    
+    # Check if user already has worker profile
+    if hasattr(request.user, 'worker'):
+        print("🔍 DEBUG: User already has worker profile - redirecting to dashboard")
+        messages.info(request, "You already have a worker profile.")
+        return redirect('worker_dashboard')
+    
+    if request.method == 'POST':
+        print("🔍 DEBUG: POST request detected")
+        print("🔍 DEBUG: POST data:", dict(request.POST))
+        print("🔍 DEBUG: FILES data:", dict(request.FILES) if request.FILES else 'No files')
+        
+        form = WorkerForm(request.POST, request.FILES)
+        print(f"🔍 DEBUG: Form is valid: {form.is_valid()}")
+        
+        if form.is_valid():
+            print("✅ DEBUG: FORM IS VALID - Proceeding to save")
+            try:
+                worker = form.save(commit=False)
+                worker.owner = request.user
+                worker.verified = False
+                worker.verification_status = 'pending'
+                
+                # Handle location
+                latitude = request.POST.get('latitude')
+                longitude = request.POST.get('longitude')
+                print(f"🔍 DEBUG: Location data - lat: {latitude}, lon: {longitude}")
+                
+                if latitude and longitude:
+                    worker.latitude = float(latitude)
+                    worker.longitude = float(longitude)
+                    print("✅ DEBUG: Location data saved")
+                else:
+                    print("❌ DEBUG: No location data provided")
+                
+                print(f"✅ DEBUG: Saving worker: {worker.name}")
+                worker.save()
+                print(f"✅ DEBUG: Worker saved with ID: {worker.id}")
+                
+                # 🧪 CRITICAL: Email sending block
+                print("🧪 DEBUG: ========== ATTEMPTING TO SEND EMAIL ==========")
+                try:
+                    from jobs.views import send_verification_request_notification
+                    
+                    print("🔍 DEBUG: Calling send_verification_request_notification...")
+                    email_result = send_verification_request_notification(worker)
+                    print(f"🔍 DEBUG: Email function returned: {email_result}")
+                    
+                    if email_result:
+                        print("✅✅✅ DEBUG: EMAIL SENT SUCCESSFULLY!")
+                        messages.success(request, "Profile created and verification email sent to admin!")
+                    else:
+                        print("❌❌❌ DEBUG: EMAIL FUNCTION RETURNED FALSE")
+                        messages.warning(request, "Profile created but email notification failed")
+                        
+                except Exception as email_error:
+                    print(f"❌❌❌ DEBUG: EMAIL ERROR: {str(email_error)}")
+                    import traceback
+                    traceback.print_exc()
+                    messages.warning(request, "Profile created but email notification failed")
+                
+                print("🔍 DEBUG: Redirecting to worker_dashboard")
+                return redirect('worker_dashboard')
+                
+            except Exception as save_error:
+                print(f"❌ DEBUG: Error saving worker: {str(save_error)}")
+                import traceback
+                traceback.print_exc()
+                messages.error(request, f"Error saving profile: {str(save_error)}")
+                return render(request, 'jobs/worker_form.html', {'form': form})
+        else:
+            print("❌ DEBUG: FORM INVALID - Errors below:")
+            for field, errors in form.errors.items():
+                print(f"❌ DEBUG: {field}: {errors}")
+            
+            # Check specific common issues
+            if 'citizenship_image' in form.errors:
+                print("❌ DEBUG: Citizenship image validation failed")
+            if 'latitude' in form.errors or 'longitude' in form.errors:
+                print("❌ DEBUG: Location validation failed")
+            
+            messages.error(request, "Please fix the errors below.")
+            return render(request, 'jobs/worker_form.html', {'form': form})
+    
+    else:
+        print("🔍 DEBUG: GET request - showing empty form")
+        form = WorkerForm()
+    
+    return render(request, 'jobs/worker_form.html', {'form': form})
+
+
+def send_verification_request_notification(worker):
+    """Send email notification to admin about new worker verification request - FIXED"""
+    try:
+        logger.info(f"🔍 Starting verification email for worker: {worker.name}")
+        
+        # Use your admin email
+        admin_email = 'rubythapa506@gmail.com'  # Change to your actual admin email
+        
+        subject = f"New Worker Verification Request - {worker.name}"
+        
+        # Generate secure tokens for verification links
+        import hashlib
+        approve_token = hashlib.md5(f"verify_{worker.id}_{worker.created_at}".encode()).hexdigest()
+        reject_token = hashlib.md5(f"reject_{worker.id}_{worker.created_at}".encode()).hexdigest()
+        
+        # Create the context with verification links
+        base_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        
+        # Public verification links (no login required)
+        approve_url = f"{base_url}/public-verify-worker/{worker.id}/?action=approve&token={approve_token}"
+        reject_url = f"{base_url}/public-verify-worker/{worker.id}/?action=reject&token={reject_token}"
+        
+        context = {
+            'worker_name': worker.name,
+            'worker_email': worker.owner.email,
+            'worker_phone': str(worker.phone_number),
+            'worker_tagline': worker.tagline,
+            'worker_id': worker.id,
+            'request_id': f"WR{worker.id:06d}",
+            'submission_date': worker.created_at.strftime('%B %d, %Y at %I:%M %p') if worker.created_at else "Just now",
+            'verification_url': f"{base_url}/admin-dashboard/",
+            'admin_dashboard_url': f"{base_url}/admin-dashboard/",
+            # ✅ CORRECTED: Use the same variable names as your email template
+            'approve_url': approve_url,
+            'reject_url': reject_url,
+        }
+        
+        # Try to render the template
+        try:
+            html_message = render_to_string('emails/worker_verification_request.html', context)
+            logger.info("✅ Used worker_verification_request.html template")
+        except Exception as template_error:
+            logger.warning(f"⚠️ Template error: {template_error}. Using fallback HTML.")
+            html_message = create_fallback_email_html(context)
+        
+        # Plain text version
+        plain_message = f"""
+New Worker Verification Request - BlueCaller
+
+Worker: {worker.name}
+Email: {worker.owner.email}
+Phone: {worker.phone_number}
+Tagline: {worker.tagline}
+
+APPROVE this worker: {approve_url}
+REJECT this worker: {reject_url}
+
+Or review in admin dashboard: {base_url}/admin-dashboard/
+
+Best regards,
+BlueCaller System
+        """
+        
+        # Send email
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[admin_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+        logger.info(f"✅ Verification email sent to: {admin_email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ FAILED to send verification email: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def create_fallback_email_html(context):
+    """Create fallback HTML email"""
+    return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: #4f46e5; color: white; padding: 20px; text-align: center; }}
+        .worker-info {{ background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>New Worker Verification Request</h1>
+        </div>
+        <div class="content">
+            <p>Hello Admin,</p>
+            <p>A new worker has submitted their profile for verification:</p>
+            
+            <div class="worker-info">
+                <h3>Worker Details:</h3>
+                <p><strong>Name:</strong> {context['worker_name']}</p>
+                <p><strong>Email:</strong> {context['worker_email']}</p>
+                <p><strong>Phone:</strong> {context['worker_phone']}</p>
+                <p><strong>Tagline:</strong> {context['worker_tagline']}</p>
+                <p><strong>Request ID:</strong> {context['request_id']}</p>
+            </div>
+            
+            <p>Please review this worker in the admin dashboard.</p>
+        </div>
+    </div>
+</body>
+</html>
+    """
+
+@login_required
+@user_passes_test(admin_required)
+def verify_worker_from_dashboard(request, worker_id):
+    """Handle worker verification directly from admin dashboard"""
+    worker = get_object_or_404(Worker, id=worker_id)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'approve':
+            worker.verify_worker()
+            
+            # Send verification email to worker
+            try:
+                send_worker_verification_email(worker, True)
+                messages.success(request, f"Worker {worker.name} approved successfully! Verification email sent.")
+            except Exception as e:
+                logger.error(f"Failed to send verification email: {e}")
+                messages.success(request, f"Worker {worker.name} approved successfully! (Email notification failed)")
+            
+        elif action == 'reject':
+            reason = request.POST.get('reason', 'Profile does not meet verification requirements')
+            worker.reject_worker(reason)
+            
+            # Send rejection email to worker
+            try:
+                send_worker_verification_email(worker, False, reason)
+                messages.info(request, f"Worker {worker.name} rejected. Notification sent.")
+            except Exception as e:
+                logger.error(f"Failed to send rejection email: {e}")
+                messages.info(request, f"Worker {worker.name} rejected.")
+        
+        else:
+            messages.error(request, "Invalid action specified.")
+    
+    return redirect('admin_dashboard:dashboard')
+
+
+@login_required
+def debug_worker_create(request):
+    """Temporary debug view to test form submission"""
+    if request.method == 'POST':
+        print("🔍 DEBUG: Raw POST data:")
+        for key, value in request.POST.items():
+            print(f"  {key}: {value}")
+        
+        print("🔍 DEBUG: Files:")
+        for key, file in request.FILES.items():
+            print(f"  {key}: {file.name}")
+        
+        form = WorkerForm(request.POST, request.FILES)
+        if form.is_valid():
+            print("✅ DEBUG: Form is valid!")
+            # Continue with your existing logic
+            return redirect('worker_dashboard')
+        else:
+            print("❌ DEBUG: Form invalid:", form.errors)
+            return render(request, 'jobs/worker_form.html', {'form': form})
+    
+    return redirect('worker-create')
 
 
 @login_required
@@ -4281,3 +4907,52 @@ def format_simplified_address(address_components):
         parts.append(address_components['postcode'])
     
     return ', '.join(parts) if parts else None
+
+
+def get_location_cache_key(user_id, ip_address=None):
+    """Generate a unique cache key for user location"""
+    if user_id:
+        return f'user_location_{user_id}'
+    elif ip_address:
+        # Hash IP address for privacy
+        ip_hash = hashlib.md5(ip_address.encode()).hexdigest()
+        return f'ip_location_{ip_hash}'
+    return 'anonymous_location'
+
+def cache_user_location(user_id, latitude, longitude, accuracy=None, source='browser', expires=3600):
+    """Cache user location data"""
+    cache_key = get_location_cache_key(user_id)
+    location_data = {
+        'latitude': latitude,
+        'longitude': longitude,
+        'accuracy': accuracy,
+        'source': source,
+        'timestamp': timezone.now().isoformat(),
+        'user_id': user_id
+    }
+    cache.set(cache_key, location_data, expires)
+    return location_data
+
+def get_cached_user_location(user_id):
+    """Get cached user location"""
+    cache_key = get_location_cache_key(user_id)
+    return cache.get(cache_key)
+
+def cache_ip_location(ip_address, latitude, longitude, expires=3600):
+    """Cache IP-based location data"""
+    cache_key = get_location_cache_key(None, ip_address)
+    location_data = {
+        'latitude': latitude,
+        'longitude': longitude,
+        'accuracy': 5000,  # IP geolocation is less accurate
+        'source': 'ip_cached',
+        'timestamp': timezone.now().isoformat(),
+        'ip_address': ip_address
+    }
+    cache.set(cache_key, location_data, expires)
+    return location_data
+
+def get_cached_ip_location(ip_address):
+    """Get cached IP location"""
+    cache_key = get_location_cache_key(None, ip_address)
+    return cache.get(cache_key)
