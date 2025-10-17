@@ -1,1133 +1,1133 @@
-                                  {% extends 'jobs/_base.html' %}
-                                  {% load static %}
-                                  {% load custom_tags %}
-
-                                  {% block content %}
-                                  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
-                                  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
-                                  <link rel="stylesheet" href="../static/landing/css/custom.css">
-                                  <script src="https://cdn.tailwindcss.com"></script>
-                                  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-                                  <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
-
-                                  <script>
-                                    $(document).ready(function() {
-                                      $('#slider1').owlCarousel({
-                                        items: 3,
-                                        loop: true,
-                                        margin: 10,
-                                        nav: true,
-                                        dots: true,
-                                        autoplay: true,
-                                        autoplayTimeout: 3000,
-                                        responsive: {
-                                          0: { items: 1 },
-                                          768: { items: 2 },
-                                          1000: { items: 3 }
-                                        }
-                                      });
-
-                                      // Distance slider functionality
-                                      const distanceSlider = document.getElementById('distanceSlider');
-                                      const distanceValue = document.getElementById('distanceValue');
-                                      const distanceForm = document.getElementById('distanceForm');
-
-                                      if (distanceSlider && distanceValue) {
-                                        // Set initial value from the URL parameter or default
-                                        const urlParams = new URLSearchParams(window.location.search);
-                                        const initialDistance = urlParams.get('max_distance') || '{{ max_distance|default:50 }}';
-                                        distanceSlider.value = initialDistance;
-                                        distanceValue.textContent = initialDistance + ' km';
-
-                                        // Update value on input
-                                        distanceSlider.addEventListener('input', function() {
-                                          distanceValue.textContent = this.value + ' km';
-                                        });
-
-                                        // Submit form on change (release of the slider thumb)
-                                        distanceSlider.addEventListener('change', function() {
-                                          distanceForm.submit();
-                                        });
-                                      }
-
-                                      // Favorite functionality
-                                      $('.favorite-btn').on('click', function(e) {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        
-                                        const btn = $(this);
-                                        const workerId = btn.data('worker-id');
-                                        const isCurrentlyFavorite = btn.hasClass('favorited');
-                                        
-                                        console.log('Toggling favorite for worker:', workerId, 'Current state:', isCurrentlyFavorite);
-                                        
-                                        $.ajax({
-                                          url: '{% url "toggle_favorite_worker" 0 %}'.replace('0', workerId),
-                                          type: 'POST',
-                                          headers: {
-                                            'X-Requested-With': 'XMLHttpRequest',
-                                            'X-CSRFToken': '{{ csrf_token }}'
-                                          },
-                                          success: function(response) {
-                                            console.log('Favorite response:', response);
-                                            if (response.success) {
-                                              if (response.is_favorite) {
-                                                btn.addClass('favorited');
-                                                btn.find('.favorite-icon').html('❤️');
-                                                btn.attr('title', 'Remove from favorites');
-                                                btn.find('.favorite-text').text('Favorited');
-                                              } else {
-                                                btn.removeClass('favorited');
-                                                btn.find('.favorite-icon').html('🤍');
-                                                btn.attr('title', 'Add to favorites');
-                                                btn.find('.favorite-text').text('Add to Favorites');
-                                              }
-                                              
-                                              // Show temporary message
-                                              showMessage(response.message, 'success');
-                                              
-                                              // Update favorite count in dashboard if available
-                                              updateFavoriteCount();
-                                            }
-                                          },
-                                          error: function(xhr) {
-                                            console.error('Favorite error:', xhr);
-                                            showMessage('Error updating favorites', 'error');
-                                          }
-                                        });
-                                      });
-
-                                      // Check favorite status on page load
-                                      function checkFavoriteStatus() {
-                                        $('.favorite-btn').each(function() {
-                                          const btn = $(this);
-                                          const workerId = btn.data('worker-id');
-                                          
-                                          $.ajax({
-                                            url: '{% url "check_favorite_status" 0 %}'.replace('0', workerId),
-                                            type: 'GET',
-                                            headers: {
-                                              'X-Requested-With': 'XMLHttpRequest'
-                                            },
-                                            success: function(response) {
-                                              if (response.is_favorite) {
-                                                btn.addClass('favorited');
-                                                btn.find('.favorite-icon').html('❤️');
-                                                btn.attr('title', 'Remove from favorites');
-                                                btn.find('.favorite-text').text('Favorited');
-                                              }
-                                            },
-                                            error: function(xhr) {
-                                              console.error('Error checking favorite status:', xhr);
-                                            }
-                                          });
-                                        });
-                                      }
-
-                                      // Initialize favorite status on page load
-                                      checkFavoriteStatus();
-
-                                      // Function to get worker address from coordinates
-                                      function getWorkerAddress(workerId, latitude, longitude) {
-                                        if (!latitude || !longitude) {
-                                          console.log(`No coordinates for worker ${workerId}`);
-                                          return;
-                                        }
-
-                                        console.log(`🔍 Getting address for worker ${workerId}: ${latitude}, ${longitude}`);
-
-                                        $.ajax({
-                                          url: '{% url "get_worker_address" %}',
-                                          type: 'POST',
-                                          headers: {
-                                            'X-Requested-With': 'XMLHttpRequest',
-                                            'X-CSRFToken': '{{ csrf_token }}'
-                                          },
-                                          data: {
-                                            worker_id: workerId,
-                                            latitude: latitude,
-                                            longitude: longitude
-                                          },
-                                          success: function(response) {
-                                            console.log(`✅ Address response for worker ${workerId}:`, response);
-                                            
-                                            if (response.success && response.address) {
-                                              // Update the address element for this worker
-                                              const addressElement = $(`#worker-address-${workerId}`);
-                                              addressElement.text(response.address);
-                                              addressElement.removeClass('hidden');
-                                              console.log(`✅ Updated address for worker ${workerId}: ${response.address}`);
-                                            } else {
-                                              console.log(`❌ No address for worker ${workerId}:`, response.error);
-                                              const addressElement = $(`#worker-address-${workerId}`);
-                                              addressElement.text(response.error || 'Address not available');
-                                              addressElement.removeClass('hidden');
-                                              addressElement.addClass('text-red-500');
-                                            }
-                                          },
-                                          error: function(xhr, status, error) {
-                                            console.error(`❌ Error getting address for worker ${workerId}:`, error);
-                                            const addressElement = $(`#worker-address-${workerId}`);
-                                            addressElement.text('Address service unavailable');
-                                            addressElement.removeClass('hidden');
-                                            addressElement.addClass('text-red-500');
-                                          }
-                                        });
-                                      }
-
-                                      // Initialize worker addresses on page load with rate limiting
-                                      function initializeWorkerAddresses() {
-                                        const workerCards = $('.worker-card');
-                                        let delay = 0;
-                                        
-                                        workerCards.each(function() {
-                                          const card = $(this);
-                                          const workerId = card.data('worker-id');
-                                          const latitude = card.data('latitude');
-                                          const longitude = card.data('longitude');
-                                          
-                                          if (workerId && latitude && longitude) {
-                                            // Stagger requests to avoid hitting API limits
-                                            setTimeout(() => {
-                                              console.log(`🕒 Making request for worker ${workerId} after ${delay}ms delay`);
-                                              getWorkerAddress(workerId, latitude, longitude);
-                                            }, delay);
-                                            delay += 2000; // 2 seconds between requests to respect API limits
-                                          } else {
-                                            console.log(`❌ No coordinates for worker ${workerId}`);
-                                          }
-                                        });
-                                        
-                                        console.log(`📊 Total workers with coordinates: ${workerCards.filter('[data-latitude][data-longitude]').length}`);
-                                      }
-
-                                      // Initialize addresses when page loads
-                                      initializeWorkerAddresses();
-
-                                      function showMessage(message, type) {
-                                        const messageDiv = $('<div class="fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-opacity duration-300"></div>');
-                                        
-                                        if (type === 'success') {
-                                          messageDiv.addClass('bg-green-500');
-                                        } else {
-                                          messageDiv.addClass('bg-red-500');
-                                        }
-                                        
-                                        messageDiv.text(message);
-                                        $('body').append(messageDiv);
-                                        
-                                        setTimeout(function() {
-                                          messageDiv.fadeOut(300, function() {
-                                            $(this).remove();
-                                          });
-                                        }, 3000);
-                                      }
-
-                                      function updateFavoriteCount() {
-                                        // This function would update the favorite count in the dashboard
-                                        // You can implement this if you have a real-time counter
-                                        console.log('Favorite count updated');
-                                      }
-                                    });
-
-                                    document.addEventListener('DOMContentLoaded', function() {
-                                      // Function to update location
-                                      function updateCurrentLocation() {
-                                          if (navigator.geolocation) {
-                                              navigator.geolocation.getCurrentPosition(
-                                                  function(position) {
-                                                      const latitude = position.coords.latitude;
-                                                      const longitude = position.coords.longitude;
-                                                      const accuracy = position.coords.accuracy;
-                                                      
-                                                      // Send to server to update session
-                                                      fetch('{% url "update_current_location" %}', {
-                                                          method: 'POST',
-                                                          headers: {
-                                                              'Content-Type': 'application/json',
-                                                              'X-CSRFToken': '{{ csrf_token }}'
-                                                          },
-                                                          body: JSON.stringify({
-                                                              latitude: latitude,
-                                                              longitude: longitude,
-                                                              accuracy: accuracy
-                                                          })
-                                                      })
-                                                      .then(response => response.json())
-                                                      .then(data => {
-                                                          if (data.success) {
-                                                              console.log('Location updated:', data);
-                                                              // Optionally reload the page to re-sort workers by new location
-                                                              // window.location.reload();
-                                                          }
-                                                      })
-                                                      .catch(error => {
-                                                          console.error('Error updating location:', error);
-                                                      });
-                                                  },
-                                                  function(error) {
-                                                      console.warn('Location unavailable:', error.message);
-                                                  },
-                                                  {
-                                                      enableHighAccuracy: true,
-                                                      timeout: 10000,
-                                                      maximumAge: 300000 // Cache for 5 minutes
-                                                  }
-                                              );
-                                          }
-                                      }
-                                      
-                                      // Update location on page load
-                                      updateCurrentLocation();
-                                      
-                                      // Optionally update location every 5 minutes while on the page
-                                      setInterval(updateCurrentLocation, 300000);
-                                      
-                                      // Show location indicator if available
-                                      const customerLocation = {{ customer_location|safe|default:'null' }};
-                                      if (customerLocation) {
-                                          console.log('Current location:', customerLocation.latitude, customerLocation.longitude);
-                                          console.log('Location source:', customerLocation.source);
-                                      }
-                                  });
-                                  </script>
-
-                                  <div class="max-w-7xl mx-auto mb-12 px-4" style="max-width:unset;width:100%;padding:0">
-                                    <div class="relative bg-gradient-to-r from-blue-600 to-indigo-800 rounded-2xl shadow-2xl overflow-hidden transform hover:scale-[1.01] transition duration-500">
-                                      <div class="absolute inset-0 bg-[url('{% static 'landing/img/pattern.svg' %}')] opacity-10"></div>
-                                      <div class="relative z-10 px-8 py-12 sm:p-16 flex flex-col md:flex-row items-center">
-                                        <div class="md:w-1/2 mb-8 md:mb-0">
-                                          <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Quality Services at Your Doorstep</h2>
-                                          <p class="text-blue-100 text-lg mb-6">
-                                            Book verified professionals for all your home service needs. Fast, reliable, and guaranteed satisfaction!
-                                          </p>
-                                          <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                                            <a href="#feature" class="px-6 py-3 bg-white text-blue-600 font-bold rounded-lg shadow-lg hover:bg-blue-50 transition duration-300 text-center">
-                                              How It Works
-                                            </a>
-                                            <a href="{% url 'worker-list' %}" class="px-6 py-3 bg-yellow-400 text-blue-900 font-bold rounded-lg shadow-lg hover:bg-yellow-300 transition duration-300 text-center">
-                                              Find Professionals
-                                            </a>
-                                          </div>
-                                        </div>
-                                        <div class="md:w-1/2 flex justify-center">
-                                          <img 
-                                            src="{% static 'landing/img/logo/logo1.png' %}"
-                                            alt="BlueCaller Logo"
-                                            class="w-full max-w-md h-auto transform hover:scale-105 transition duration-500"
-                                            loading="lazy"
-                                          >
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div class="min-h-screen bg-gradient-to-tr from-indigo-50 via-purple-50 to-pink-50 py-8 px-4">
-
-                                    <div class="max-w-7xl mx-auto mb-12 px-4">
-                                      {% if user.is_authenticated %}
-                                      <div class="w-full">
-
-                                        {% if user.customer.name %}
-                                        <!-- Improved layout with more vertical space -->
-                                        <div class="flex flex-col gap-8 w-full">
-                                          
-                                          <!-- Search and Filter Section -->
-                                          <div class="bg-white rounded-2xl shadow-xl p-6">
-                                            <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-                                              <!-- Search Form -->
-                                              <form method="get" class="flex-1 min-w-0">
-                                                <div class="flex flex-col sm:flex-row gap-4">
-                                                  <input
-                                                    type="text"
-                                                    name="q"
-                                                    value="{{ query|default:'' }}"
-                                                    placeholder="Search workers by tagline..."
-                                                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg"
-                                                  >
-                                                  
-                                                  <div class="flex gap-4">
-                                                    <div class="relative">
-                                                      <button
-                                                        type="button"
-                                                        onclick="this.nextElementSibling.classList.toggle('hidden')"
-                                                        class="px-6 py-3 bg-indigo-200 rounded-lg hover:bg-indigo-300 focus:outline-none transition flex items-center space-x-2 whitespace-nowrap text-lg"
-                                                        aria-label="Filter options"
-                                                      >
-                                                        <img src="{{ '/media/filter.png' }}" alt="Filter Icon" class="h-6 w-6">
-                                                        <span class="text-indigo-700 font-medium">Filter</span>
-                                                      </button>
-
-                                                      <div class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50">
-                                                        <button
-                                                          type="submit"
-                                                          name="filter"
-                                                          value="rating"
-                                                          class="block w-full px-4 py-3 text-left text-gray-700 hover:bg-indigo-100 transition text-lg"
-                                                        >
-                                                          Filter by Rating
-                                                        </button>
-                                                        <button
-                                                          type="submit"
-                                                          name="filter"
-                                                          value="distance"
-                                                          class="block w-full px-4 py-3 text-left text-gray-700 hover:bg-indigo-100 transition text-lg"
-                                                        >
-                                                          Filter by Distance
-                                                        </button>
-                                                      </div>
-                                                    </div>
-
-                                                    <button
-                                                      type="submit"
-                                                      class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-2xl hover:scale-105 transition transform duration-300 whitespace-nowrap text-lg"
-                                                    >
-                                                      Search
-                                                    </button>
-                                                  </div>
-                                                </div>
-                                              </form>
-                                            </div>
-
-                                            <!-- Distance Filter -->
-                                            <div class="mt-6 pt-6 border-t border-gray-200">
-                                              <form id="distanceForm" method="get" class="flex flex-col lg:flex-row items-center gap-6">
-                                                <input type="hidden" name="q" value="{{ query|default:'' }}">
-                                                
-                                                <div class="flex items-center gap-4 flex-1 min-w-0">
-                                                  <label for="distanceSlider" class="text-indigo-700 font-semibold whitespace-nowrap text-lg min-w-[120px]">
-                                                    Max Distance:
-                                                  </label>
-                                                  <span id="distanceValue" class="text-indigo-600 font-medium whitespace-nowrap text-lg min-w-[60px]">
-                                                    {{ max_distance|default:50 }} km
-                                                  </span>
-                                                  <input
-                                                    type="range"
-                                                    id="distanceSlider"
-                                                    name="max_distance"
-                                                    min="1"
-                                                    max="100"
-                                                    value="{{ max_distance|default:50 }}"
-                                                    class="flex-1 min-w-0 h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer slider"
-                                                  >
-                                                </div>
-                                                
-                                                <button
-                                                  type="submit"
-                                                  class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-lg font-semibold min-w-[120px]"
-                                                >
-                                                  Apply Filter
-                                                </button>
-                                              </form>
-                                            </div>
-
-                                            <!-- REMOVED: Sort Options Section -->
-                                          </div>
-
-                                          <!-- Action Buttons -->
-                                          <div class="flex flex-col sm:flex-row gap-6">
-                                            <form action="{% url 'customer_appointments' %}" method="get" class="flex-1">
-                                              <button
-                                                type="submit"
-                                                class="w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
-                                              >
-                                                📅 Manage Appointments
-                                              </button>
-                                            </form>
-                                            <form action="{% url 'favorite_workers_list' %}" method="get" class="flex-1">
-                                              <button
-                                                type="submit"
-                                                class="w-full px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
-                                              >
-                                                ⭐ My Favorites
-                                              </button>
-                                            </form>
-                                          </div>
-                                        </div>
-                                        {% endif %}
-
-                                        {% if user.worker.name %}
-                                        <div class="max-w-full mx-auto my-10 p-8 bg-white bg-opacity-90 rounded-xl shadow-lg w-full">
-                                          <h2 class="text-3xl font-extrabold text-indigo-700 mb-8 border-b-2 border-indigo-300 pb-2">My Appointments</h2>
-                                          {% if appointments %}
-                                          <ul class="space-y-6">
-                                            {% for appointment in appointments %}
-                                            <li
-                                              class="p-6 rounded-xl bg-indigo-50 shadow hover:bg-indigo-100 transition duration-300 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4"
-                                            >
-                                              <div class="text-indigo-900 space-y-2 text-lg font-medium flex-grow">
-                                                <p><span class="font-semibold">Date:</span> {{ appointment.appointment_date|date:"F j, Y, g:i a" }}</p>
-                                                <p><span class="font-semibold">Customer:</span> {{ appointment.customer.name }}</p>
-                                                <p><span class="font-semibold">Contact No:</span> {{ appointment.customer.phone_number }}</p>
-                                                <p><span class="font-semibold">Status:</span> <span class="capitalize">{{ appointment.status }}</span></p>
-                                              </div>
-
-                                              <div class="flex flex-col sm:flex-row gap-4 flex-shrink-0">
-                                                {% if appointment.status == 'pending' %}
-                                                <form action="{% url 'accept_appointment' appointment.id %}" method="post">
-                                                  {% csrf_token %}
-                                                  <button
-                                                    type="submit"
-                                                    class="w-full sm:w-auto px-5 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition whitespace-nowrap"
-                                                  >
-                                                    Accept
-                                                  </button>
-                                                </form>
-                                                <form action="{% url 'reject_appointment' appointment.id %}" method="post">
-                                                  {% csrf_token %}
-                                                  <button
-                                                    type="submit"
-                                                    class="w-full sm:w-auto px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition whitespace-nowrap"
-                                                  >
-                                                    Reject
-                                                  </button>
-                                                </form>
-                                                {% elif appointment.status == 'accepted' %}
-                                                <form action="{% url 'complete_appointment' appointment.id %}" method="post">
-                                                  {% csrf_token %}
-                                                  <button
-                                                    type="submit"
-                                                    class="w-full sm:w-auto px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition whitespace-nowrap"
-                                                  >
-                                                    Completed
-                                                  </button>
-                                                </form>
-                                                {% elif appointment.status == 'completed' %}
-                                                <form action="{% url 'delete_appointment' appointment.id %}" method="post">
-                                                  {% csrf_token %}
-                                                  <button
-                                                    type="submit"
-                                                    class="w-full sm:w-auto px-5 py-2 bg-red-700 text-white font-semibold rounded-lg hover:bg-red-800 transition whitespace-nowrap"
-                                                  >
-                                                    Delete Appointment
-                                                  </button>
-                                                </form>
-                                                {% endif %}
-                                              </div>
-                                            </li>
-                                            {% endfor %}
-                                          </ul>
-                                          {% else %}
-                                          <p class="text-indigo-500 text-center text-xl mt-12">You currently have no appointments.</p>
-                                          {% endif %}
-                                        </div>
-                                        {% endif %}
-                                      </div>
-                                      {% else %}
-                                      <!-- Search and Filter Section for non-authenticated users -->
-                                      <div class="w-full">
-                                        <div class="flex flex-col gap-6 w-full">
-                                          
-                                          <!-- Search and Filter Section -->
-                                          <div class="bg-white rounded-2xl shadow-xl p-6">
-                                            <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-                                              <!-- Search Form -->
-                                              <form method="get" class="flex-1 min-w-0">
-                                                <div class="flex flex-col sm:flex-row gap-4">
-                                                  <input
-                                                    type="text"
-                                                    name="q"
-                                                    value="{{ query|default:'' }}"
-                                                    placeholder="Search workers by tagline..."
-                                                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg"
-                                                  />
-                                                  <button
-                                                    type="submit"
-                                                    class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-lg"
-                                                  >
-                                                    <i class="fas fa-search mr-2"></i>Search
-                                                  </button>
-                                                </div>
-                                              </form>
-
-                                              <!-- Clear filters button -->
-                                              {% if query %}
-                                              <div class="flex items-center">
-                                                <a href="{% url 'worker-list' %}" class="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-semibold">
-                                                  Clear Filters
-                                                </a>
-                                              </div>
-                                              {% endif %}
-                                            </div>
-
-                                            <!-- Distance Filter for non-authenticated users -->
-                                            <div class="mt-6 pt-6 border-t border-gray-200">
-                                              <form id="distanceForm" method="get" class="flex flex-col lg:flex-row items-center gap-6">
-                                                <input type="hidden" name="q" value="{{ query|default:'' }}">
-                                                
-                                                <div class="flex items-center gap-4 flex-1 min-w-0">
-                                                  <label for="distanceSlider" class="text-indigo-700 font-semibold whitespace-nowrap text-lg min-w-[120px]">
-                                                    Max Distance:
-                                                  </label>
-                                                  <span id="distanceValue" class="text-indigo-600 font-medium whitespace-nowrap text-lg min-w-[60px]">
-                                                    {{ max_distance|default:50 }} km
-                                                  </span>
-                                                  <input
-                                                    type="range"
-                                                    id="distanceSlider"
-                                                    name="max_distance"
-                                                    min="1"
-                                                    max="100"
-                                                    value="{{ max_distance|default:50 }}"
-                                                    class="flex-1 min-w-0 h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer slider"
-                                                  >
-                                                </div>
-                                                
-                                                <button
-                                                  type="submit"
-                                                  class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-lg font-semibold min-w-[120px]"
-                                                >
-                                                  Apply Filter
-                                                </button>
-                                              </form>
-                                            </div>
-
-                                            <!-- REMOVED: Sort Options for non-authenticated users -->
-                                          </div>
-                                        </div>
-                                      </div>
-                                      {% endif %}
-                                    </div>
-
-                                    <!-- Search Results Header -->
-                                    {% if q %}
-                                    <div class="max-w-7xl mx-auto px-4 mb-8">
-                                      <h1 class="text-4xl font-extrabold text-indigo-800 font-serif text-center">Search results for "{{ q }}"</h1>
-                                    </div>
-                                    {% endif %}
-
-                                    <!-- Location/Distance Info -->
-                                    {% if max_distance %}
-                                    <div class="max-w-7xl mx-auto px-4 mb-6">
-                                      <div class="text-center">
-                                        <p class="text-lg text-indigo-700 font-semibold">
-                                          Showing workers within <span class="text-indigo-900 font-bold">{{ max_distance }} km</span> of your location
-                                        </p>
-                                      </div>
-                                    </div>
-                                    {% elif customer_location %}
-                                    <div class="max-w-7xl mx-auto px-4 mb-6">
-                                      <div class="text-center">
-                                        <p class="text-lg text-indigo-700 font-semibold">
-                                          Workers sorted by distance from your location
-                                        </p>
-                                      </div>
-                                    </div>
-                                    {% endif %}
-
-                                    <!-- ✅ SECTION 1: Workers Near Your Location (Sorted by Distance) -->
-                                    <div class="max-w-7xl mx-auto mb-16 px-4">
-                                      <div class="text-center mb-8">
-                                        <h2 class="text-3xl font-bold text-indigo-800">📍 Workers Near Your Location</h2>
-                                        <p class="text-gray-600 mt-2">Sorted by distance from your current location</p>
-                                      </div>
-                                      
-                                      {% if object_list %}
-                                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                        {% for worker in object_list %}
-                                        {% if not max_distance or worker.distance_km <= max_distance|add:"0" %}
-                                        <div class="group relative">
-                                          <!-- Favorite Button -->
-                                          <button 
-                                            class="favorite-btn absolute top-4 right-4 z-10 bg-white bg-opacity-90 rounded-full p-2 shadow-lg hover:scale-110 transition-transform duration-200"
-                                            data-worker-id="{{ worker.id }}"
-                                            title="Add to favorites"
-                                          >
-                                            <span class="favorite-icon text-xl">🤍</span>
-                                            <span class="favorite-text sr-only">Add to Favorites</span>
-                                          </button>
-                                          
-                                          <a href="{% url 'worker_service_details' worker.id %}" class="block" >
-                                            <div
-                                              class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full card-height"
-                                              data-worker-id="{{ worker.id }}"
-                                              data-latitude="{{ worker.latitude|default:'' }}"
-                                              data-longitude="{{ worker.longitude|default:'' }}"
-                                              data-distance="{{ worker.distance_km|default:9999 }}"
-                                              data-rating="{{ worker.bayesian_average_rating|default:0 }}"
-                                            >
-                                              <div class="p-6 flex flex-col items-center text-center space-y-4">
-                                                <div class="flex-shrink-0">
-                                                  {% if worker.profile_pic %}
-                                                  <img
-                                                    class="w-28 h-28 object-cover rounded-full border-4 border-indigo-400 group-hover:border-pink-400 transition"
-                                                    src="{{ worker.profile_pic.url }}"
-                                                    alt="Profile pic"
-                                                    loading="lazy"
-                                                  >
-                                                  {% else %}
-                                                  <div class="w-28 h-28 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600 font-bold text-2xl">
-                                                    {{ worker.name|slice:":1" }}
-                                                  </div>
-                                                  {% endif %}
-                                                </div>
-
-                                                <div class="flex flex-col space-y-3 w-full">
-                                                  <p class="text-2xl font-extrabold text-indigo-900 group-hover:text-pink-600 transition">{{ worker.name }}</p>
-
-                                                  <div class="flex justify-center">
-                                                    {% if worker.verified %}
-                                                    <span
-                                                      class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold flex items-center space-x-2 text-sm"
-                                                      title="Verified Worker"
-                                                    >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                                      </svg>
-                                                      <span>Verified</span>
-                                                    </span>
-                                                    {% else %}
-                                                    <span
-                                                      class="px-3 py-1 rounded-full bg-red-100 text-red-700 font-semibold flex items-center space-x-2 text-sm"
-                                                      title="Not Verified"
-                                                    >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                      </svg>
-                                                      <span>Not Verified</span>
-                                                    </span>
-                                                    {% endif %}
-                                                  </div>
-
-                                                  <p class="text-gray-700 italic text-base leading-relaxed">{{ worker.tagline }}</p>
-
-                                                  <div class="space-y-2">
-                                                    <!-- Worker Address Display -->
-                                                    {% if worker.latitude and worker.longitude %}
-                                                    <div id="worker-address-{{ worker.id }}" class="hidden">
-                                                      <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        </svg>
-                                                        <span class="text-sm text-blue-600 font-semibold">Loading address...</span>
-                                                      </p>
-                                                    </div>
-                                                    {% endif %}
-
-                                                    {% if worker.location %}
-                                                    <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
-                                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                      </svg>
-                                                      <span class="text-sm">{{ worker.location }}</span>
-                                                    </p>
-                                                    {% endif %}
-
-                                                    {% if worker.distance_km is not None %}
-                                                    <p class="text-indigo-700 font-semibold flex items-center justify-center space-x-1">
-                                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                                      </svg>
-                                                      <span class="text-sm">{{ worker.distance_km }} km away</span>
-                                                    </p>
-                                                    {% endif %}
-                                                  </div>
-                                                  
-                                                  <!-- ✅ FIXED: Rating Display with Bayesian Algorithm - SEPARATE LINES -->
-                                                  <div class="flex flex-col items-center space-y-2 mt-3">
-                                                    <div class="text-center">
-                                                      <!-- Star Rating -->
-                                                      <div class="flex items-center justify-center space-x-1 mb-2">
-                                                        {% if worker.has_ratings %}
-                                                          {% for _ in worker.full_stars %}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
-                                                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                                            </svg>
-                                                          {% endfor %}
-
-                                                          {% if worker.half_star %}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
-                                                              <defs>
-                                                                <linearGradient id="half-gradient-{{ worker.id }}">
-                                                                  <stop offset="50%" stop-color="gold" />
-                                                                  <stop offset="50%" stop-color="gray" />
-                                                                </linearGradient>
-                                                              </defs>
-                                                              <path fill="url(#half-gradient-{{ worker.id }})"
-                                                                    d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                                                            </svg>
-                                                          {% endif %}
-
-                                                          {% for _ in worker.empty_stars %}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray" class="drop-shadow-sm">
-                                                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                                            </svg>
-                                                          {% endfor %}
-                                                        {% else %}
-                                                          <!-- Show empty stars for no ratings -->
-                                                          {% for _ in "12345" %}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
-                                                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                                            </svg>
-                                                          {% endfor %}
-                                                        {% endif %}
-                                                      </div>
-
-                                                      <!-- Rating Number and Review Count - SEPARATE LINES -->
-                                                      <div class="space-y-1">
-                                                        {% if worker.has_ratings %}
-                                                          <div class="text-center">
-                                                            <span class="text-indigo-900 font-bold text-xl">{{ worker.average_rating|floatformat:1 }}</span>
-                                                            <span class="text-gray-500 text-sm">/5</span>
-                                                          </div>
-                                                          <div class="text-center">
-                                                            <span class="text-indigo-600 font-medium text-sm">
-                                                              ({{ worker.total_ratings }} review{{ worker.total_ratings|pluralize }})
-                                                            </span>
-                                                          </div>
-                                                          <div class="text-xs text-green-600 font-semibold flex items-center justify-center mt-1">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                                              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                            </svg>
-                                                            Bayesian Rating
-                                                          </div>
-                                                        {% else %}
-                                                          <div class="text-center space-y-1">
-                                                            <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
-                                                            <br>
-                                                            <span class="text-gray-400 text-xs">Be the first to rate!</span>
-                                                          </div>
-                                                        {% endif %}
-                                                      </div>
-                                                    </div>
-                                                  </div>
-
-                                                  <!-- User's Own Rating Display -->
-                                                  {% if worker.user_rating %}
-                                                  <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center mt-2">
-                                                    <p class="text-blue-800 font-semibold text-sm flex items-center justify-center">
-                                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                      </svg>
-                                                      Your Rating: {{ worker.user_rating }}/5
-                                                    </p>
-                                                  </div>
-                                                  {% endif %}
-                                                </div>
-                                              </div>
-
-                                              <div class="px-6 py-4 bg-indigo-100 rounded-b-xl text-center card-btn">
-                                                <button
-                                                  class="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transform transition duration-300 ease-in-out"
-                                                >
-                                                  View Details
-                                                </button>
-                                              </div>
-                                            </div>
-                                          </a>
-                                        </div>
-                                        {% endif %}
-                                        {% endfor %}
-                                      </div>
-                                      {% else %}
-                                      <div class="text-center py-12">
-                                        <p class="text-xl text-indigo-700 font-semibold">
-                                          {% if max_distance %}
-                                            No workers found within {{ max_distance }} km of your location.
-                                          {% else %}
-                                            No workers found matching your search criteria.
-                                          {% endif %}
-                                        </p>
-                                      </div>
-                                      {% endif %}
-                                    </div>
-
-                                    <!-- ✅ SECTION 2: Top Recommended Workers (Sorted by Highest Rating) -->
-                                    {% if recommended_workers %}
-                                    <div class="max-w-7xl mx-auto mt-16 px-4">
-                                      <div class="text-center mb-8">
-                                        <h2 class="text-3xl font-bold text-indigo-800">🌟 Top Recommended Workers</h2>
-                                        <p class="text-gray-600 mt-2">Highest rated professionals based on customer reviews</p>
-                                      </div>
-                                      
-                                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                        {% for worker in recommended_workers %}
-                                        <div class="group relative">
-                                          <!-- Favorite Button -->
-                                          {% if user.is_authenticated and user.customer %}
-                                          <button 
-                                            class="favorite-btn absolute top-4 right-4 z-10 bg-white bg-opacity-90 rounded-full p-2 shadow-lg hover:scale-110 transition-transform duration-200"
-                                            data-worker-id="{{ worker.id }}"
-                                            title="Add to favorites"
-                                          >
-                                            <span class="favorite-icon text-xl">🤍</span>
-                                            <span class="favorite-text sr-only">Add to Favorites</span>
-                                          </button>
-                                          {% endif %}
-                                          
-                                          <a href="{% url 'worker_service_details' worker.id %}" class="block ">
-                                            <div class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full card-height">
-                                              <div class="p-6 flex flex-col items-center text-center space-y-4">
-                                                <div class="flex-shrink-0">
-                                                  {% if worker.profile_pic %}
-                                                  <img
-                                                    class="w-28 h-28 object-cover rounded-full border-4 border-yellow-400 group-hover:border-yellow-500 transition"
-                                                    src="{{ worker.profile_pic.url }}"
-                                                    alt="Profile pic"
-                                                    loading="lazy"
-                                                  >
-                                                  {% else %}
-                                                  <div class="w-28 h-28 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-600 font-bold text-2xl">
-                                                    {{ worker.name|slice:":1" }}
-                                                  </div>
-                                                  {% endif %}
-                                                </div>
-
-                                                <div class="flex flex-col space-y-3 w-full">
-                                                  <p class="text-2xl font-extrabold text-gray-900 group-hover:text-yellow-600 transition">{{ worker.name }}</p>
-
-                                                  <div class="flex justify-center">
-                                                    {% if worker.verified %}
-                                                    <span
-                                                      class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold flex items-center space-x-2 text-sm"
-                                                      title="Verified Worker"
-                                                    >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                                      </svg>
-                                                      <span>Verified</span>
-                                                    </span>
-                                                    {% endif %}
-                                                  </div>
-
-                                                  <p class="text-gray-700 italic text-base leading-relaxed">{{ worker.tagline }}</p>
-
-                                                  <div class="space-y-2">
-                                                    {% if worker.location %}
-                                                    <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
-                                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                      </svg>
-                                                      <span class="text-sm">{{ worker.location }}</span>
-                                                    </p>
-                                                    {% endif %}
-
-                                                    {% if worker.distance_km %}
-                                                    <p class="text-indigo-700 font-semibold flex items-center justify-center space-x-1">
-                                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                                      </svg>
-                                                      <span class="text-sm">{{ worker.distance_km }} km away</span>
-                                                    </p>
-                                                    {% endif %}
-                                                  </div>
-                                                  
-                                                  <!-- ✅ FIXED: Rating Display with Bayesian Algorithm - SEPARATE LINES -->
-                                                  <div class="flex flex-col items-center space-y-2 mt-3">
-                                                    <div class="text-center">
-                                                      <!-- Star Rating -->
-                                                      <div class="flex items-center justify-center space-x-1 mb-2">
-                                                        {% if worker.has_ratings %}
-                                                          {% for _ in worker.full_stars %}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
-                                                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                                            </svg>
-                                                          {% endfor %}
-
-                                                          {% if worker.half_star %}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
-                                                              <defs>
-                                                                <linearGradient id="half-gradient-{{ worker.id }}">
-                                                                  <stop offset="50%" stop-color="gold" />
-                                                                  <stop offset="50%" stop-color="gray" />
-                                                                </linearGradient>
-                                                              </defs>
-                                                              <path fill="url(#half-gradient-{{ worker.id }})"
-                                                                    d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                                                            </svg>
-                                                          {% endif %}
-
-                                                          {% for _ in worker.empty_stars %}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray" class="drop-shadow-sm">
-                                                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                                            </svg>
-                                                          {% endfor %}
-                                                        {% else %}
-                                                          <!-- Show empty stars for no ratings -->
-                                                          {% for _ in "12345" %}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
-                                                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                                            </svg>
-                                                          {% endfor %}
-                                                        {% endif %}
-                                                      </div>
-
-                                                      <!-- Rating Number and Review Count - SEPARATE LINES -->
-                                                      <div class="space-y-1">
-                                                        {% if worker.has_ratings %}
-                                                          <div class="text-center">
-                                                            <span class="text-gray-900 font-bold text-xl">{{ worker.average_rating|floatformat:1 }}</span>
-                                                            <span class="text-gray-500 text-sm">/5</span>
-                                                          </div>
-                                                          <div class="text-center">
-                                                            <span class="text-gray-600 font-medium text-sm">
-                                                              ({{ worker.total_ratings }} review{{ worker.total_ratings|pluralize }})
-                                                            </span>
-                                                          </div>
-                                                          <div class="text-xs text-green-600 font-semibold flex items-center justify-center mt-1">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                                              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                            </svg>
-                                                            Bayesian Rating
-                                                          </div>
-                                                        {% else %}
-                                                          <div class="text-center space-y-1">
-                                                            <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
-                                                            <br>
-                                                            <span class="text-gray-400 text-xs">Be the first to rate!</span>
-                                                          </div>
-                                                        {% endif %}
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              </div>
-
-                                              <div class="px-6 py-4 bg-yellow-100 rounded-b-xl text-center">
-                                                <button
-                                                  class="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transform transition duration-300 ease-in-out"
-                                                >
-                                                  View Details
-                                                </button>
-                                              </div>
-                                            </div>
-                                          </a>
-                                        </div>
-                                        {% endfor %}
-                                      </div>
-                                    </div>
-                                    {% endif %}
-
-                                  </div>
-
-                                  <style>
-                                    .slider::-webkit-slider-thumb {
-                                      appearance: none;
-                                      height: 20px;
-                                      width: 20px;
-                                      border-radius: 50%;
-                                      background: #4f46e5;
-                                      cursor: pointer;
-                                      border: 2px solid #ffffff;
-                                      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                                    }
-
-                                    .slider::-moz-range-thumb {
-                                      height: 20px;
-                                      width: 20px;
-                                      border-radius: 50%;
-                                      background: #4f46e5;
-                                      cursor: pointer;
-                                      border: 2px solid #ffffff;
-                                      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                                    }
-
-                                    .slider::-webkit-slider-track {
-                                      height: 8px;
-                                      background: #c7d2fe;
-                                      border-radius: 4px;
-                                    }
-
-                                    .slider::-moz-range-track {
-                                      height: 8px;
-                                      background: #c7d2fe;
-                                      border-radius: 4px;
-                                      border: none;
-                                    }
-
-                                    .favorite-btn.favorited {
-                                      background: linear-gradient(135deg, #fce4ec, #f8bbd9);
-                                    }
-
-                                    .favorite-btn.favorited .favorite-icon {
-                                      animation: heartBeat 0.6s ease-in-out;
-                                    }
-
-                                    @keyframes heartBeat {
-                                      0% { transform: scale(1); }
-                                      25% { transform: scale(1.3); }
-                                      50% { transform: scale(1); }
-                                      75% { transform: scale(1.2); }
-                                      100% { transform: scale(1); }
-                                    }
-
-                                    /* Enhanced card styling */
-                                    .worker-card {
-                                      transition: all 0.3s ease;
-                                    }
-
-                                    .worker-card:hover {
-                                      transform: translateY(-5px);
-                                      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-                                    }
-
-                                    /* Improved grid layout */
-                                    .worker-grid {
-                                      display: grid;
-                                      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                                      gap: 2rem;
-                                    }
-
-                                    @media (min-width: 640px) {
-                                      .worker-grid {
-                                        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-                                      }
-                                    }
-
-                                    @media (min-width: 1024px) {
-                                      .worker-grid {
-                                        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                                      }
-                                    }
-
-                                    @media (min-width: 1280px) {
-                                      .worker-grid {
-                                        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                                      }
-                                    }
-
-                                    .line-clamp-2 {
-                                      display: -webkit-box;
-                                      -webkit-line-clamp: 2;
-                                      -webkit-box-orient: vertical;
-                                      overflow: hidden;
-                                    }
-
-                                    .recommendation-badge {
-                                      background: linear-gradient(135deg, #fbbf24, #f59e0b);
-                                      color: white;
-                                    }
-
-                                    .bayesian-indicator {
-                                      background: linear-gradient(135deg, #10b981, #059669);
-                                      color: white;
-                                    }
-
-                                    /* Recommended section styles */
-                                    .recommended-badge {
-                                      position: absolute;
-                                      top: -8px;
-                                      left: -8px;
-                                      background: linear-gradient(135deg, #f59e0b, #d97706);
-                                      color: white;
-                                      padding: 4px 12px;
-                                      border-radius: 12px;
-                                      font-size: 0.75rem;
-                                      font-weight: 600;
-                                      z-index: 20;
-                                      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                                    }
-
-                                    .top-rated-indicator {
-                                      background: linear-gradient(135deg, #fbbf24, #f59e0b);
-                                      color: white;
-                                      padding: 2px 8px;
-                                      border-radius: 8px;
-                                      font-size: 0.7rem;
-                                      font-weight: 600;
-                                    }
-                                  </style>
-                                  {% endblock %}
+{% extends 'jobs/_base.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+<link rel="stylesheet" href="../static/landing/css/custom.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+
+<script>
+  $(document).ready(function() {
+    $('#slider1').owlCarousel({
+      items: 3,
+      loop: true,
+      margin: 10,
+      nav: true,
+      dots: true,
+      autoplay: true,
+      autoplayTimeout: 3000,
+      responsive: {
+        0: { items: 1 },
+        768: { items: 2 },
+        1000: { items: 3 }
+      }
+    });
+
+    // Distance slider functionality
+    const distanceSlider = document.getElementById('distanceSlider');
+    const distanceValue = document.getElementById('distanceValue');
+    const distanceForm = document.getElementById('distanceForm');
+
+    if (distanceSlider && distanceValue) {
+      // Set initial value from the URL parameter or default
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialDistance = urlParams.get('max_distance') || '{{ max_distance|default:50 }}';
+      distanceSlider.value = initialDistance;
+      distanceValue.textContent = initialDistance + ' km';
+
+      // Update value on input
+      distanceSlider.addEventListener('input', function() {
+        distanceValue.textContent = this.value + ' km';
+      });
+
+      // Submit form on change (release of the slider thumb)
+      distanceSlider.addEventListener('change', function() {
+        distanceForm.submit();
+      });
+    }
+
+    // Favorite functionality
+    $('.favorite-btn').on('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const btn = $(this);
+      const workerId = btn.data('worker-id');
+      const isCurrentlyFavorite = btn.hasClass('favorited');
+      
+      console.log('Toggling favorite for worker:', workerId, 'Current state:', isCurrentlyFavorite);
+      
+      $.ajax({
+        url: '{% url "toggle_favorite_worker" 0 %}'.replace('0', workerId),
+        type: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+          console.log('Favorite response:', response);
+          if (response.success) {
+            if (response.is_favorite) {
+              btn.addClass('favorited');
+              btn.find('.favorite-icon').html('❤️');
+              btn.attr('title', 'Remove from favorites');
+              btn.find('.favorite-text').text('Favorited');
+            } else {
+              btn.removeClass('favorited');
+              btn.find('.favorite-icon').html('🤍');
+              btn.attr('title', 'Add to favorites');
+              btn.find('.favorite-text').text('Add to Favorites');
+            }
+            
+            // Show temporary message
+            showMessage(response.message, 'success');
+            
+            // Update favorite count in dashboard if available
+            updateFavoriteCount();
+          }
+        },
+        error: function(xhr) {
+          console.error('Favorite error:', xhr);
+          showMessage('Error updating favorites', 'error');
+        }
+      });
+    });
+
+    // Check favorite status on page load
+    function checkFavoriteStatus() {
+      $('.favorite-btn').each(function() {
+        const btn = $(this);
+        const workerId = btn.data('worker-id');
+        
+        $.ajax({
+          url: '{% url "check_favorite_status" 0 %}'.replace('0', workerId),
+          type: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          success: function(response) {
+            if (response.is_favorite) {
+              btn.addClass('favorited');
+              btn.find('.favorite-icon').html('❤️');
+              btn.attr('title', 'Remove from favorites');
+              btn.find('.favorite-text').text('Favorited');
+            }
+          },
+          error: function(xhr) {
+            console.error('Error checking favorite status:', xhr);
+          }
+        });
+      });
+    }
+
+    // Initialize favorite status on page load
+    checkFavoriteStatus();
+
+    // Function to get worker address from coordinates
+    function getWorkerAddress(workerId, latitude, longitude) {
+      if (!latitude || !longitude) {
+        console.log(`No coordinates for worker ${workerId}`);
+        return;
+      }
+
+      console.log(`🔍 Getting address for worker ${workerId}: ${latitude}, ${longitude}`);
+
+      $.ajax({
+        url: '{% url "get_worker_address" %}',
+        type: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        data: {
+          worker_id: workerId,
+          latitude: latitude,
+          longitude: longitude
+        },
+        success: function(response) {
+          console.log(`✅ Address response for worker ${workerId}:`, response);
+          
+          if (response.success && response.address) {
+            // Update the address element for this worker
+            const addressElement = $(`#worker-address-${workerId}`);
+            addressElement.text(response.address);
+            addressElement.removeClass('hidden');
+            console.log(`✅ Updated address for worker ${workerId}: ${response.address}`);
+          } else {
+            console.log(`❌ No address for worker ${workerId}:`, response.error);
+            const addressElement = $(`#worker-address-${workerId}`);
+            addressElement.text(response.error || 'Address not available');
+            addressElement.removeClass('hidden');
+            addressElement.addClass('text-red-500');
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error(`❌ Error getting address for worker ${workerId}:`, error);
+          const addressElement = $(`#worker-address-${workerId}`);
+          addressElement.text('Address service unavailable');
+          addressElement.removeClass('hidden');
+          addressElement.addClass('text-red-500');
+        }
+      });
+    }
+
+    // Initialize worker addresses on page load with rate limiting
+    function initializeWorkerAddresses() {
+      const workerCards = $('.worker-card');
+      let delay = 0;
+      
+      workerCards.each(function() {
+        const card = $(this);
+        const workerId = card.data('worker-id');
+        const latitude = card.data('latitude');
+        const longitude = card.data('longitude');
+        
+        if (workerId && latitude && longitude) {
+          // Stagger requests to avoid hitting API limits
+          setTimeout(() => {
+            console.log(`🕒 Making request for worker ${workerId} after ${delay}ms delay`);
+            getWorkerAddress(workerId, latitude, longitude);
+          }, delay);
+          delay += 2000; // 2 seconds between requests to respect API limits
+        } else {
+          console.log(`❌ No coordinates for worker ${workerId}`);
+        }
+      });
+      
+      console.log(`📊 Total workers with coordinates: ${workerCards.filter('[data-latitude][data-longitude]').length}`);
+    }
+
+    // Initialize addresses when page loads
+    initializeWorkerAddresses();
+
+    function showMessage(message, type) {
+      const messageDiv = $('<div class="fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-opacity duration-300"></div>');
+      
+      if (type === 'success') {
+        messageDiv.addClass('bg-green-500');
+      } else {
+        messageDiv.addClass('bg-red-500');
+      }
+      
+      messageDiv.text(message);
+      $('body').append(messageDiv);
+      
+      setTimeout(function() {
+        messageDiv.fadeOut(300, function() {
+          $(this).remove();
+        });
+      }, 3000);
+    }
+
+    function updateFavoriteCount() {
+      // This function would update the favorite count in the dashboard
+      // You can implement this if you have a real-time counter
+      console.log('Favorite count updated');
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Function to update location
+    function updateCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    // Send to server to update session
+                    fetch('{% url "update_current_location" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            latitude: latitude,
+                            longitude: longitude,
+                            accuracy: accuracy
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Location updated:', data);
+                            // Optionally reload the page to re-sort workers by new location
+                            // window.location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error updating location:', error);
+                    });
+                },
+                function(error) {
+                    console.warn('Location unavailable:', error.message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000 // Cache for 5 minutes
+                }
+            );
+        }
+    }
+    
+    // Update location on page load
+    updateCurrentLocation();
+    
+    // Optionally update location every 5 minutes while on the page
+    setInterval(updateCurrentLocation, 300000);
+    
+    // Show location indicator if available
+    const customerLocation = {{ customer_location|safe|default:'null' }};
+    if (customerLocation) {
+        console.log('Current location:', customerLocation.latitude, customerLocation.longitude);
+        console.log('Location source:', customerLocation.source);
+    }
+});
+</script>
+
+<div class="max-w-7xl mx-auto mb-12 px-4" style="max-width:unset;width:100%;padding:0">
+  <div class="relative bg-gradient-to-r from-blue-600 to-indigo-800 rounded-2xl shadow-2xl overflow-hidden transform hover:scale-[1.01] transition duration-500">
+    <div class="absolute inset-0 bg-[url('{% static 'landing/img/pattern.svg' %}')] opacity-10"></div>
+    <div class="relative z-10 px-8 py-12 sm:p-16 flex flex-col md:flex-row items-center">
+      <div class="md:w-1/2 mb-8 md:mb-0">
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Quality Services at Your Doorstep</h2>
+        <p class="text-blue-100 text-lg mb-6">
+          Book verified professionals for all your home service needs. Fast, reliable, and guaranteed satisfaction!
+        </p>
+        <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+          <a href="#feature" class="px-6 py-3 bg-white text-blue-600 font-bold rounded-lg shadow-lg hover:bg-blue-50 transition duration-300 text-center">
+            How It Works
+          </a>
+          <a href="{% url 'worker-list' %}" class="px-6 py-3 bg-yellow-400 text-blue-900 font-bold rounded-lg shadow-lg hover:bg-yellow-300 transition duration-300 text-center">
+            Find Professionals
+          </a>
+        </div>
+      </div>
+      <div class="md:w-1/2 flex justify-center">
+        <img 
+          src="{% static 'landing/img/logo/logo1.png' %}"
+          alt="BlueCaller Logo"
+          class="w-full max-w-md h-auto transform hover:scale-105 transition duration-500"
+          loading="lazy"
+        >
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="min-h-screen bg-gradient-to-tr from-indigo-50 via-purple-50 to-pink-50 py-8 px-4">
+
+  <div class="max-w-7xl mx-auto mb-12 px-4">
+    {% if user.is_authenticated %}
+    <div class="w-full">
+
+      {% if user.customer.name %}
+      <!-- Improved layout with more vertical space -->
+      <div class="flex flex-col gap-8 w-full">
+        
+        <!-- Search and Filter Section -->
+        <div class="bg-white rounded-2xl shadow-xl p-6">
+          <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+            <!-- Search Form -->
+            <form method="get" class="flex-1 min-w-0">
+              <div class="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="text"
+                  name="q"
+                  value="{{ query|default:'' }}"
+                  placeholder="Search workers by tagline..."
+                  class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg"
+                >
+                
+                <div class="flex gap-4">
+                  <div class="relative">
+                    <button
+                      type="button"
+                      onclick="this.nextElementSibling.classList.toggle('hidden')"
+                      class="px-6 py-3 bg-indigo-200 rounded-lg hover:bg-indigo-300 focus:outline-none transition flex items-center space-x-2 whitespace-nowrap text-lg"
+                      aria-label="Filter options"
+                    >
+                      <img src="{{ '/media/filter.png' }}" alt="Filter Icon" class="h-6 w-6">
+                      <span class="text-indigo-700 font-medium">Filter</span>
+                    </button>
+
+                    <div class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50">
+                      <button
+                        type="submit"
+                        name="filter"
+                        value="rating"
+                        class="block w-full px-4 py-3 text-left text-gray-700 hover:bg-indigo-100 transition text-lg"
+                      >
+                        Filter by Rating
+                      </button>
+                      <button
+                        type="submit"
+                        name="filter"
+                        value="distance"
+                        class="block w-full px-4 py-3 text-left text-gray-700 hover:bg-indigo-100 transition text-lg"
+                      >
+                        Filter by Distance
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-2xl hover:scale-105 transition transform duration-300 whitespace-nowrap text-lg"
+                  >
+                    Search
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Distance Filter -->
+          <div class="mt-6 pt-6 border-t border-gray-200">
+            <form id="distanceForm" method="get" class="flex flex-col lg:flex-row items-center gap-6">
+              <input type="hidden" name="q" value="{{ query|default:'' }}">
+              
+              <div class="flex items-center gap-4 flex-1 min-w-0">
+                <label for="distanceSlider" class="text-indigo-700 font-semibold whitespace-nowrap text-lg min-w-[120px]">
+                  Max Distance:
+                </label>
+                <span id="distanceValue" class="text-indigo-600 font-medium whitespace-nowrap text-lg min-w-[60px]">
+                  {{ max_distance|default:50 }} km
+                </span>
+                <input
+                  type="range"
+                  id="distanceSlider"
+                  name="max_distance"
+                  min="1"
+                  max="100"
+                  value="{{ max_distance|default:50 }}"
+                  class="flex-1 min-w-0 h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer slider"
+                >
+              </div>
+              
+              <button
+                type="submit"
+                class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-lg font-semibold min-w-[120px]"
+              >
+                Apply Filter
+              </button>
+            </form>
+          </div>
+
+          <!-- REMOVED: Sort Options Section -->
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-6">
+          <form action="{% url 'customer_appointments' %}" method="get" class="flex-1">
+            <button
+              type="submit"
+              class="w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
+            >
+              📅 Manage Appointments
+            </button>
+          </form>
+          <form action="{% url 'favorite_workers_list' %}" method="get" class="flex-1">
+            <button
+              type="submit"
+              class="w-full px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
+            >
+              ⭐ My Favorites
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if user.worker.name %}
+      <div class="max-w-full mx-auto my-10 p-8 bg-white bg-opacity-90 rounded-xl shadow-lg w-full">
+        <h2 class="text-3xl font-extrabold text-indigo-700 mb-8 border-b-2 border-indigo-300 pb-2">My Appointments</h2>
+        {% if appointments %}
+        <ul class="space-y-6">
+          {% for appointment in appointments %}
+          <li
+            class="p-6 rounded-xl bg-indigo-50 shadow hover:bg-indigo-100 transition duration-300 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4"
+          >
+            <div class="text-indigo-900 space-y-2 text-lg font-medium flex-grow">
+              <p><span class="font-semibold">Date:</span> {{ appointment.appointment_date|date:"F j, Y, g:i a" }}</p>
+              <p><span class="font-semibold">Customer:</span> {{ appointment.customer.name }}</p>
+              <p><span class="font-semibold">Contact No:</span> {{ appointment.customer.phone_number }}</p>
+              <p><span class="font-semibold">Status:</span> <span class="capitalize">{{ appointment.status }}</span></p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 flex-shrink-0">
+              {% if appointment.status == 'pending' %}
+              <form action="{% url 'accept_appointment' appointment.id %}" method="post">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="w-full sm:w-auto px-5 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition whitespace-nowrap"
+                >
+                  Accept
+                </button>
+              </form>
+              <form action="{% url 'reject_appointment' appointment.id %}" method="post">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="w-full sm:w-auto px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition whitespace-nowrap"
+                >
+                  Reject
+                </button>
+              </form>
+              {% elif appointment.status == 'accepted' %}
+              <form action="{% url 'complete_appointment' appointment.id %}" method="post">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="w-full sm:w-auto px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition whitespace-nowrap"
+                >
+                  Completed
+                </button>
+              </form>
+              {% elif appointment.status == 'completed' %}
+              <form action="{% url 'delete_appointment' appointment.id %}" method="post">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="w-full sm:w-auto px-5 py-2 bg-red-700 text-white font-semibold rounded-lg hover:bg-red-800 transition whitespace-nowrap"
+                >
+                  Delete Appointment
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-indigo-500 text-center text-xl mt-12">You currently have no appointments.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <!-- Search and Filter Section for non-authenticated users -->
+    <div class="w-full">
+      <div class="flex flex-col gap-6 w-full">
+        
+        <!-- Search and Filter Section -->
+        <div class="bg-white rounded-2xl shadow-xl p-6">
+          <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+            <!-- Search Form -->
+            <form method="get" class="flex-1 min-w-0">
+              <div class="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="text"
+                  name="q"
+                  value="{{ query|default:'' }}"
+                  placeholder="Search workers by tagline..."
+                  class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg"
+                />
+                <button
+                  type="submit"
+                  class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-lg"
+                >
+                  <i class="fas fa-search mr-2"></i>Search
+                </button>
+              </div>
+            </form>
+
+            <!-- Clear filters button -->
+            {% if query %}
+            <div class="flex items-center">
+              <a href="{% url 'worker-list' %}" class="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-semibold">
+                Clear Filters
+              </a>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Distance Filter for non-authenticated users -->
+          <div class="mt-6 pt-6 border-t border-gray-200">
+            <form id="distanceForm" method="get" class="flex flex-col lg:flex-row items-center gap-6">
+              <input type="hidden" name="q" value="{{ query|default:'' }}">
+              
+              <div class="flex items-center gap-4 flex-1 min-w-0">
+                <label for="distanceSlider" class="text-indigo-700 font-semibold whitespace-nowrap text-lg min-w-[120px]">
+                  Max Distance:
+                </label>
+                <span id="distanceValue" class="text-indigo-600 font-medium whitespace-nowrap text-lg min-w-[60px]">
+                  {{ max_distance|default:50 }} km
+                </span>
+                <input
+                  type="range"
+                  id="distanceSlider"
+                  name="max_distance"
+                  min="1"
+                  max="100"
+                  value="{{ max_distance|default:50 }}"
+                  class="flex-1 min-w-0 h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer slider"
+                >
+              </div>
+              
+              <button
+                type="submit"
+                class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-lg font-semibold min-w-[120px]"
+              >
+                Apply Filter
+              </button>
+            </form>
+          </div>
+
+          <!-- REMOVED: Sort Options for non-authenticated users -->
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Search Results Header -->
+  {% if q %}
+  <div class="max-w-7xl mx-auto px-4 mb-8">
+    <h1 class="text-4xl font-extrabold text-indigo-800 font-serif text-center">Search results for "{{ q }}"</h1>
+  </div>
+  {% endif %}
+
+  <!-- Location/Distance Info -->
+  {% if max_distance %}
+  <div class="max-w-7xl mx-auto px-4 mb-6">
+    <div class="text-center">
+      <p class="text-lg text-indigo-700 font-semibold">
+        Showing workers within <span class="text-indigo-900 font-bold">{{ max_distance }} km</span> of your location
+      </p>
+    </div>
+  </div>
+  {% elif customer_location %}
+  <div class="max-w-7xl mx-auto px-4 mb-6">
+    <div class="text-center">
+      <p class="text-lg text-indigo-700 font-semibold">
+        Workers sorted by distance from your location
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ✅ SECTION 1: Workers Near Your Location (Sorted by Distance) -->
+  <div class="max-w-7xl mx-auto mb-16 px-4">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold text-indigo-800">📍 Workers Near Your Location</h2>
+      <p class="text-gray-600 mt-2">Sorted by distance from your current location</p>
+    </div>
+    
+    {% if object_list %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      {% for worker in object_list %}
+      {% if not max_distance or worker.distance_km <= max_distance|add:"0" %}
+      <div class="group relative">
+        <!-- Favorite Button -->
+        <button 
+          class="favorite-btn absolute top-4 right-4 z-10 bg-white bg-opacity-90 rounded-full p-2 shadow-lg hover:scale-110 transition-transform duration-200"
+          data-worker-id="{{ worker.id }}"
+          title="Add to favorites"
+        >
+          <span class="favorite-icon text-xl">🤍</span>
+          <span class="favorite-text sr-only">Add to Favorites</span>
+        </button>
+        
+        <a href="{% url 'worker_service_details' worker.id %}" class="block" >
+          <div
+            class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full card-height"
+            data-worker-id="{{ worker.id }}"
+            data-latitude="{{ worker.latitude|default:'' }}"
+            data-longitude="{{ worker.longitude|default:'' }}"
+            data-distance="{{ worker.distance_km|default:9999 }}"
+            data-rating="{{ worker.average_rating|default:0 }}"
+          >
+            <div class="p-6 flex flex-col items-center text-center space-y-4">
+              <div class="flex-shrink-0">
+                {% if worker.profile_pic %}
+                <img
+                  class="w-28 h-28 object-cover rounded-full border-4 border-indigo-400 group-hover:border-pink-400 transition"
+                  src="{{ worker.profile_pic.url }}"
+                  alt="Profile pic"
+                  loading="lazy"
+                >
+                {% else %}
+                <div class="w-28 h-28 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600 font-bold text-2xl">
+                  {{ worker.name|slice:":1" }}
+                </div>
+                {% endif %}
+              </div>
+
+              <div class="flex flex-col space-y-3 w-full">
+                <p class="text-2xl font-extrabold text-indigo-900 group-hover:text-pink-600 transition">{{ worker.name }}</p>
+
+                <div class="flex justify-center">
+                  {% if worker.verified %}
+                  <span
+                    class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold flex items-center space-x-2 text-sm"
+                    title="Verified Worker"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Verified</span>
+                  </span>
+                  {% else %}
+                  <span
+                    class="px-3 py-1 rounded-full bg-red-100 text-red-700 font-semibold flex items-center space-x-2 text-sm"
+                    title="Not Verified"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Not Verified</span>
+                  </span>
+                  {% endif %}
+                </div>
+
+                <p class="text-gray-700 italic text-base leading-relaxed">{{ worker.tagline }}</p>
+
+                <div class="space-y-2">
+                  <!-- Worker Address Display -->
+                  {% if worker.latitude and worker.longitude %}
+                  <div id="worker-address-{{ worker.id }}" class="hidden">
+                    <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span class="text-sm text-blue-600 font-semibold">Loading address...</span>
+                    </p>
+                  </div>
+                  {% endif %}
+
+                  {% if worker.location %}
+                  <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-sm">{{ worker.location }}</span>
+                  </p>
+                  {% endif %}
+
+                  {% if worker.distance_km is not None %}
+                  <p class="text-indigo-700 font-semibold flex items-center justify-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    <span class="text-sm">{{ worker.distance_km }} km away</span>
+                  </p>
+                  {% endif %}
+                </div>
+                
+                <!-- ✅ FIXED: Rating Display with Bayesian Algorithm -->
+                <div class="flex flex-col items-center space-y-2 mt-3">
+                  <div class="text-center">
+                    <!-- Star Rating -->
+                    <div class="flex items-center justify-center space-x-1 mb-2">
+                      {% if worker.has_ratings %}
+                        {% for _ in worker.full_stars %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        {% endfor %}
+
+                        {% if worker.half_star %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
+                            <defs>
+                              <linearGradient id="half-gradient-{{ worker.id }}">
+                                <stop offset="50%" stop-color="gold" />
+                                <stop offset="50%" stop-color="gray" />
+                              </linearGradient>
+                            </defs>
+                            <path fill="url(#half-gradient-{{ worker.id }})"
+                                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                          </svg>
+                        {% endif %}
+
+                        {% for _ in worker.empty_stars %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray" class="drop-shadow-sm">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        {% endfor %}
+                      {% else %}
+                        <!-- Show empty stars for no ratings -->
+                        {% for _ in "12345" %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        {% endfor %}
+                      {% endif %}
+                    </div>
+
+                    <!-- Rating Number and Review Count -->
+                    <div class="space-y-1">
+                      {% if worker.has_ratings %}
+                        <div class="text-center">
+                          <span class="text-indigo-900 font-bold text-xl">{{ worker.average_rating|floatformat:1 }}</span>
+                          <span class="text-gray-500 text-sm">/5</span>
+                        </div>
+                        <div class="text-center">
+                          <span class="text-indigo-600 font-medium text-sm">
+                            ({{ worker.total_ratings }} review{{ worker.total_ratings|pluralize }})
+                          </span>
+                        </div>
+                        <div class="text-xs text-green-600 font-semibold flex items-center justify-center mt-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                          </svg>
+                          Bayesian Rating
+                        </div>
+                      {% else %}
+                        <div class="text-center space-y-1">
+                          <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
+                          <br>
+                          <span class="text-gray-400 text-xs">Be the first to rate!</span>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- User's Own Rating Display -->
+                {% if worker.user_rating %}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center mt-2">
+                  <p class="text-blue-800 font-semibold text-sm flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    Your Rating: {{ worker.user_rating }}/5
+                  </p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="px-6 py-4 bg-indigo-100 rounded-b-xl text-center card-btn">
+              <button
+                class="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transform transition duration-300 ease-in-out"
+              >
+                View Details
+              </button>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+      <p class="text-xl text-indigo-700 font-semibold">
+        {% if max_distance %}
+          No workers found within {{ max_distance }} km of your location.
+        {% else %}
+          No workers found matching your search criteria.
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ✅ SECTION 2: Top Recommended Workers (Sorted by Highest Rating) -->
+  {% if recommended_workers %}
+  <div class="max-w-7xl mx-auto mt-16 px-4">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold text-indigo-800">🌟 Top Recommended Workers</h2>
+      <p class="text-gray-600 mt-2">Highest rated professionals based on Bayesian rating system</p>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      {% for worker in recommended_workers %}
+      <div class="group relative">
+        <!-- Favorite Button -->
+        {% if user.is_authenticated and user.customer %}
+        <button 
+          class="favorite-btn absolute top-4 right-4 z-10 bg-white bg-opacity-90 rounded-full p-2 shadow-lg hover:scale-110 transition-transform duration-200"
+          data-worker-id="{{ worker.id }}"
+          title="Add to favorites"
+        >
+          <span class="favorite-icon text-xl">🤍</span>
+          <span class="favorite-text sr-only">Add to Favorites</span>
+        </button>
+        {% endif %}
+        
+        <a href="{% url 'worker_service_details' worker.id %}" class="block ">
+          <div class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full card-height">
+            <div class="p-6 flex flex-col items-center text-center space-y-4">
+              <div class="flex-shrink-0">
+                {% if worker.profile_pic %}
+                <img
+                  class="w-28 h-28 object-cover rounded-full border-4 border-yellow-400 group-hover:border-yellow-500 transition"
+                  src="{{ worker.profile_pic.url }}"
+                  alt="Profile pic"
+                  loading="lazy"
+                >
+                {% else %}
+                <div class="w-28 h-28 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-600 font-bold text-2xl">
+                  {{ worker.name|slice:":1" }}
+                </div>
+                {% endif %}
+              </div>
+
+              <div class="flex flex-col space-y-3 w-full">
+                <p class="text-2xl font-extrabold text-gray-900 group-hover:text-yellow-600 transition">{{ worker.name }}</p>
+
+                <div class="flex justify-center">
+                  {% if worker.verified %}
+                  <span
+                    class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold flex items-center space-x-2 text-sm"
+                    title="Verified Worker"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Verified</span>
+                  </span>
+                  {% endif %}
+                </div>
+
+                <p class="text-gray-700 italic text-base leading-relaxed">{{ worker.tagline }}</p>
+
+                <div class="space-y-2">
+                  {% if worker.location %}
+                  <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-sm">{{ worker.location }}</span>
+                  </p>
+                  {% endif %}
+
+                  {% if worker.distance_km %}
+                  <p class="text-indigo-700 font-semibold flex items-center justify-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    <span class="text-sm">{{ worker.distance_km }} km away</span>
+                  </p>
+                  {% endif %}
+                </div>
+                
+                <!-- ✅ FIXED: Rating Display for Recommended Workers -->
+                <div class="flex flex-col items-center space-y-2 mt-3">
+                  <div class="text-center">
+                    <!-- Star Rating -->
+                    <div class="flex items-center justify-center space-x-1 mb-2">
+                      {% if worker.has_ratings %}
+                        {% for _ in worker.full_stars %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        {% endfor %}
+
+                        {% if worker.half_star %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
+                            <defs>
+                              <linearGradient id="half-gradient-{{ worker.id }}">
+                                <stop offset="50%" stop-color="gold" />
+                                <stop offset="50%" stop-color="gray" />
+                              </linearGradient>
+                            </defs>
+                            <path fill="url(#half-gradient-{{ worker.id }})"
+                                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                          </svg>
+                        {% endif %}
+
+                        {% for _ in worker.empty_stars %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray" class="drop-shadow-sm">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        {% endfor %}
+                      {% else %}
+                        <!-- Show empty stars for no ratings -->
+                        {% for _ in "12345" %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        {% endfor %}
+                      {% endif %}
+                    </div>
+
+                    <!-- Rating Number and Review Count -->
+                    <div class="space-y-1">
+                      {% if worker.has_ratings %}
+                        <div class="text-center">
+                          <span class="text-gray-900 font-bold text-xl">{{ worker.average_rating|floatformat:1 }}</span>
+                          <span class="text-gray-500 text-sm">/5</span>
+                        </div>
+                        <div class="text-center">
+                          <span class="text-gray-600 font-medium text-sm">
+                            ({{ worker.total_ratings }} review{{ worker.total_ratings|pluralize }})
+                          </span>
+                        </div>
+                        <div class="text-xs text-green-600 font-semibold flex items-center justify-center mt-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                          </svg>
+                          Bayesian Rating
+                        </div>
+                      {% else %}
+                        <div class="text-center space-y-1">
+                          <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
+                          <br>
+                          <span class="text-gray-400 text-xs">Be the first to rate!</span>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="px-6 py-4 bg-yellow-100 rounded-b-xl text-center">
+              <button
+                class="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transform transition duration-300 ease-in-out"
+              >
+                View Details
+              </button>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<style>
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #4f46e5;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .slider::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #4f46e5;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .slider::-webkit-slider-track {
+    height: 8px;
+    background: #c7d2fe;
+    border-radius: 4px;
+  }
+
+  .slider::-moz-range-track {
+    height: 8px;
+    background: #c7d2fe;
+    border-radius: 4px;
+    border: none;
+  }
+
+  .favorite-btn.favorited {
+    background: linear-gradient(135deg, #fce4ec, #f8bbd9);
+  }
+
+  .favorite-btn.favorited .favorite-icon {
+    animation: heartBeat 0.6s ease-in-out;
+  }
+
+  @keyframes heartBeat {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  /* Enhanced card styling */
+  .worker-card {
+    transition: all 0.3s ease;
+  }
+
+  .worker-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Improved grid layout */
+  .worker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+  }
+
+  @media (min-width: 640px) {
+    .worker-grid {
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .worker-grid {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .worker-grid {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .recommendation-badge {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: white;
+  }
+
+  .bayesian-indicator {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+  }
+
+  /* Recommended section styles */
+  .recommended-badge {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 20;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .top-rated-indicator {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}

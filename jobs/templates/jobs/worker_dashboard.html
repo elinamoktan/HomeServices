@@ -679,6 +679,39 @@
     .toast.error {
       background: linear-gradient(135deg, #ef4444, #dc2626);
     }
+
+    /* Verification Status Styles */
+    .verification-alert {
+      border-radius: 16px;
+      margin-bottom: 2rem;
+      border: 2px solid transparent;
+      animation: slideInLeft 0.6s ease forwards;
+    }
+
+    .verification-alert.rejected {
+      background: linear-gradient(135deg, #fef2f2, #fee2e2);
+      border-color: #fecaca;
+    }
+
+    .verification-alert.pending {
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border-color: #fde68a;
+    }
+
+    .verification-alert.approved {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border-color: #bbf7d0;
+    }
+
+    .countdown-timer {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      color: #dc2626;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #fecaca;
+    }
   </style>
 </head>
 <body>
@@ -772,6 +805,88 @@
         </div>
       </div>
     </div>
+
+    <!-- Verification Status Alert - FIXED SECTION -->
+    {% if worker.verification_status == 'rejected' %}
+    <div class="verification-alert rejected p-6 fade-in-up">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div class="flex-1">
+          <div class="flex items-center mb-3">
+            <i class="fas fa-times-circle text-red-600 text-2xl mr-3"></i>
+            <h3 class="text-xl font-bold text-red-900">Profile Verification Rejected</h3>
+          </div>
+          
+          {% if worker.rejection_reason %}
+          <div class="mb-4 p-4 bg-white bg-opacity-50 rounded-lg border border-red-200">
+            <strong class="text-red-800 flex items-center">
+              <i class="fas fa-info-circle mr-2"></i>Rejection Reason:
+            </strong>
+            <p class="text-red-700 mt-2">{{ worker.rejection_reason }}</p>
+          </div>
+          {% endif %}
+          
+          <p class="text-red-800 mb-4">
+            Please update your profile information based on the feedback above and resubmit for verification.
+          </p>
+          
+          <div class="flex flex-wrap gap-3">
+            {% if can_resubmit %}
+            <button type="button" class="btn btn-primary" onclick="resubmitVerification()" id="resubmitBtn">
+              <i class="fas fa-redo mr-2"></i>Resubmit for Verification
+            </button>
+            {% else %}
+            <button type="button" class="btn btn-secondary" disabled id="resubmitBtn">
+              <i class="fas fa-clock mr-2"></i> 
+              Resubmit (Wait {{ wait_time_display }})
+            </button>
+            {% endif %}
+            
+            <a href="{% url 'worker_settings' %}" class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+              <i class="fas fa-edit mr-2"></i>Edit Profile
+            </a>
+          </div>
+          
+          <!-- Countdown Timer -->
+          {% if not can_resubmit %}
+          <div class="mt-4">
+            <p class="text-sm text-red-700 flex items-center">
+              <i class="fas fa-clock mr-2"></i>
+              You can resubmit in: 
+              <span id="countdown-timer" class="countdown-timer ml-2">{{ wait_time }}</span> minutes
+            </p>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div class="text-right">
+          <div class="bg-red-100 border border-red-300 rounded-lg p-4">
+            <p class="text-sm text-red-800 font-semibold">Need Help?</p>
+            <p class="text-xs text-red-600 mt-1">Contact support if you need assistance</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% elif worker.verification_status == 'pending' %}
+    <div class="verification-alert pending p-6 fade-in-up">
+      <div class="flex items-center">
+        <i class="fas fa-clock text-amber-600 text-2xl mr-4"></i>
+        <div>
+          <h3 class="text-xl font-bold text-amber-900 mb-1">Verification Pending</h3>
+          <p class="text-amber-800">Your profile is under review by our team. You'll be notified once verified.</p>
+        </div>
+      </div>
+    </div>
+    {% elif worker.verification_status == 'approved' %}
+    <div class="verification-alert approved p-6 fade-in-up">
+      <div class="flex items-center">
+        <i class="fas fa-check-circle text-green-600 text-2xl mr-4"></i>
+        <div>
+          <h3 class="text-xl font-bold text-green-900 mb-1">Profile Verified!</h3>
+          <p class="text-green-800">Your profile is approved and visible to customers. You can now receive appointments.</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -1712,15 +1827,156 @@
         </div>
       </div>
     </div>
+  
+  
+  
+      <!-- DEBUG SECTION - REMOVE LATER -->
+    <div style="background: yellow; padding: 10px; margin: 10px 0; border: 2px solid red;">
+        <h3>DEBUG INFO:</h3>
+        <p>Worker: {{ worker.name }}</p>
+        <p>Verified: {{ worker.verified }}</p>
+        <p>Verification Status: {{ worker.verification_status }}</p>
+        <p>Rejection Reason: {{ worker.rejection_reason }}</p>
+        <p>Last Rejection: {{ worker.last_rejection_date }}</p>
+        <p>Can Resubmit: {{ can_resubmit }}</p>
+        <p>Wait Time: {{ wait_time }}</p>
+        <p>Wait Display: {{ wait_time_display }}</p>
+        <p>Show Section: {% if worker.verification_status == 'rejected' %}YES{% else %}NO{% endif %}</p>
+        <p>Show Button: {% if worker.verification_status == 'rejected' and can_resubmit %}YES{% else %}NO{% endif %}</p>
+    </div>
+  
   </div>
 
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
 <script>
-// Enhanced notification functionality with customer completion support
-let notificationCheckInterval;
-let currentNotifications = [];
+// Resubmit verification functionality
+function resubmitVerification() {
+    if (!confirm('Are you sure you want to resubmit your profile for verification?\n\nPlease make sure you have updated your profile information based on the rejection reason.')) {
+        return;
+    }
+    
+    const button = document.getElementById('resubmitBtn');
+    const originalText = button.innerHTML;
+    
+    // Show loading state
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+    button.disabled = true;
+    
+    // Send AJAX request
+    fetch('{% url "resubmit_verification" %}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showToastNotification('Success!', data.message, 'success');
+            
+            // Reload page after 2 seconds to show updated status
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            // Show error message
+            showToastNotification('Error', data.error, 'error');
+            
+            // Reset button
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToastNotification('Error', 'An error occurred while submitting. Please try again.', 'error');
+        
+        // Reset button
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Countdown timer for resubmission
+function startResubmissionCountdown(minutesLeft) {
+    if (minutesLeft <= 0) {
+        location.reload(); // Reload to enable the button
+        return;
+    }
+    
+    let totalSeconds = minutesLeft * 60;
+    const countdownElement = document.getElementById('countdown-timer');
+    const resubmitBtn = document.getElementById('resubmitBtn');
+    
+    const countdownInterval = setInterval(() => {
+        totalSeconds--;
+        
+        if (totalSeconds <= 0) {
+            clearInterval(countdownInterval);
+            location.reload(); // Reload page to enable resubmit button
+            return;
+        }
+        
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        
+        // Update countdown display
+        if (countdownElement) {
+            countdownElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Update button text
+        if (resubmitBtn) {
+            const displayText = `${minutes}m ${seconds}s`;
+            resubmitBtn.innerHTML = `<i class="fas fa-clock mr-2"></i> Resubmit (Wait ${displayText})`;
+        }
+    }, 1000);
+}
+
+// Check resubmission status on page load
+function checkResubmissionStatus() {
+    fetch('{% url "check_resubmission_status" %}', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && !data.can_resubmit && data.wait_time > 0) {
+            // Start countdown if waiting period is active
+            startResubmissionCountdown(data.wait_time);
+        }
+    })
+    .catch(error => {
+        console.error('Error checking resubmission status:', error);
+    });
+}
+
+// Utility function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
 // Tab functionality
 function showTab(tabName) {
@@ -1740,6 +1996,10 @@ function showTab(tabName) {
     // Activate selected tab button
     event.target.classList.add('active');
 }
+
+// Enhanced notification functionality with customer completion support
+let notificationCheckInterval;
+let currentNotifications = [];
 
 // Real-time notification functionality
 function updateNotificationBadge() {
@@ -1983,7 +2243,7 @@ function markNotificationRead(notificationId) {
 }
 
 function markAllNotificationsRead() {
-    fetch('{% url "mark_all_notifications_read" %}', {  // This now points to the API endpoint
+    fetch('{% url "mark_all_notifications_read" %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -2130,30 +2390,17 @@ function dismissToast(toastId) {
     }
 }
 
-// Handle customer completion notification specifically
-function handleCustomerCompletionNotification(notification) {
-    console.log('Customer completion notification received:', notification);
-    
-    // Show toast notification
-    showToastNotification(
-        notification.title,
-        notification.message,
-        'info',
-        notification.appointment_id
-    );
-    
-    // Update the appointments list to highlight the completed appointment
-    updateAppointmentsList();
-}
-
-function updateAppointmentsList() {
-    // This function would refresh or update the appointments list
-    // For now, we'll just log it
-    console.log('Updating appointments list for customer completions');
-}
-
-// Initialize notification system
+// Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Check resubmission status
+    checkResubmissionStatus();
+    
+    // Start countdown if needed
+    const initialWaitTime = {{ wait_time|default:0 }};
+    if (initialWaitTime > 0) {
+        startResubmissionCountdown(initialWaitTime);
+    }
+    
     // Update notification badge on page load
     updateNotificationBadge();
     

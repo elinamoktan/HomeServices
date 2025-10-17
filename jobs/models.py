@@ -11,7 +11,8 @@ import logging
 from decimal import Decimal
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.utils import timezone
+from datetime import timedelta
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
@@ -132,6 +133,8 @@ class Worker(models.Model):
         default='pending'
     )
     rejection_reason = models.TextField(blank=True, null=True)
+    last_rejection_date = models.DateTimeField(blank=True, null=True)  
+    verification_submitted_at = models.DateTimeField(blank=True, null=True) 
     
     # Documents
     citizenship_image = models.ImageField(upload_to='citizenship/', blank=True, null=True)
@@ -185,11 +188,13 @@ class Worker(models.Model):
 
     def save(self, *args, **kwargs):
         """Override save to sync verification status"""
-        # Auto-set verification status based on verified field
-        if self.verified:
-            self.verification_status = 'approved'
-        elif not self.verified and self.verification_status == 'approved':
-            self.verification_status = 'pending'
+        # Don't auto-change status if it's explicitly rejected
+        if self.verification_status != 'rejected':
+            # Only auto-set verification status if not rejected
+            if self.verified:
+                self.verification_status = 'approved'
+            elif not self.verified and self.verification_status == 'approved':
+                self.verification_status = 'pending'
         
         # Sync total_ratings with rating_count
         self.total_ratings = self.rating_count
@@ -262,6 +267,36 @@ class Worker(models.Model):
             return None
             
         return _haversine_km(self.latitude, self.longitude, other_lat, other_lon)
+
+    def can_resubmit_verification(self):
+            """Check if worker can resubmit for verification after 15 minutes"""
+            if not self.last_rejection_date:
+                return True
+            # Allow resubmission after 15 minutes
+            return timezone.now() >= self.last_rejection_date + timedelta(minutes=15)
+    
+    def get_resubmission_wait_time(self):
+        """Get remaining wait time in minutes for resubmission"""
+        if not self.last_rejection_date or self.can_resubmit_verification():
+            return 0
+        
+        wait_until = self.last_rejection_date + timedelta(minutes=15)
+        time_left = wait_until - timezone.now()
+        minutes_left = max(0, int(time_left.total_seconds() // 60))
+        return minutes_left
+    
+    def get_resubmission_wait_time_display(self):
+        """Get formatted wait time for display"""
+        minutes = self.get_resubmission_wait_time()
+        if minutes == 0:
+            return "Ready to resubmit"
+        elif minutes < 60:
+            return f"{minutes} minutes"
+        else:
+            hours = minutes // 60
+            remaining_minutes = minutes % 60
+            return f"{hours}h {remaining_minutes}m"
+
 
     def bayesian_average_rating(self, confidence=5.0, default_rating=0.0):
         """
@@ -390,6 +425,9 @@ class Worker(models.Model):
         """Verify worker and update status"""
         self.verified = True
         self.verification_status = 'approved'
+        # Clear rejection data when verifying
+        self.rejection_reason = ''
+        self.last_rejection_date = None
         self.save()
         
         # Create notification for worker
@@ -417,10 +455,11 @@ class Worker(models.Model):
         return True
 
     def reject_worker(self, reason="Profile does not meet requirements"):
-        """Reject worker with reason"""
-        self.verified = False
+        """Reject worker with reason AND set rejection date"""
+        self.verified = False  # ✅ IMPORTANT: Set verified to False
         self.verification_status = 'rejected'
         self.rejection_reason = reason
+        self.last_rejection_date = timezone.now()  # ✅ CRITICAL: Set this!
         self.save()
         
         # Create notification for worker
@@ -432,8 +471,9 @@ class Worker(models.Model):
             appointment=None
         )
         
+        logger.info(f"Worker {self.name} rejected at {self.last_rejection_date}")
         return True
-    
+        
     # Add this class method to your Worker model
     @classmethod
     def get_visible_workers(cls):

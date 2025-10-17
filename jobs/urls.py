@@ -123,4 +123,8 @@ urlpatterns = [
     # ✅ NEW: Cache management URLs
     path('api/clear-location-cache/', views.clear_location_cache, name='clear_location_cache'),
     path('api/get-cached-location/', views.get_cached_location, name='get_cached_location'),
+
+    path('resubmit-verification/', views.resubmit_verification, name='resubmit_verification'),
+    path('check-resubmission-status/', views.check_resubmission_status, name='check_resubmission_status'),
+    path('debug-verification/', views.debug_verification, name='debug_verification'),
 ]

@@ -147,6 +147,7 @@
                                 <th>Email</th>
                                 <th>Registered</th>
                                 <th>Documents</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -194,7 +195,12 @@
                                         {% endif %}
                                     </div>
                                 </td>
-                                <td>
+                                <td id="status-{{ worker.id }}">
+                                    <span class="status-badge status-pending">
+                                        <i class="fas fa-clock"></i> Pending
+                                    </span>
+                                </td>
+                                <td id="actions-{{ worker.id }}">
                                     <div class="btn-group btn-group-sm">
                                         <!-- Approve Form -->
                                         <form method="POST" action="{% url 'admin_dashboard:verify_worker_dashboard' worker.id %}" 
@@ -365,11 +371,9 @@
             });
         });
         
-        // Confirm rejection - FIXED VERSION
+        // Confirm rejection - UPDATED VERSION
         document.getElementById('confirmRejectBtn').addEventListener('click', function() {
-            // CORRECTED: Get the value properly
-            const workerIdInput = document.getElementById('rejectWorkerId');
-            const workerId = workerIdInput ? workerIdInput.value : null;
+            const workerId = document.getElementById('rejectWorkerId').value;
             const reason = document.getElementById('rejectionReason').value.trim() || 
                           'Profile does not meet our verification requirements';
             
@@ -386,7 +390,6 @@
             formData.append('action', 'reject');
             formData.append('reason', reason);
             
-            // CORRECTED: Use proper URL
             fetch(`/bluecollar-admin/verify-worker-dashboard/${workerId}/`, {
                 method: 'POST',
                 body: formData,
@@ -404,11 +407,10 @@
                 console.log('Rejection response:', data);
                 if (data.success) {
                     showToast('Success', data.message, 'success');
-                    // Remove the worker row from table
-                    const workerRow = document.getElementById(`worker-${workerId}`);
-                    if (workerRow) {
-                        workerRow.remove();
-                    }
+                    
+                    // ✅ UPDATE STATUS AND ACTIONS FOR REJECTION
+                    updateWorkerStatus(workerId, 'rejected', data.reason);
+                    
                     rejectionModal.hide();
                     
                     // Update pending workers count
@@ -423,12 +425,11 @@
             });
         });
         
-        // Handle approve forms with AJAX - FIXED VERSION
+        // Handle approve forms with AJAX - UPDATED VERSION
         document.querySelectorAll('.verify-form').forEach(form => {
             form.addEventListener('submit', function(e) {
                 e.preventDefault(); // Prevent default form submission
                 
-                // CORRECTED: Get workerId from form data attribute
                 const workerId = this.dataset.workerId;
                 const submitBtn = this.querySelector('.btn-verify');
                 const rejectBtn = document.querySelector(`.btn-reject[data-worker-id="${workerId}"]`);
@@ -446,7 +447,6 @@
                 // Submit via AJAX
                 const formData = new FormData(this);
                 
-                // CORRECTED: Use the proper URL construction
                 fetch(`/bluecollar-admin/verify-worker-dashboard/${workerId}/`, {
                     method: 'POST',
                     body: formData,
@@ -464,38 +464,85 @@
                     console.log('Response data:', data);
                     if (data.success) {
                         showToast('Success', data.message, 'success');
-                        // Remove the worker row from table
-                        const workerRow = document.getElementById(`worker-${workerId}`);
-                        if (workerRow) {
-                            workerRow.remove();
-                        }
+                        
+                        // ✅ UPDATE STATUS AND ACTIONS FOR APPROVAL
+                        updateWorkerStatus(workerId, 'approved');
+                        
                         // Update pending workers count
                         updatePendingCount();
                     } else {
                         showToast('Error', data.error, 'error');
                         // Reset buttons
-                        submitBtn.innerHTML = '<i class="fas fa-check"></i> Approve';
-                        submitBtn.disabled = false;
-                        if (rejectBtn) {
-                            rejectBtn.innerHTML = '<i class="fas fa-times"></i> Reject';
-                            rejectBtn.disabled = false;
-                        }
+                        resetButtons(workerId);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     showToast('Error', 'An error occurred while processing your request', 'error');
                     // Reset buttons
-                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Approve';
-                    submitBtn.disabled = false;
-                    if (rejectBtn) {
-                        rejectBtn.innerHTML = '<i class="fas fa-times"></i> Reject';
-                        rejectBtn.disabled = false;
-                    }
+                    resetButtons(workerId);
                 });
             });
         });
     });
+
+    // Function to update worker status and actions
+    function updateWorkerStatus(workerId, status, reason = null) {
+        const statusCell = document.getElementById(`status-${workerId}`);
+        const actionsCell = document.getElementById(`actions-${workerId}`);
+        
+        if (status === 'approved') {
+            statusCell.innerHTML = `
+                <span class="status-badge status-approved">
+                    <i class="fas fa-check-circle"></i> Approved
+                </span>
+            `;
+            actionsCell.innerHTML = `
+                <span class="badge bg-success">
+                    <i class="fas fa-check"></i> Approved
+                </span>
+            `;
+        } else if (status === 'rejected') {
+            statusCell.innerHTML = `
+                <span class="status-badge status-rejected">
+                    <i class="fas fa-times-circle"></i> Rejected
+                </span>
+            `;
+            actionsCell.innerHTML = `
+                <span class="badge bg-danger">
+                    <i class="fas fa-times"></i> Rejected
+                </span>
+                ${reason ? `<small class="text-muted d-block mt-1">Reason: ${reason}</small>` : ''}
+            `;
+        }
+        
+        // Add fade animation
+        const workerRow = document.getElementById(`worker-${workerId}`);
+        if (workerRow) {
+            workerRow.style.transition = 'all 0.3s ease';
+            workerRow.style.backgroundColor = status === 'approved' ? '#d1fae5' : '#fee2e2';
+            
+            // Remove the row after a delay if you want to hide it completely
+            setTimeout(() => {
+                // workerRow.remove(); // Uncomment this if you want to remove the row completely
+            }, 2000);
+        }
+    }
+
+    // Function to reset buttons to original state
+    function resetButtons(workerId) {
+        const submitBtn = document.querySelector(`.verify-form[data-worker-id="${workerId}"] .btn-verify`);
+        const rejectBtn = document.querySelector(`.btn-reject[data-worker-id="${workerId}"]`);
+        
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-check"></i> Approve';
+            submitBtn.disabled = false;
+        }
+        if (rejectBtn) {
+            rejectBtn.innerHTML = '<i class="fas fa-times"></i> Reject';
+            rejectBtn.disabled = false;
+        }
+    }
 
     // Function to update pending count
     function updatePendingCount() {
@@ -522,7 +569,7 @@
         if (pendingTable && pendingTable.children.length === 0) {
             const emptyState = `
                 <tr>
-                    <td colspan="6" class="text-center py-4">
+                    <td colspan="7" class="text-center py-4">
                         <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
                         <h5>No Pending Verifications</h5>
                         <p class="text-muted">All worker profiles have been verified.</p>
@@ -595,6 +642,42 @@
 /* Button styles for verification actions */
 .btn-verify, .btn-reject {
     min-width: 80px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-verify:disabled, .btn-reject:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Status badge styles */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-approved {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.status-rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.status-pending {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
 }
 
 /* Responsive table adjustments */
@@ -606,6 +689,11 @@
     .btn-group-sm .btn {
         padding: 0.25rem 0.5rem;
         font-size: 0.75rem;
+    }
+    
+    .status-badge {
+        font-size: 10px;
+        padding: 4px 8px;
     }
 }
 
@@ -627,6 +715,17 @@
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Highlight animation for updated rows */
+@keyframes highlight {
+    0% { background-color: transparent; }
+    50% { background-color: #e8f5e8; }
+    100% { background-color: transparent; }
+}
+
+.highlight-update {
+    animation: highlight 2s ease;
 }
 </style>
 {% endblock %}

@@ -39,6 +39,7 @@ import json
 from django.contrib.auth.decorators import login_required, user_passes_test
 from admin_dashboard.models import AdminActivityLog
 from django.db.models import Q 
+from django.views.decorators.http import require_http_methods 
 # ✅ FIXED: Import CustomUser instead of User
 try:
     from accounts.models import CustomUser
@@ -538,10 +539,9 @@ def _haversine_km(lat1, lon1, lat2, lon2):
         
     except (ValueError, TypeError):
         return float('inf')
-
 def get_recommended_workers(request, limit=8):
     """
-    Get recommended workers using Bayesian algorithm
+    Get recommended workers using Bayesian algorithm - FIXED VERSION
     """
     try:
         # Get all available, verified workers
@@ -550,48 +550,41 @@ def get_recommended_workers(request, limit=8):
             verified=True
         ).select_related('owner').prefetch_related('ratings')
         
-        # Calculate Bayesian rating for each and create a list of tuples
-        worker_ratings = []
+        # Calculate Bayesian rating for each worker
+        workers_with_ratings = []
         for worker in workers:
             bayesian_rating = worker.bayesian_average_rating()
             rating_count = worker.ratings.count()
             
-            # Only include workers that have ratings
-            if rating_count > 0:
-                worker_ratings.append((worker, bayesian_rating, rating_count))
+            # Add all workers to the list, not just those with ratings
+            workers_with_ratings.append((worker, bayesian_rating, rating_count))
         
-        # ✅ Sort by Bayesian rating (highest first), then by number of ratings
-        worker_ratings.sort(key=lambda x: (x[1], x[2]), reverse=True)
+        # ✅ FIXED: Sort by Bayesian rating (highest first), then by number of ratings
+        # Workers with no ratings will have bayesian_rating = 2.5 (default)
+        workers_with_ratings.sort(key=lambda x: (x[1], x[2]), reverse=True)
         
         # Prepare the top workers for template
         recommended_workers = []
-        for worker, bayesian_rating, rating_count in worker_ratings[:limit]:
+        for worker, bayesian_rating, rating_count in workers_with_ratings[:limit]:
             worker.average_rating = bayesian_rating
             worker.total_ratings = rating_count
-            worker.has_ratings = True
+            worker.has_ratings = rating_count > 0
             
             # Add star breakdown
-            full_stars = int(bayesian_rating)
-            half_star = 1 if bayesian_rating % 1 >= 0.5 else 0
-            empty_stars = 5 - (full_stars + half_stars)
+            if rating_count > 0:
+                full_stars = int(bayesian_rating)
+                half_star = 1 if bayesian_rating % 1 >= 0.5 else 0
+                empty_stars = 5 - (full_stars + half_star)
+            else:
+                full_stars = 0
+                half_star = 0
+                empty_stars = 5
             
             worker.full_stars = range(full_stars)
             worker.half_star = half_star
             worker.empty_stars = range(empty_stars)
             
             recommended_workers.append(worker)
-        
-        # If we don't have enough rated workers, add some unrated but verified workers
-        if len(recommended_workers) < limit:
-            additional_workers = workers.filter(ratings__isnull=True)[:limit - len(recommended_workers)]
-            for worker in additional_workers:
-                worker.average_rating = 0
-                worker.total_ratings = 0
-                worker.has_ratings = False
-                worker.full_stars = range(0)
-                worker.half_star = 0
-                worker.empty_stars = range(5)
-                recommended_workers.append(worker)
         
         return recommended_workers
         
@@ -612,6 +605,7 @@ def get_recommended_workers(request, limit=8):
             worker.empty_stars = range(5)
             
         return fallback_workers
+
 
 def calculate_recommendation_score(worker, bayesian_rating):
     """
@@ -640,7 +634,6 @@ def calculate_recommendation_score(worker, bayesian_rating):
     except Exception as e:
         logger.error(f"Error calculating recommendation score: {e}")
         return 0.0
-
 class WorkerListView(ListView):
     model = Worker
     template_name = 'jobs/worker_list.html'
@@ -656,8 +649,8 @@ class WorkerListView(ListView):
         # ✅ FIXED: Only show verified and available workers
         queryset = Worker.objects.filter(
             is_available=True,
-            verified=True,  # Only show verified workers
-            verification_status='approved'  # Only show approved workers
+            verified=True,
+            verification_status='approved'
         ).select_related('owner').prefetch_related('ratings')
 
         if query:
@@ -676,9 +669,34 @@ class WorkerListView(ListView):
             customer = self.request.user.customer
             customer_location = customer.get_current_location()
 
-        # Calculate distances if customer has location
-        workers_with_distance = []
+        # ✅ FIXED: Calculate ratings and add to each worker
+        workers_with_ratings = []
         for worker in queryset:
+            # Calculate Bayesian rating
+            bayesian_rating = worker.bayesian_average_rating()
+            rating_count = worker.ratings.count()
+            has_ratings = rating_count > 0
+            
+            # Add rating properties to worker object
+            worker.average_rating = bayesian_rating
+            worker.total_ratings = rating_count
+            worker.has_ratings = has_ratings
+            
+            # Calculate star breakdown
+            if has_ratings:
+                full_stars = int(bayesian_rating)
+                half_star = 1 if bayesian_rating % 1 >= 0.5 else 0
+                empty_stars = 5 - (full_stars + half_star)
+            else:
+                full_stars = 0
+                half_star = 0
+                empty_stars = 5
+            
+            worker.full_stars = range(full_stars)
+            worker.half_star = half_star
+            worker.empty_stars = range(empty_stars)
+            
+            # Calculate distance
             distance_km = None
             if customer_location and worker.latitude and worker.longitude:
                 try:
@@ -691,14 +709,14 @@ class WorkerListView(ListView):
                     distance_km = None
             
             worker.distance_km = distance_km
-            workers_with_distance.append(worker)
+            workers_with_ratings.append(worker)
 
-        return queryset
+        return workers_with_ratings
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Add recommended workers (highest rated)
+        # ✅ FIXED: Add recommended workers (highest rated)
         recommended_workers = get_recommended_workers(self.request, limit=8)
         context['recommended_workers'] = recommended_workers
         
@@ -714,8 +732,9 @@ class WorkerListView(ListView):
         
         return context
 
+        
 def send_worker_verification_email(worker, approved, rejection_reason=None):
-    """Send email notification to worker about verification status"""
+    """Send email notification to worker about verification status - FIXED VERSION"""
     try:
         if approved:
             subject = "🎉 Your BlueCaller Worker Profile Has Been Verified!"
@@ -929,14 +948,23 @@ def send_worker_verification_email(worker, approved, rejection_reason=None):
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
         recipients = [worker.owner.email]
         
-        # Send email asynchronously
-        send_email_async(subject, plain_message, from_email, recipients, html_message)
+        # Send email
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=from_email,
+            recipient_list=recipients,
+            html_message=html_message,
+            fail_silently=False
+        )
         
         logger.info(f"Worker verification email sent to {worker.name} ({worker.owner.email}) - Approved: {approved}")
         return True
         
     except Exception as e:
         logger.error(f"Failed to send worker verification email: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 from django.views.decorators.csrf import csrf_exempt
@@ -1761,6 +1789,7 @@ def request_new_worker(request, appointment_id):
     
     messages.info(request, "You can now request a new worker.")
     return redirect('worker-list')
+
 @login_required
 def worker_dashboard(request):
     """
@@ -1772,7 +1801,10 @@ def worker_dashboard(request):
         messages.error(request, "You don't have a worker profile.")
         return redirect('worker-list')
     
-    # Get all appointments for this worker with explicit field selection
+    # Refresh worker from database to ensure we have latest data
+    worker = Worker.objects.get(id=worker.id)
+    
+    # Get all appointments for this worker
     appointments = Appointment.objects.filter(worker=worker).select_related(
         'customer', 'service_subtask', 'service_subtask__subtask'
     ).only(
@@ -1781,17 +1813,24 @@ def worker_dashboard(request):
         'customer_completed', 'worker_completed', 'created_at'
     ).order_by('-appointment_date')
     
-    # Separate appointments by status for better organization
+    # Separate appointments by status
     pending_appointments = appointments.filter(status='pending')
     accepted_appointments = appointments.filter(status='accepted')
     completed_appointments = appointments.filter(status='completed')
     rejected_appointments = appointments.filter(status='rejected')
     
-    # ✅ FIXED: Calculate customer completed appointments properly
+    # Calculate customer completed appointments
     customer_completed_appointments = accepted_appointments.filter(
         customer_completed=True, 
         worker_completed=False
     )
+    
+    # ✅ CRITICAL: Calculate resubmission data
+    can_resubmit = worker.can_resubmit_verification()
+    wait_time = worker.get_resubmission_wait_time()
+    wait_time_display = worker.get_resubmission_wait_time_display()
+    
+    print(f"DEBUG - Worker: {worker.name}, Status: {worker.verification_status}, Can Resubmit: {can_resubmit}")  # Debug print
     
     context = {
         'worker': worker,
@@ -1802,6 +1841,11 @@ def worker_dashboard(request):
         'rejected_appointments': rejected_appointments,
         'customer_completed_appointments': customer_completed_appointments,  
         'today': timezone.now().date(),
+        
+        # ✅ VERIFICATION CONTEXT - MAKE SURE THESE ARE INCLUDED
+        'can_resubmit': can_resubmit,
+        'wait_time': wait_time,
+        'wait_time_display': wait_time_display,
     }
     
     return render(request, 'jobs/worker_dashboard.html', context)
@@ -2670,7 +2714,6 @@ def customer_support(request):
     }
     return render(request, 'jobs/customer_support.html', context)
 
-from django.utils import timezone
 from datetime import timedelta
 import json
 
@@ -3417,6 +3460,38 @@ def check_favorite_status(request, worker_id):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 from .forms import WorkerProfileForm as WorkerForm
+
+@login_required
+def debug_verification(request):
+    """Temporary debug view to check verification status"""
+    try:
+        worker = request.user.worker
+    except AttributeError:
+        return JsonResponse({'error': 'No worker profile'})
+    
+    # Get context data that should be passed to template
+    can_resubmit = worker.can_resubmit_verification()
+    wait_time = worker.get_resubmission_wait_time()
+    wait_time_display = worker.get_resubmission_wait_time_display()
+    
+    debug_data = {
+        'worker_id': worker.id,
+        'worker_name': worker.name,
+        'verified': worker.verified,
+        'verification_status': worker.verification_status,
+        'rejection_reason': worker.rejection_reason,
+        'last_rejection_date': str(worker.last_rejection_date),
+        'can_resubmit': can_resubmit,
+        'wait_time': wait_time,
+        'wait_time_display': wait_time_display,
+        
+        # Template conditions
+        'template_show_section': worker.verification_status == 'rejected',
+        'template_show_button': worker.verification_status == 'rejected' and can_resubmit,
+        'template_show_disabled_button': worker.verification_status == 'rejected' and not can_resubmit,
+    }
+    
+    return JsonResponse(debug_data)
 
 @login_required
 def create_worker_profile(request):
@@ -4707,6 +4782,109 @@ BlueCaller Team
         
     except Exception as e:
         logger.error(f"Failed to send worker confirmation email to customer {customer.name}: {str(e)}")
+
+@login_required
+@require_http_methods(["POST"])
+def resubmit_verification(request):
+    """Allow worker to resubmit for verification after rejection"""
+    try:
+        worker = get_object_or_404(Worker, owner=request.user)
+        
+        # Check if worker can resubmit (15-minute waiting period)
+        if not worker.can_resubmit_verification():
+            minutes_left = worker.get_resubmission_wait_time()
+            return JsonResponse({
+                'success': False,
+                'error': f'Please wait {minutes_left} minutes before resubmitting'
+            })
+        
+        # Reset verification status to pending
+        worker.verification_status = 'pending'
+        worker.verification_submitted_at = timezone.now()
+        # Keep rejection reason for admin reference, but worker can't see it after resubmission
+        worker.save()
+        
+        # Create notification for admin
+        try:
+            from admin_dashboard.models import AdminActivityLog
+            from django.contrib.auth.models import User
+            
+            # Get first available admin user for logging
+            admin_user = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True)).first()
+            if admin_user:
+                AdminActivityLog.objects.create(
+                    admin_user=admin_user,
+                    action='UPDATE',
+                    model_name='Worker',
+                    object_id=worker.id,
+                    description=f'Worker {worker.name} resubmitted for verification after rejection'
+                )
+        except Exception as e:
+            logger.error(f"Failed to log admin activity: {e}")
+        
+        # Send email to admin about resubmission
+        try:
+            from admin_dashboard.views import send_verification_resubmission_email
+            send_verification_resubmission_email(worker)
+        except Exception as e:
+            logger.error(f"Failed to send resubmission email: {e}")
+        
+        # Send notification to worker
+        try:
+            Notification.objects.create(
+                worker=worker,
+                notification_type='verification_resubmitted',
+                title='Verification Resubmitted',
+                message='Your profile has been resubmitted for verification. Admin will review it again shortly.',
+                appointment=None
+            )
+        except Exception as e:
+            logger.error(f"Failed to create resubmission notification: {e}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Verification resubmitted successfully! Admin will review your profile again.'
+        })
+        
+    except Worker.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Worker profile not found'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Error in resubmit_verification: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An error occurred while processing your request'
+        }, status=500)
+
+# NEW: Add API endpoint to check resubmission status
+@login_required
+@require_http_methods(["GET"])
+def check_resubmission_status(request):
+    """Check if worker can resubmit and get wait time"""
+    try:
+        worker = get_object_or_404(Worker, owner=request.user)
+        
+        can_resubmit = worker.can_resubmit_verification()
+        wait_time = worker.get_resubmission_wait_time()
+        wait_time_display = worker.get_resubmission_wait_time_display()
+        
+        return JsonResponse({
+            'success': True,
+            'can_resubmit': can_resubmit,
+            'wait_time': wait_time,
+            'wait_time_display': wait_time_display,
+            'verification_status': worker.verification_status,
+            'rejection_reason': worker.rejection_reason if worker.verification_status == 'rejected' else None
+        })
+        
+    except Worker.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Worker profile not found'
+        }, status=404)
+
 
 @login_required
 def add_custom_subtask(request, worker_service_id):
