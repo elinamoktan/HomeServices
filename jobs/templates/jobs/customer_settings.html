@@ -3,238 +3,694 @@
 
 {% block title %}Settings - AppointMate{% endblock %}
 
+{% block extra_css %}
+<style>
+  :root {
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-light: #60a5fa;
+    --secondary: #8b5cf6;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --dark: #0f172a;
+    --light: #f8fafc;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #1e293b;
+  }
+
+  .settings-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .settings-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  }
+
+  .form-group {
+    margin-bottom: 1.75rem;
+  }
+
+  .form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 14px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #fafafa;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    background: white;
+  }
+
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 32px;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    transition: .4s;
+    border-radius: 34px;
+  }
+
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #10b981, #34d399);
+  }
+
+  input:checked + .toggle-slider:before {
+    transform: translateX(28px);
+  }
+
+  .tab-button {
+    padding: 0.875rem 1.75rem;
+    border-radius: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    background: rgba(255, 255, 255, 0.7);
+    color: #64748b;
+    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
+  }
+
+  .tab-button.active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .tab-content {
+    display: none;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .security-card {
+    padding: 1.75rem;
+    border-radius: 16px;
+    border: 2px solid;
+    transition: all 0.3s ease;
+  }
+
+  .security-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn {
+    padding: 0.875rem 1.75rem;
+    border-radius: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+  }
+
+  .modal-content {
+    position: relative;
+    background: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    transform: scale(0.7);
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  .modal.active .modal-content {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #3b82f6);
+    transition: width 0.3s ease;
+  }
+
+  .password-strength {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .strength-weak { color: #ef4444; }
+  .strength-medium { color: #f59e0b; }
+  .strength-strong { color: #10b981; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mb-8">
-  <h1 class="text-3xl font-bold text-gray-800 mb-2">Account Settings</h1>
-  <p class="text-gray-600">Manage your preferences and account details</p>
+  <h1 class="text-3xl font-bold text-white mb-2">Account Settings</h1>
+  <p class="text-white text-opacity-80">Manage your security and preferences</p>
 </div>
 
-{% if messages %}
-  <div class="mb-6">
-    {% for message in messages %}
-      <div class="p-4 rounded-lg bg-green-100 text-green-800 border border-green-200 mb-3">
-        <div class="flex items-center">
-          <i class="fas fa-check-circle mr-3"></i>
-          <span>{{ message }}</span>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
+<!-- Settings Tabs -->
+<div class="flex flex-wrap gap-3 mb-8">
+  <button class="tab-button active" onclick="showSettingsTab('security')">
+    <i class="fas fa-shield-alt mr-2"></i>Security
+  </button>
+</div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <!-- Profile Information -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <div class="flex items-center mb-6">
-      <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-        <i class="fas fa-user text-blue-600"></i>
-      </div>
-      <div>
-        <h2 class="text-xl font-semibold text-gray-800">Profile Information</h2>
-        <p class="text-gray-600 text-sm">Update your personal details</p>
+<!-- Security Settings -->
+<div id="security-tab" class="tab-content active">
+  <div class="space-y-6">
+    <div class="settings-card">
+      <h3 class="text-xl font-bold text-gray-900 mb-6">Security Settings</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="security-card bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-key text-blue-600 text-lg"></i>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-semibold text-gray-900 mb-2">Change Password</h4>
+              <p class="text-sm text-gray-600 mb-4">Update your password with current password</p>
+              <button class="btn btn-primary" onclick="openPasswordModal()">
+                Change Password
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="security-card bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-shield-alt text-green-600 text-lg"></i>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-semibold text-gray-900 mb-2">Two-Factor Authentication</h4>
+              <p class="text-sm text-gray-600 mb-4">Add extra security layer</p>
+              <button class="btn bg-green-600 hover:bg-green-700 text-white" onclick="toggle2FA()">
+                <span id="2fa-status">Enable 2FA</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <form method="post" class="space-y-4">
-      {% csrf_token %}
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-          <input type="text" name="first_name" value="{{ user.first_name }}" 
-                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    <!-- Password Recovery Section -->
+    <div class="settings-card">
+      <h3 class="text-xl font-bold text-gray-900 mb-6">Password Recovery</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="security-card bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-unlock-alt text-orange-600 text-lg"></i>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-semibold text-gray-900 mb-2">Setup Security Questions</h4>
+              <p class="text-sm text-gray-600 mb-4">Configure security questions for password recovery</p>
+              <button class="btn bg-orange-600 hover:bg-orange-700 text-white" onclick="setupSecurityQuestions()">
+                <i class="fas fa-question-circle mr-2"></i>
+                Setup Recovery
+              </button>
+            </div>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-          <input type="text" name="last_name" value="{{ user.last_name }}"
-                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        
+        <div class="security-card bg-gradient-to-br from-teal-50 to-cyan-50 border-teal-200">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-key text-teal-600 text-lg"></i>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-semibold text-gray-900 mb-2">Reset Password</h4>
+              <p class="text-sm text-gray-600 mb-4">Reset password using security questions</p>
+              <button class="btn bg-teal-600 hover:bg-teal-700 text-white" onclick="startPasswordReset()">
+                <i class="fas fa-sync-alt mr-2"></i>
+                Reset Password
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Password Change Modal -->
+<div id="password-modal" class="modal">
+  <div class="modal-content">
+    <div class="p-8">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-900">Change Password</h3>
+        <button class="text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('password-modal')">&times;</button>
+      </div>
+      <form id="password-form" onsubmit="changePassword(event)">
+        <div class="space-y-4">
+          <div class="form-group">
+            <label class="form-label">Current Password</label>
+            <input type="password" id="current-password" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Password</label>
+            <input type="password" id="new-password" class="form-input" required oninput="checkPasswordStrength(this.value, '')">
+            <div class="progress-bar mt-2">
+              <div class="progress-fill" id="password-strength-bar" style="width: 0%"></div>
+            </div>
+            <div class="password-strength" id="password-strength-text">Password strength</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" id="confirm-password" class="form-input" required oninput="checkPasswordMatch('')">
+            <div id="password-match" class="text-sm mt-1"></div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-4 mt-8">
+          <button type="button" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onclick="closeModal('password-modal')">
+            Cancel
+          </button>
+          <button type="submit" class="px-6 py-3 btn btn-primary">
+            Update Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Security Questions Setup Modal -->
+<div id="security-questions-modal" class="modal">
+  <div class="modal-content">
+    <div class="p-8">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-900">Setup Security Questions</h3>
+        <button class="text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('security-questions-modal')">&times;</button>
+      </div>
+      <form id="security-questions-form" onsubmit="saveSecurityQuestions(event)">
+        <div class="space-y-4">
+          <div class="form-group">
+            <label class="form-label">Question 1: What was your first pet's name?</label>
+            <input type="text" id="sq-answer1" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Question 2: What city were you born in?</label>
+            <input type="text" id="sq-answer2" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Question 3: What is your mother's maiden name?</label>
+            <input type="text" id="sq-answer3" class="form-input" required>
+          </div>
+        </div>
+        <div class="flex justify-end gap-4 mt-8">
+          <button type="button" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onclick="closeModal('security-questions-modal')">
+            Cancel
+          </button>
+          <button type="submit" class="px-6 py-3 btn btn-primary">
+            Save Questions
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Password Reset Modal (Step 1: Verify Security Questions) -->
+<div id="password-reset-modal" class="modal">
+  <div class="modal-content">
+    <div class="p-8">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-900">Reset Password - Verify Identity</h3>
+        <button class="text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('password-reset-modal')">&times;</button>
+      </div>
+      <div class="mb-6">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <i class="fas fa-info-circle text-blue-600 text-lg mt-0.5"></i>
+          <p class="text-sm text-blue-800">Answer the security questions to verify your identity and reset your password.</p>
+        </div>
+      </div>
+      <form id="password-reset-verify-form" onsubmit="verifySecurityAnswers(event)">
+        <div class="space-y-4">
+          <div class="form-group">
+            <label class="form-label">What was your first pet's name?</label>
+            <input type="text" id="reset-answer1" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">What city were you born in?</label>
+            <input type="text" id="reset-answer2" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">What is your mother's maiden name?</label>
+            <input type="text" id="reset-answer3" class="form-input" required>
+          </div>
+        </div>
+        <div class="flex justify-end gap-4 mt-8">
+          <button type="button" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onclick="closeModal('password-reset-modal')">
+            Cancel
+          </button>
+          <button type="submit" class="px-6 py-3 btn btn-primary">
+            <i class="fas fa-check mr-2"></i>
+            Verify Answers
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Password Reset Modal (Step 2: Set New Password) -->
+<div id="password-reset-new-modal" class="modal">
+  <div class="modal-content">
+    <div class="p-8">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-900">Set New Password</h3>
+        <button class="text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('password-reset-new-modal')">&times;</button>
+      </div>
+      <div class="mb-6">
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+          <i class="fas fa-check-circle text-green-600 text-lg mt-0.5"></i>
+          <p class="text-sm text-green-800">Identity verified! Now set your new password.</p>
+        </div>
+      </div>
+      <form id="password-reset-new-form" onsubmit="setNewPasswordWithoutCurrent(event)">
+        <div class="space-y-4">
+          <div class="form-group">
+            <label class="form-label">New Password</label>
+            <input type="password" id="reset-new-password" class="form-input" required oninput="checkPasswordStrength(this.value, 'reset')">
+            <div class="progress-bar mt-2">
+              <div class="progress-fill" id="reset-password-strength-bar" style="width: 0%"></div>
+            </div>
+            <div class="password-strength" id="reset-password-strength-text">Password strength</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" id="reset-confirm-password" class="form-input" required oninput="checkPasswordMatch('reset')">
+            <div id="reset-password-match" class="text-sm mt-1"></div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-4 mt-8">
+          <button type="button" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onclick="closeModal('password-reset-new-modal')">
+            Cancel
+          </button>
+          <button type="submit" class="px-6 py-3 btn btn-primary">
+            <i class="fas fa-key mr-2"></i>
+            Reset Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const state = {
+    security: {
+      twoFactorEnabled: false,
+      securityQuestionsSet: false,
+      securityAnswers: {}
+    }
+  };
+
+  function showSettingsTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
+    document.getElementById(tabName + '-tab').classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function openPasswordModal() {
+    openModal('password-modal');
+  }
+
+  function checkPasswordStrength(password, prefix) {
+    let strength = 0;
+    const barId = prefix ? `${prefix}-password-strength-bar` : 'password-strength-bar';
+    const textId = prefix ? `${prefix}-password-strength-text` : 'password-strength-text';
+    const bar = document.getElementById(barId);
+    const text = document.getElementById(textId);
+    
+    if (password.length >= 8) strength += 25;
+    if (/[A-Z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 25;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 25;
+    
+    bar.style.width = strength + '%';
+    
+    if (strength < 50) {
+      text.className = 'password-strength strength-weak';
+      text.textContent = 'Weak password';
+    } else if (strength < 75) {
+      text.className = 'password-strength strength-medium';
+      text.textContent = 'Medium password';
+    } else {
+      text.className = 'password-strength strength-strong';
+      text.textContent = 'Strong password';
+    }
+  }
+
+  function checkPasswordMatch(prefix) {
+    const matchId = prefix ? `${prefix}-password-match` : 'password-match';
+    const newPasswordId = prefix ? `${prefix}-new-password` : 'new-password';
+    const confirmPasswordId = prefix ? `${prefix}-confirm-password` : 'confirm-password';
+    
+    const matchDiv = document.getElementById(matchId);
+    const newPassword = document.getElementById(newPasswordId).value;
+    const confirmPassword = document.getElementById(confirmPasswordId).value;
+    
+    if (confirmPassword === '') {
+      matchDiv.textContent = '';
+    } else if (newPassword === confirmPassword) {
+      matchDiv.textContent = 'Passwords match!';
+      matchDiv.className = 'text-sm mt-1 text-green-600';
+    } else {
+      matchDiv.textContent = 'Passwords do not match!';
+      matchDiv.className = 'text-sm mt-1 text-red-600';
+    }
+  }
+
+  function changePassword(event) {
+    event.preventDefault();
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    if (newPassword !== confirmPassword) {
+      showNotification('New passwords do not match!', 'error');
+      return;
+    }
+    
+    closeModal('password-modal');
+    document.getElementById('password-form').reset();
+    showNotification('Password changed successfully!', 'success');
+  }
+
+  function toggle2FA() {
+    state.security.twoFactorEnabled = !state.security.twoFactorEnabled;
+    document.querySelector('#2fa-status').textContent = state.security.twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA';
+    showNotification(`Two-factor authentication ${state.security.twoFactorEnabled ? 'enabled' : 'disabled'}`, 'success');
+  }
+
+  function setupSecurityQuestions() {
+    openModal('security-questions-modal');
+  }
+
+  function saveSecurityQuestions(event) {
+    event.preventDefault();
+    
+    state.security.securityAnswers = {
+      answer1: document.getElementById('sq-answer1').value.toLowerCase().trim(),
+      answer2: document.getElementById('sq-answer2').value.toLowerCase().trim(),
+      answer3: document.getElementById('sq-answer3').value.toLowerCase().trim()
+    };
+    
+    state.security.securityQuestionsSet = true;
+    closeModal('security-questions-modal');
+    document.getElementById('security-questions-form').reset();
+    showNotification('Security questions saved! You can now use password reset.', 'success');
+  }
+
+  function startPasswordReset() {
+    if (!state.security.securityQuestionsSet) {
+      showNotification('Please setup security questions first!', 'warning');
+      return;
+    }
+    openModal('password-reset-modal');
+  }
+
+  function verifySecurityAnswers(event) {
+    event.preventDefault();
+    
+    const answer1 = document.getElementById('reset-answer1').value.toLowerCase().trim();
+    const answer2 = document.getElementById('reset-answer2').value.toLowerCase().trim();
+    const answer3 = document.getElementById('reset-answer3').value.toLowerCase().trim();
+    
+    if (answer1 === state.security.securityAnswers.answer1 &&
+        answer2 === state.security.securityAnswers.answer2 &&
+        answer3 === state.security.securityAnswers.answer3) {
       
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-        <input type="email" name="email" value="{{ user.email }}"
-               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-      </div>
+      closeModal('password-reset-modal');
+      document.getElementById('password-reset-verify-form').reset();
       
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-        <input type="tel" name="phone" placeholder="+1 (555) 123-4567"
-               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-      </div>
+      setTimeout(() => {
+        openModal('password-reset-new-modal');
+      }, 300);
+    } else {
+      showNotification('Security answers do not match! Please try again.', 'error');
+    }
+  }
 
-      <div class="pt-2">
-        <button type="submit" name="update_profile" 
-                class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-          Update Profile
-        </button>
-      </div>
-    </form>
-  </div>
+  function setNewPasswordWithoutCurrent(event) {
+    event.preventDefault();
+    
+    const newPassword = document.getElementById('reset-new-password').value;
+    const confirmPassword = document.getElementById('reset-confirm-password').value;
+    
+    if (newPassword !== confirmPassword) {
+      showNotification('Passwords do not match!', 'error');
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      showNotification('Password must be at least 8 characters long!', 'error');
+      return;
+    }
+    
+    closeModal('password-reset-new-modal');
+    document.getElementById('password-reset-new-form').reset();
+    showNotification('Password reset successfully! Please login with your new password.', 'success');
+  }
 
-  <!-- Notification Settings -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <div class="flex items-center mb-6">
-      <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-        <i class="fas fa-bell text-green-600"></i>
-      </div>
-      <div>
-        <h2 class="text-xl font-semibold text-gray-800">Notifications</h2>
-        <p class="text-gray-600 text-sm">Manage your alert preferences</p>
-      </div>
-    </div>
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.style.display = 'block';
+    setTimeout(() => modal.classList.add('active'), 10);
+  }
 
-    <form method="post" class="space-y-4">
-      {% csrf_token %}
-      <div class="space-y-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="font-medium text-gray-800">Appointment Reminders</h3>
-            <p class="text-sm text-gray-600">Get reminded before appointments</p>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" name="appointment_reminders" class="sr-only peer" checked>
-            <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
+  function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.classList.remove('active');
+    setTimeout(() => modal.style.display = 'none', 300);
+  }
 
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="font-medium text-gray-800">Service Updates</h3>
-            <p class="text-sm text-gray-600">Updates about your service requests</p>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" name="service_updates" class="sr-only peer" checked>
-            <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
-
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="font-medium text-gray-800">SMS Notifications</h3>
-            <p class="text-sm text-gray-600">Text messages for urgent updates</p>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" name="sms_notifications" class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
+  function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    const bgColor = type === 'success' ? 'bg-green-500' : 
+                   type === 'error' ? 'bg-red-500' : 
+                   type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
+    
+    notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg z-50 transform transition-all duration-300 translate-x-full`;
+    notification.innerHTML = `
+      <div class="flex items-center gap-3">
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+        <span>${message}</span>
       </div>
-
-      <div class="pt-2">
-        <button type="submit" name="update_notifications"
-                class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium">
-          Save Preferences
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <!-- Security Settings -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <div class="flex items-center mb-6">
-      <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
-        <i class="fas fa-lock text-orange-600"></i>
-      </div>
-      <div>
-        <h2 class="text-xl font-semibold text-gray-800">Security</h2>
-        <p class="text-gray-600 text-sm">Protect your account</p>
-      </div>
-    </div>
-
-    <div class="space-y-4">
-      <div class="flex items-center justify-between py-3">
-        <div>
-          <h3 class="font-medium text-gray-800">Change Password</h3>
-          <p class="text-sm text-gray-600">Update your password regularly</p>
-        </div>
-        <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm">
-          Change
-        </button>
-      </div>
-
-      <div class="flex items-center justify-between py-3">
-        <div>
-          <h3 class="font-medium text-gray-800">Two-Factor Authentication</h3>
-          <p class="text-sm text-gray-600">Add extra security to your account</p>
-        </div>
-        <button class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm">
-          Enable
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Service Preferences -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <div class="flex items-center mb-6">
-      <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-        <i class="fas fa-tools text-purple-600"></i>
-      </div>
-      <div>
-        <h2 class="text-xl font-semibold text-gray-800">Service Preferences</h2>
-        <p class="text-gray-600 text-sm">Customize your service experience</p>
-      </div>
-    </div>
-
-    <form method="post" class="space-y-4">
-      {% csrf_token %}
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Contact Method</label>
-        <select name="contact_method" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-          <option value="email">Email</option>
-          <option value="phone">Phone Call</option>
-          <option value="sms">Text Message</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Default Service Address</label>
-        <textarea name="service_address" rows="2" placeholder="Enter your primary service address"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
-      </div>
-
-      <div class="pt-2">
-        <button type="submit" name="update_preferences"
-                class="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium">
-          Save Preferences
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Account Actions -->
-<div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-  <div class="flex items-center mb-6">
-    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4">
-      <i class="fas fa-exclamation-triangle text-red-600"></i>
-    </div>
-    <div>
-      <h2 class="text-xl font-semibold text-red-800">Account Actions</h2>
-      <p class="text-red-600 text-sm">Permanent actions - proceed with caution</p>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div class="flex items-center justify-between p-4 border border-red-200 rounded-lg">
-      <div>
-        <h3 class="font-medium text-red-800">Delete Account</h3>
-        <p class="text-sm text-red-600">Permanently delete your account</p>
-      </div>
-      <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm">
-        Delete
-      </button>
-    </div>
-
-    <div class="flex items-center justify-between p-4 border border-blue-200 rounded-lg">
-      <div>
-        <h3 class="font-medium text-blue-800">Export Data</h3>
-        <p class="text-sm text-blue-600">Download your account data</p>
-      </div>
-      <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
-        Export
-      </button>
-    </div>
-  </div>
-</div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.remove('translate-x-full'), 10);
+    setTimeout(() => {
+      notification.classList.add('translate-x-full');
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+</script>
 {% endblock %}

@@ -7,40 +7,78 @@
     <title>{% block title %}AppointMate - Customer{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --accent: #f72585;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --danger: #e63946;
+            --dark: #1a1d29;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+        }
+        
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ec 100%);
             min-height: 100vh;
+            color: var(--dark);
         }
 
         .dashboard-container {
             display: flex;
             min-height: 100vh;
+            flex-direction: column;
         }
         
         .sidebar {
-            width: 280px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            color: #1f2937;
+            width: 100%;
+            background: var(--dark);
+            color: white;
             transition: all 0.3s ease;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
             z-index: 1000;
+            position: relative;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .sidebar.mobile-open {
+            display: block;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(114, 9, 183, 0.1) 100%);
+            z-index: -1;
         }
         
         .sidebar-header {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            padding: 1.5rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .sidebar-logo {
-            font-size: 1.75rem;
-            font-weight: 700;
+            font-size: 1.5rem;
+            font-weight: 800;
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -48,26 +86,37 @@
         
         .sidebar-logo i {
             background: white;
-            color: #667eea;
-            width: 45px;
-            height: 45px;
+            color: var(--primary);
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
-            font-size: 1.25rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
         }
         
         .nav-item {
-            padding: 1rem 1.5rem;
-            margin: 0.5rem 1rem;
+            padding: 1rem 1.25rem;
+            margin: 0.25rem 0.75rem;
             border-radius: 12px;
             transition: all 0.3s ease;
             cursor: pointer;
             display: flex;
             align-items: center;
             text-decoration: none;
-            color: #4b5563;
+            color: rgba(255, 255, 255, 0.8);
             font-weight: 500;
             position: relative;
             overflow: hidden;
@@ -80,14 +129,14 @@
             top: 0;
             height: 100%;
             width: 4px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             transform: scaleY(0);
             transition: transform 0.3s ease;
         }
         
         .nav-item:hover, .nav-item.active {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            color: #667eea;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
         }
         
         .nav-item.active::before {
@@ -107,30 +156,55 @@
         }
         
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 1.5rem 2rem;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            background: white;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 1rem;
-            border-radius: 16px;
+            margin: 0.75rem;
+            border-radius: 14px;
+            position: sticky;
+            top: 0.75rem;
+            z-index: 100;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .mobile-menu-btn-header {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
         }
         
         .search-bar {
             display: flex;
             align-items: center;
-            background: #f1f5f9;
+            background: var(--gray-light);
             border-radius: 12px;
             padding: 0.75rem 1.25rem;
-            width: 350px;
+            width: 100%;
+            max-width: 350px;
             transition: all 0.3s ease;
+            flex: 1;
+            min-width: 200px;
         }
         
         .search-bar:focus-within {
             background: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
         }
         
         .search-bar input {
@@ -139,26 +213,35 @@
             outline: none;
             width: 100%;
             margin-left: 0.5rem;
-            color: #1f2937;
+            color: var(--dark);
+            font-weight: 500;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
         
         .user-profile {
             display: flex;
             align-items: center;
             cursor: pointer;
-            gap: 1rem;
+            gap: 0.75rem;
         }
         
         .user-avatar {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
         }
         
         .user-avatar img {
@@ -172,10 +255,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 44px;
-            height: 44px;
+            width: 42px;
+            height: 42px;
             border-radius: 12px;
-            background: #f1f5f9;
+            background: var(--gray-light);
             transition: all 0.3s ease;
             cursor: pointer;
         }
@@ -188,45 +271,501 @@
             position: absolute;
             top: -6px;
             right: -6px;
-            background: #ef4444;
+            background: var(--danger);
             color: white;
             border-radius: 50%;
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
         }
 
-        /* Location status indicator */
+        /* Enhanced Location Status */
         .location-status {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: #f0f9ff;
-            border: 1px solid #e0f2fe;
-            border-radius: 8px;
+            gap: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
             font-size: 0.875rem;
+            font-weight: 500;
             color: #0369a1;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
 
         .location-status.active {
-            background: #f0fdf4;
-            border-color: #dcfce7;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: rgba(34, 197, 94, 0.3);
             color: #166534;
+            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
         }
 
         .location-status.inactive {
-            background: #fef2f2;
-            border-color: #fecaca;
+            background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+            border-color: rgba(239, 68, 68, 0.2);
             color: #dc2626;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
         }
 
-        @media (max-width: 768px) {
+        .location-status i {
+            font-size: 1.1rem;
+        }
+
+        .content-wrapper {
+            padding: 1.5rem;
+        }
+
+        /* Enhanced Dashboard Cards */
+        .dashboard-card {
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Enhanced Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+        }
+        
+        .stat-card:nth-child(1) { --gradient-start: var(--primary); --gradient-end: var(--secondary); }
+        .stat-card:nth-child(2) { --gradient-start: #f8961e; --gradient-end: #f3722c; }
+        .stat-card:nth-child(3) { --gradient-start: #4cc9f0; --gradient-end: #4895ef; }
+        .stat-card:nth-child(4) { --gradient-start: #43e97b; --gradient-end: #38f9d7; }
+        
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin: 1rem 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.6rem;
+            color: white;
+        }
+
+        /* Enhanced Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 18px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            color: white;
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .welcome-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .welcome-banner::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 180px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Enhanced Progress Bars */
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.5s ease;
+        }
+
+        /* Enhanced Card Headers */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .card-title i {
+            color: var(--primary);
+        }
+        
+        .card-action {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        
+        .card-action:hover {
+            color: var(--primary-dark);
+        }
+
+        /* Enhanced Buttons */
+        .btn {
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Enhanced Notification System */
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid;
+            z-index: 10000;
+            max-width: 400px;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .notification-toast.show {
+            transform: translateX(0);
+        }
+        
+        .notification-toast.success {
+            border-left-color: #10b981;
+        }
+        
+        .notification-toast.error {
+            border-left-color: var(--danger);
+        }
+        
+        .notification-toast.info {
+            border-left-color: var(--primary);
+        }
+        
+        .notification-toast.warning {
+            border-left-color: var(--warning);
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .notification-toast.success .notification-icon {
+            background: #10b981;
+            color: white;
+        }
+        
+        .notification-toast.error .notification-icon {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .notification-toast.info .notification-icon {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .notification-toast.warning .notification-icon {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .notification-message {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .notification-close:hover {
+            color: #374151;
+            background: #f3f4f6;
+        }
+
+        /* Enhanced Notifications Panel */
+        .notifications-panel {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            width: 380px;
+            max-height: 500px;
+            overflow: hidden;
+            display: none;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .notifications-panel.show {
+            display: block;
+        }
+        
+        .notifications-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .notifications-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        
+        .notification-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .notification-item:hover {
+            background: #f9fafb;
+        }
+        
+        .notification-item.unread {
+            background: #f0f9ff;
+        }
+        
+        .notification-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        /* Enhanced Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1.5rem;
+            color: var(--gray);
+        }
+        
+        .empty-state i {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+        
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+        /* Desktop Styles */
+        @media (min-width: 1024px) {
+            .dashboard-container {
+                flex-direction: row;
+            }
+            
+            .sidebar {
+                width: 280px;
+                display: block;
+                position: relative;
+            }
+            
+            .mobile-menu-btn, .mobile-menu-btn-header {
+                display: none !important;
+            }
+            
+            .header {
+                margin: 1rem;
+                padding: 1.5rem 2rem;
+            }
+            
+            .header-top {
+                width: auto;
+            }
+            
+            .content-wrapper {
+                padding: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
+            
+            .dashboard-card {
+                padding: 2rem;
+                margin-bottom: 2rem;
+                border-radius: 20px;
+            }
+            
+            .welcome-banner {
+                padding: 2.5rem;
+                margin-bottom: 2rem;
+                border-radius: 20px;
+            }
+            
+            .stat-card {
+                padding: 2rem;
+                border-radius: 20px;
+            }
+            
+            .stat-value {
+                font-size: 2.5rem;
+            }
+        }
+
+        /* Tablet Styles */
+        @media (min-width: 768px) and (max-width: 1023px) {
             .sidebar {
                 width: 70px;
             }
@@ -254,30 +793,247 @@
                 margin-right: 0;
             }
             
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
             .search-bar {
-                width: 150px;
+                width: 250px;
+            }
+            
+            .header {
+                padding: 1.25rem;
+                margin: 0.75rem;
+            }
+            
+            .content-wrapper {
+                padding: 1.5rem;
+            }
+            
+            .welcome-banner {
+                padding: 2rem;
+            }
+            
+            .location-status {
+                font-size: 0.8rem;
+                padding: 0.6rem 1rem;
+            }
+            
+            .notifications-panel {
+                width: 400px;
+            }
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 767px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            
+            .mobile-menu-btn-header {
+                display: block;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .sidebar.mobile-open {
+                display: block;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .search-bar {
+                width: 100%;
+                max-width: none;
+                min-width: auto;
             }
             
             .header {
                 padding: 1rem;
                 margin: 0.5rem;
+                border-radius: 12px;
             }
-
+            
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .content-wrapper {
+                padding: 1rem;
+            }
+            
+            .welcome-banner {
+                padding: 1.5rem;
+                border-radius: 16px;
+            }
+            
             .location-status {
                 font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
+                padding: 0.5rem 0.75rem;
+                max-width: 180px;
+            }
+            
+            .user-profile .user-info {
+                display: none;
+            }
+            
+            .notifications-panel {
+                width: 90vw;
+                right: 5vw;
+                left: 5vw;
+                top: 80px;
+            }
+            
+            .dashboard-card {
+                padding: 1.25rem;
+                border-radius: 16px;
+            }
+            
+            .stat-card {
+                padding: 1.25rem;
+                border-radius: 16px;
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .card-title {
+                font-size: 1.3rem;
+            }
+        }
+
+        /* Small Mobile Styles */
+        @media (max-width: 480px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .header-top {
+                width: 100%;
+            }
+            
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .location-status {
+                max-width: 140px;
+                font-size: 0.7rem;
+                padding: 0.5rem;
+            }
+            
+            .notification-badge {
+                width: 38px;
+                height: 38px;
+            }
+            
+            .user-avatar {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .content-wrapper {
+                padding: 0.75rem;
+            }
+            
+            .welcome-banner {
+                padding: 1.25rem;
+            }
+            
+            .dashboard-card {
+                padding: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.75rem;
+            }
+            
+            .stat-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 1.4rem;
+            }
+            
+            .btn {
+                padding: 0.65rem 1.25rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Extra Small Mobile Styles */
+        @media (max-width: 360px) {
+            .location-status {
+                max-width: 120px;
+                font-size: 0.65rem;
+            }
+            
+            .notification-badge {
+                width: 36px;
+                height: 36px;
+            }
+            
+            .user-avatar {
+                width: 36px;
+                height: 36px;
+            }
+            
+            .nav-item {
+                padding: 0.9rem 1rem;
+                margin: 0.25rem 0.5rem;
+            }
+            
+            .sidebar-header {
+                padding: 1rem 0.75rem;
+            }
+            
+            .sidebar-logo {
+                font-size: 1.3rem;
+            }
+            
+            .sidebar-logo i {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="dashboard-container">
-        <div class="sidebar">
+        <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn-header" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
                     <i class="fas fa-calendar-check"></i>
                     <span class="sidebar-logo-text">AppointMate</span>
                 </div>
+                <button class="mobile-menu-btn" id="closeSidebar">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             
             <div class="sidebar-nav py-4">
@@ -309,10 +1065,6 @@
                     <i class="fas fa-cog"></i>
                     <span class="nav-text">Settings</span>
                 </a>
-                <a href="{% url 'customer_support' %}" class="nav-item {% if current_page == 'support' %}active{% endif %}">
-                    <i class="fas fa-question-circle"></i>
-                    <span class="nav-text">Help & Support</span>
-                </a>
                 
                 <form method="post" action="{% url 'logout' %}" class="nav-item" style="display: contents;">
                     {% csrf_token %}
@@ -326,19 +1078,21 @@
         
         <div class="main-content">
             <div class="header">
-                <div class="search-bar">
-                    <i class="fas fa-search text-gray-400"></i>
-                    <input type="text" placeholder="Search services...">
+                <div class="header-top">
+                    <div class="search-bar">
+                        <i class="fas fa-search text-gray-400"></i>
+                        <input type="text" placeholder="Search services...">
+                    </div>
                 </div>
                 
-                <div class="flex items-center gap-4">
-                    <!-- Location Status Indicator -->
+                <div class="header-right">
+                    <!-- Enhanced Location Status Indicator -->
                     <div id="location-status" class="location-status inactive" style="display: none;">
                         <i class="fas fa-map-marker-alt"></i>
                         <span id="location-status-text">Updating location...</span>
                     </div>
 
-                    <div class="notification-badge">
+                    <div class="notification-badge" id="notificationBadge">
                         <i class="fas fa-bell text-gray-500 text-xl"></i>
                         {% if unread_notification_count and unread_notification_count > 0 %}
                             <span class="badge" id="notification-count">{{ unread_notification_count }}</span>
@@ -346,7 +1100,7 @@
                     </div>
                     
                     <div class="user-profile">
-                        <div>
+                        <div class="user-info">
                             <div class="font-semibold text-gray-800">{{ customer.name }}</div>
                             <div class="text-sm text-gray-500">Customer</div>
                         </div>
@@ -361,22 +1115,69 @@
                 </div>
             </div>
             
-            <div class="content-wrapper p-6">
+            <div class="content-wrapper">
                 {% block content %}
                 {% endblock %}
             </div>
         </div>
     </div>
 
+    <!-- Notification Toast Container -->
+    <div id="notificationToastContainer"></div>
+
+    <!-- Notifications Panel -->
+    <div id="notificationsPanel" class="notifications-panel">
+        <div class="notifications-header">
+            <h3 class="font-bold text-gray-800 text-lg">Notifications</h3>
+            <button onclick="markAllNotificationsAsRead()" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+                Mark all as read
+            </button>
+        </div>
+        <div id="notificationsList" class="notifications-list">
+            <!-- Notifications will be loaded here -->
+        </div>
+        <div class="p-3 border-t border-gray-200 text-center">
+            <a href="{% url 'customer_appointments' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+                View All Notifications
+            </a>
+        </div>
+    </div>
+
     <script>
-        // ==================== LOCATION TRACKING SYSTEM ====================
+        // ==================== MOBILE MENU FUNCTIONALITY ====================
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+            
+            // Prevent body scrolling when menu is open
+            if (sidebar.classList.contains('mobile-open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            
+            if (window.innerWidth <= 767 && 
+                sidebar.classList.contains('mobile-open') && 
+                !sidebar.contains(event.target) && 
+                !mobileMenuBtn.contains(event.target)) {
+                toggleMobileMenu();
+            }
+        });
+
+        // ==================== ENHANCED LOCATION TRACKING SYSTEM ====================
         class LocationTracker {
             constructor() {
                 this.currentLocation = null;
                 this.options = {
                     enableHighAccuracy: true,
-                    timeout: 10000, // 10 seconds
-                    maximumAge: 300000 // 5 minutes cache
+                    timeout: 10000,
+                    maximumAge: 300000
                 };
                 this.updateInterval = null;
             }
@@ -407,13 +1208,13 @@
                             let errorMessage = 'Location access failed';
                             switch(error.code) {
                                 case error.PERMISSION_DENIED:
-                                    errorMessage = 'Location access denied. Using IP-based location.';
+                                    errorMessage = 'Location access denied';
                                     break;
                                 case error.POSITION_UNAVAILABLE:
-                                    errorMessage = 'Location unavailable. Using IP-based location.';
+                                    errorMessage = 'Location unavailable';
                                     break;
                                 case error.TIMEOUT:
-                                    errorMessage = 'Location request timeout. Using IP-based location.';
+                                    errorMessage = 'Location request timeout';
                                     break;
                             }
                             this.updateLocationStatus(errorMessage, 'inactive');
@@ -469,7 +1270,7 @@
                        document.cookie.match(/csrftoken=([^;]+)/)?.[1];
             }
 
-            // Update location status display
+            // Enhanced location status display
             updateLocationStatus(message, status) {
                 const statusElement = document.getElementById('location-status');
                 const statusText = document.getElementById('location-status-text');
@@ -478,13 +1279,18 @@
                     statusElement.style.display = 'flex';
                     statusElement.className = `location-status ${status}`;
                     statusText.textContent = message;
+                    
+                    // Add animation for status changes
+                    statusElement.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        statusElement.style.transform = 'scale(1)';
+                    }, 300);
                 }
             }
 
             // Initialize location tracking
             async initialize() {
                 try {
-                    // Show location status
                     this.updateLocationStatus('Initializing location...', 'inactive');
 
                     // Try to get current location
@@ -500,9 +1306,9 @@
                         this.getCurrentLocation().then(loc => {
                             this.updateServerLocation(loc);
                         }).catch(console.error);
-                    }, 300000); // 5 minutes
+                    }, 300000);
             
-                    // Also update location when user returns to the page
+                    // Update location when user returns to the page
                     document.addEventListener('visibilitychange', () => {
                         if (!document.hidden) {
                             this.getCurrentLocation().then(loc => {
@@ -513,7 +1319,6 @@
             
                 } catch (error) {
                     console.warn('Location tracking initialization failed:', error.message);
-                    // Continue without location - system will use IP-based fallback
                 }
             }
 
@@ -537,35 +1342,235 @@
                 this.updateLocationStatus('Location tracking stopped', 'inactive');
             }
 
-            // Show notification
+            // Enhanced notification system
             showNotification(message, type = 'info') {
-                // You can integrate with your existing notification system
-                console.log(`${type.toUpperCase()}: ${message}`);
-                
-                // Simple browser notification
-                if (type === 'success' && 'Notification' in window && Notification.permission === 'granted') {
-                    new Notification('AppointMate', {
-                        body: message,
-                        icon: '/static/favicon.ico'
-                    });
-                }
+                showNotification(message, type);
             }
         }
 
-        // Initialize location tracking when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            const locationTracker = new LocationTracker();
+        // ==================== ENHANCED NOTIFICATION SYSTEM ====================
+        function showNotification(message, type = 'info', title = null, icon = null) {
+            const container = document.getElementById('notificationToastContainer');
+            const notificationId = 'notification-' + Date.now();
             
-            // Only initialize for authenticated users
-            {% if user.is_authenticated %}
-            locationTracker.initialize().catch(console.error);
+            if (!icon) {
+                switch(type) {
+                    case 'success': icon = 'fa-check-circle'; break;
+                    case 'error': icon = 'fa-exclamation-triangle'; break;
+                    case 'warning': icon = 'fa-exclamation-circle'; break;
+                    default: icon = 'fa-info-circle';
+                }
+            }
             
-            // Make it available globally for manual updates
-            window.locationTracker = locationTracker;
-            {% endif %}
+            if (!title) {
+                switch(type) {
+                    case 'success': title = 'Success'; break;
+                    case 'error': title = 'Error'; break;
+                    case 'warning': title = 'Warning'; break;
+                    default: title = 'Information';
+                }
+            }
+            
+            const notification = document.createElement('div');
+            notification.id = notificationId;
+            notification.className = `notification-toast ${type}`;
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="fas ${icon}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" onclick="closeNotification('${notificationId}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Adjust timeout for mobile to be shorter
+            const timeout = window.innerWidth <= 767 ? 3000 : 5000;
+            setTimeout(() => {
+                closeNotification(notificationId);
+            }, timeout);
+        }
+
+        function closeNotification(notificationId) {
+            const notification = document.getElementById(notificationId);
+            if (notification) {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+        }
+
+        // Show notifications panel
+        function showNotificationsPanel() {
+            const panel = document.getElementById('notificationsPanel');
+            panel.classList.toggle('show');
+            loadNotifications();
+        }
+
+        // Load notifications
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/customer/notifications/', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const container = document.getElementById('notificationsList');
+                    
+                    if (data.notifications && data.notifications.length > 0) {
+                        container.innerHTML = data.notifications.map(notification => `
+                            <div class="notification-item ${notification.is_read ? '' : 'unread'}" onclick="handleNotificationClick(${notification.id})">
+                                <div class="flex items-start gap-3">
+                                    ${!notification.is_read ? '<span class="notification-dot"></span>' : ''}
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-sm text-gray-800">${notification.title}</div>
+                                        <div class="text-xs text-gray-600 mt-1">${notification.message}</div>
+                                        <div class="text-xs text-gray-400 mt-1">${notification.time_ago}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        container.innerHTML = `
+                            <div class="p-4 text-center text-gray-500">
+                                <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                                <p>No notifications</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        // Handle notification click
+        function handleNotificationClick(notificationId) {
+            fetch(`/notifications/${notificationId}/mark-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            }).then(() => {
+                updateNotificationCount();
+                loadNotifications();
+            });
+        }
+
+        // Mark all notifications as read
+        function markAllNotificationsAsRead() {
+            fetch('/notifications/mark-all-read/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            }).then(() => {
+                updateNotificationCount();
+                loadNotifications();
+                showNotification('All notifications marked as read', 'success');
+            });
+        }
+
+        // Get CSRF token
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        }
+
+        // Update notification count
+        async function updateNotificationCount() {
+            try {
+                const response = await fetch('{% url "get_notification_count" %}', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notification-count');
+                    
+                    if (data.count > 0) {
+                        if (badge) {
+                            badge.textContent = data.count;
+                        } else {
+                            const notificationBadge = document.querySelector('.notification-badge');
+                            const newBadge = document.createElement('span');
+                            newBadge.className = 'badge';
+                            newBadge.id = 'notification-count';
+                            newBadge.textContent = data.count;
+                            notificationBadge.appendChild(newBadge);
+                        }
+                    } else {
+                        if (badge) {
+                            badge.remove();
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating notification count:', error);
+            }
+        }
+
+        // Close notifications panel when clicking outside
+        document.addEventListener('click', function(event) {
+            const panel = document.getElementById('notificationsPanel');
+            const badge = document.getElementById('notificationBadge');
+            
+            if (panel && panel.classList.contains('show') && 
+                !panel.contains(event.target) && 
+                !badge.contains(event.target)) {
+                panel.classList.remove('show');
+            }
         });
 
-        // Manual location update function (can be called from anywhere)
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup mobile menu functionality
+            document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+            document.getElementById('closeSidebar').addEventListener('click', toggleMobileMenu);
+
+            // Initialize location tracking for authenticated users
+            {% if user.is_authenticated %}
+            const locationTracker = new LocationTracker();
+            locationTracker.initialize().catch(console.error);
+            window.locationTracker = locationTracker;
+            {% endif %}
+
+            // Initialize notification system
+            updateNotificationCount();
+            
+            // Show any initial messages
+            {% if messages %}
+                {% for message in messages %}
+                    showNotification('{{ message }}', '{{ message.tags }}');
+                {% endfor %}
+            {% endif %}
+
+            // Update notification count every 30 seconds
+            setInterval(updateNotificationCount, 30000);
+        });
+
+        // Setup notification badge click
+        document.getElementById('notificationBadge').addEventListener('click', showNotificationsPanel);
+
+        // Manual location update function
         function updateLocationManually() {
             if (window.locationTracker) {
                 window.locationTracker.updateManually();
@@ -573,40 +1578,6 @@
                 console.error('Location tracker not initialized');
             }
         }
-
-        // ==================== EXISTING NOTIFICATION SYSTEM ====================
-        // Update notification count periodically
-        function updateNotificationCount() {
-            fetch('{% url "get_notification_count" %}', {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const badge = document.getElementById('notification-count');
-                if (data.count > 0) {
-                    if (badge) {
-                        badge.textContent = data.count;
-                    } else {
-                        const notificationBadge = document.querySelector('.notification-badge');
-                        const newBadge = document.createElement('span');
-                        newBadge.className = 'badge';
-                        newBadge.id = 'notification-count';
-                        newBadge.textContent = data.count;
-                        notificationBadge.appendChild(newBadge);
-                    }
-                } else {
-                    if (badge) {
-                        badge.remove();
-                    }
-                }
-            })
-            .catch(error => console.error('Error updating notification count:', error));
-        }
-
-        // Update notification count every 30 seconds
-        setInterval(updateNotificationCount, 30000);
     </script>
 </body>
 </html>

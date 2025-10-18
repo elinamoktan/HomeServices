@@ -986,10 +986,6 @@
           <i class="fas fa-cog"></i>
           <span class="nav-text">Settings</span>
         </a>
-        <a href="{% url 'customer_support' %}" class="nav-item {% if current_page == 'support' %}active{% endif %}">
-          <i class="fas fa-question-circle"></i>
-          <span class="nav-text">FAQs</span>
-        </a>
         
         <form method="post" action="{% url 'logout' %}" class="nav-item" style="display: contents;">
           {% csrf_token %}
