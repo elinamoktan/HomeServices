@@ -644,7 +644,7 @@
             data-latitude="{{ worker.latitude|default:'' }}"
             data-longitude="{{ worker.longitude|default:'' }}"
             data-distance="{{ worker.distance_km|default:9999 }}"
-            data-rating="{{ worker.average_rating|default:0 }}"
+            data-rating="{{ worker.bayesian_rating|default:0 }}"
           >
             <div class="p-6 flex flex-col items-center text-center space-y-4">
               <div class="flex-shrink-0">
@@ -725,56 +725,57 @@
                   {% endif %}
                 </div>
                 
-                <!-- ✅ FIXED: Rating Display with Bayesian Algorithm -->
+                <!-- ✅ FIXED: Bayesian Rating Calculation -->
                 <div class="flex flex-col items-center space-y-2 mt-3">
                   <div class="text-center">
-                    <!-- Star Rating -->
-                    <div class="flex items-center justify-center space-x-1 mb-2">
-                      {% if worker.has_ratings %}
-                        {% for _ in worker.full_stars %}
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
+                    <!-- Calculate Bayesian Average Rating -->
+                    {% with total_ratings=worker.ratings.count %}
+                    {% with avg_rating=worker.ratings.all|avg_rating %}
+                    
+                    <!-- Bayesian Average Calculation -->
+                    {% if total_ratings > 0 %}
+                      {% with bayesian_rating=avg_rating|bayesian_average:total_ratings %}
+                      
+                      <!-- Debug info (remove in production) -->
+                      <div class="text-xs text-gray-500 mb-1 debug-info" style="display: none;">
+                        Debug: Avg={{ avg_rating|floatformat:2 }}, Total={{ total_ratings }}, Bayesian={{ bayesian_rating|floatformat:2 }}
+                      </div>
+                      
+                      <!-- Star Rating for workers with ratings -->
+                      <div class="flex items-center justify-center space-x-1 mb-2">
+                        {% for i in "12345" %}
+                          {% if forloop.counter <= bayesian_rating %}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
+                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                          {% elif forloop.counter|add:"-0.5" <= bayesian_rating %}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
+                              <defs>
+                                <linearGradient id="half-gradient-{{ worker.id }}-{{ forloop.counter }}">
+                                  <stop offset="50%" stop-color="gold" />
+                                  <stop offset="50%" stop-color="lightgray" />
+                                </linearGradient>
+                              </defs>
+                              <path fill="url(#half-gradient-{{ worker.id }}-{{ forloop.counter }})"
+                                    d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                            </svg>
+                          {% else %}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
+                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                          {% endif %}
                         {% endfor %}
+                      </div>
 
-                        {% if worker.half_star %}
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
-                            <defs>
-                              <linearGradient id="half-gradient-{{ worker.id }}">
-                                <stop offset="50%" stop-color="gold" />
-                                <stop offset="50%" stop-color="gray" />
-                              </linearGradient>
-                            </defs>
-                            <path fill="url(#half-gradient-{{ worker.id }})"
-                                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                          </svg>
-                        {% endif %}
-
-                        {% for _ in worker.empty_stars %}
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray" class="drop-shadow-sm">
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
-                        {% endfor %}
-                      {% else %}
-                        <!-- Show empty stars for no ratings -->
-                        {% for _ in "12345" %}
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
-                        {% endfor %}
-                      {% endif %}
-                    </div>
-
-                    <!-- Rating Number and Review Count -->
-                    <div class="space-y-1">
-                      {% if worker.has_ratings %}
+                      <!-- Rating Number and Review Count -->
+                      <div class="space-y-1">
                         <div class="text-center">
-                          <span class="text-indigo-900 font-bold text-xl">{{ worker.average_rating|floatformat:1 }}</span>
+                          <span class="text-indigo-900 font-bold text-xl">{{ bayesian_rating|floatformat:1 }}</span>
                           <span class="text-gray-500 text-sm">/5</span>
                         </div>
                         <div class="text-center">
                           <span class="text-indigo-600 font-medium text-sm">
-                            ({{ worker.total_ratings }} review{{ worker.total_ratings|pluralize }})
+                            ({{ total_ratings }} review{{ total_ratings|pluralize }})
                           </span>
                         </div>
                         <div class="text-xs text-green-600 font-semibold flex items-center justify-center mt-1">
@@ -783,14 +784,27 @@
                           </svg>
                           Bayesian Rating
                         </div>
-                      {% else %}
-                        <div class="text-center space-y-1">
-                          <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
-                          <br>
-                          <span class="text-gray-400 text-xs">Be the first to rate!</span>
-                        </div>
-                      {% endif %}
-                    </div>
+                      </div>
+                      
+                      {% endwith %}
+                    {% else %}
+                      <!-- No ratings section -->
+                      <div class="flex items-center justify-center space-x-1 mb-2">
+                        {% for _ in "12345" %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        {% endfor %}
+                      </div>
+                      <div class="text-center space-y-1">
+                        <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
+                        <br>
+                        <span class="text-gray-400 text-xs">Be the first to rate!</span>
+                      </div>
+                    {% endif %}
+                    
+                    {% endwith %}
+                    {% endwith %}
                   </div>
                 </div>
 
@@ -918,53 +932,49 @@
                 <!-- ✅ FIXED: Rating Display for Recommended Workers -->
                 <div class="flex flex-col items-center space-y-2 mt-3">
                   <div class="text-center">
-                    <!-- Star Rating -->
-                    <div class="flex items-center justify-center space-x-1 mb-2">
-                      {% if worker.has_ratings %}
-                        {% for _ in worker.full_stars %}
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
+                    <!-- Calculate Bayesian Average Rating -->
+                    {% with total_ratings=worker.ratings.count %}
+                    {% with avg_rating=worker.ratings.all|avg_rating %}
+                    
+                    <!-- Bayesian Average Calculation -->
+                    {% if total_ratings > 0 %}
+                      {% with bayesian_rating=avg_rating|bayesian_average:total_ratings %}
+                      
+                      <!-- Star Rating for workers with ratings -->
+                      <div class="flex items-center justify-center space-x-1 mb-2">
+                        {% for i in "12345" %}
+                          {% if forloop.counter <= bayesian_rating %}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
+                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                          {% elif forloop.counter|add:"-0.5" <= bayesian_rating %}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
+                              <defs>
+                                <linearGradient id="half-gradient-rec-{{ worker.id }}-{{ forloop.counter }}">
+                                  <stop offset="50%" stop-color="gold" />
+                                  <stop offset="50%" stop-color="lightgray" />
+                                </linearGradient>
+                              </defs>
+                              <path fill="url(#half-gradient-rec-{{ worker.id }}-{{ forloop.counter }})"
+                                    d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                            </svg>
+                          {% else %}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
+                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                          {% endif %}
                         {% endfor %}
+                      </div>
 
-                        {% if worker.half_star %}
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
-                            <defs>
-                              <linearGradient id="half-gradient-{{ worker.id }}">
-                                <stop offset="50%" stop-color="gold" />
-                                <stop offset="50%" stop-color="gray" />
-                              </linearGradient>
-                            </defs>
-                            <path fill="url(#half-gradient-{{ worker.id }})"
-                                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                          </svg>
-                        {% endif %}
-
-                        {% for _ in worker.empty_stars %}
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gray" class="drop-shadow-sm">
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
-                        {% endfor %}
-                      {% else %}
-                        <!-- Show empty stars for no ratings -->
-                        {% for _ in "12345" %}
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
-                        {% endfor %}
-                      {% endif %}
-                    </div>
-
-                    <!-- Rating Number and Review Count -->
-                    <div class="space-y-1">
-                      {% if worker.has_ratings %}
+                      <!-- Rating Number and Review Count -->
+                      <div class="space-y-1">
                         <div class="text-center">
-                          <span class="text-gray-900 font-bold text-xl">{{ worker.average_rating|floatformat:1 }}</span>
+                          <span class="text-gray-900 font-bold text-xl">{{ bayesian_rating|floatformat:1 }}</span>
                           <span class="text-gray-500 text-sm">/5</span>
                         </div>
                         <div class="text-center">
                           <span class="text-gray-600 font-medium text-sm">
-                            ({{ worker.total_ratings }} review{{ worker.total_ratings|pluralize }})
+                            ({{ total_ratings }} review{{ total_ratings|pluralize }})
                           </span>
                         </div>
                         <div class="text-xs text-green-600 font-semibold flex items-center justify-center mt-1">
@@ -973,14 +983,27 @@
                           </svg>
                           Bayesian Rating
                         </div>
-                      {% else %}
-                        <div class="text-center space-y-1">
-                          <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
-                          <br>
-                          <span class="text-gray-400 text-xs">Be the first to rate!</span>
-                        </div>
-                      {% endif %}
-                    </div>
+                      </div>
+                      
+                      {% endwith %}
+                    {% else %}
+                      <!-- No ratings section -->
+                      <div class="flex items-center justify-center space-x-1 mb-2">
+                        {% for _ in "12345" %}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        {% endfor %}
+                      </div>
+                      <div class="text-center space-y-1">
+                        <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
+                        <br>
+                        <span class="text-gray-400 text-xs">Be the first to rate!</span>
+                      </div>
+                    {% endif %}
+                    
+                    {% endwith %}
+                    {% endwith %}
                   </div>
                 </div>
               </div>

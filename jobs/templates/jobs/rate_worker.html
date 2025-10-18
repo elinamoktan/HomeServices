@@ -300,9 +300,10 @@
             const currentBayesianRating = parseFloat('{{ appointment.worker.bayesian_average_rating|default:"0" }}');
             const currentRatingCount = parseInt('{{ appointment.worker.ratings.count|default:"0" }}');
             
-            // Use the same parameters as backend Bayesian calculation
-            const confidence = 5.0;
-            const globalAverage = 3.0;
+            // ✅ FIXED: Use the same parameters as backend Bayesian calculation
+            // These now match the custom_tags.py parameters (C=3.0, m=2.5)
+            const confidence = 3.0;        // CHANGED from 5.0 to 3.0
+            const globalAverage = 2.5;     // CHANGED from 3.0 to 2.5
             
             let currentRating = 0;
             
@@ -314,20 +315,18 @@
                 5: 'Excellent - Outstanding service!'
             };
             
-            // Function to calculate projected Bayesian rating - FIXED VERSION
+            // ✅ FIXED: Correct Bayesian calculation function
             function calculateProjectedRating(userRating) {
                 if (currentRatingCount === 0) {
-                    // If no ratings yet, new rating becomes the average
+                    // If no ratings yet: (C * m + new_rating) / (C + 1)
                     return ((confidence * globalAverage) + userRating) / (confidence + 1);
                 }
                 
-                // CORRECT Bayesian formula:
-                // (confidence * global_avg + sum_of_all_ratings + new_rating) / (confidence + total_ratings + 1)
-                const currentTotal = currentBayesianRating * currentRatingCount;
-                const newTotal = currentTotal + userRating;
-                const newBayesian = ((confidence * globalAverage) + newTotal) / (confidence + currentRatingCount + 1);
+                // With existing ratings: (C * m + sum_of_ratings + new_rating) / (C + n + 1)
+                const sumOfRatings = currentBayesianRating * currentRatingCount;
+                const projectedRating = ((confidence * globalAverage) + sumOfRatings + userRating) / (confidence + currentRatingCount + 1);
                 
-                return Math.min(5, Math.max(1, newBayesian)); // Clamp between 1 and 5
+                return Math.min(5, Math.max(1, projectedRating)); // Clamp between 1 and 5
             }
             
             // Function to update star appearance based on rating
@@ -366,10 +365,14 @@
                     }, 10);
                     
                     // Debug info (remove in production)
-                    console.log('Current Bayesian:', currentBayesianRating);
-                    console.log('Current Ratings:', currentRatingCount);
-                    console.log('Your Rating:', rating);
-                    console.log('Projected Rating:', projectedRating);
+                    console.log('Bayesian Parameters:', {
+                        confidence: confidence,
+                        globalAverage: globalAverage,
+                        currentBayesian: currentBayesianRating,
+                        currentRatings: currentRatingCount,
+                        userRating: rating,
+                        projectedRating: projectedRating
+                    });
                 } else {
                     bayesianPreview.classList.add('hidden');
                 }
