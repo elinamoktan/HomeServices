@@ -669,8 +669,8 @@ class WorkerListView(ListView):
             customer = self.request.user.customer
             customer_location = customer.get_current_location()
 
-        # ✅ FIXED: Calculate ratings and add to each worker
-        workers_with_ratings = []
+        # ✅ FIXED: Calculate ratings and add to each worker WITH DISTANCE SORTING
+        workers_with_ratings_and_distance = []
         for worker in queryset:
             # Calculate Bayesian rating
             bayesian_rating = worker.bayesian_average_rating()
@@ -696,8 +696,8 @@ class WorkerListView(ListView):
             worker.half_star = half_star
             worker.empty_stars = range(empty_stars)
             
-            # Calculate distance
-            distance_km = None
+            # Calculate distance - CRITICAL FOR SORTING
+            distance_km = float('inf')  # Default to infinity if no location
             if customer_location and worker.latitude and worker.longitude:
                 try:
                     distance_km = _haversine_km(
@@ -706,12 +706,21 @@ class WorkerListView(ListView):
                     )
                     distance_km = round(distance_km, 2)
                 except (ValueError, TypeError):
-                    distance_km = None
+                    distance_km = float('inf')
             
             worker.distance_km = distance_km
-            workers_with_ratings.append(worker)
+            
+            # Add worker and distance to list for sorting
+            workers_with_ratings_and_distance.append((worker, distance_km))
 
-        return workers_with_ratings
+        # ✅ CRITICAL FIX: Sort workers by distance (closest first)
+        # Workers with no distance (infinity) will be at the end
+        workers_with_ratings_and_distance.sort(key=lambda x: x[1])
+        
+        # Extract just the worker objects in sorted order
+        sorted_workers = [worker for worker, distance in workers_with_ratings_and_distance]
+        
+        return sorted_workers
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

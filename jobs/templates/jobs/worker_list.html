@@ -626,7 +626,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
       {% for worker in object_list %}
       {% if not max_distance or worker.distance_km <= max_distance|add:"0" %}
-      <div class="group relative">
+      <div class="group relative flex flex-col">
         <!-- Favorite Button -->
         <button 
           class="favorite-btn absolute top-4 right-4 z-10 bg-white bg-opacity-90 rounded-full p-2 shadow-lg hover:scale-110 transition-transform duration-200"
@@ -637,16 +637,16 @@
           <span class="favorite-text sr-only">Add to Favorites</span>
         </button>
         
-        <a href="{% url 'worker_service_details' worker.id %}" class="block" >
+        <a href="{% url 'worker_service_details' worker.id %}" class="block flex-1">
           <div
-            class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full card-height"
+            class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full flex flex-col"
             data-worker-id="{{ worker.id }}"
             data-latitude="{{ worker.latitude|default:'' }}"
             data-longitude="{{ worker.longitude|default:'' }}"
             data-distance="{{ worker.distance_km|default:9999 }}"
             data-rating="{{ worker.bayesian_rating|default:0 }}"
           >
-            <div class="p-6 flex flex-col items-center text-center space-y-4">
+            <div class="p-6 flex flex-col items-center text-center space-y-4 flex-1">
               <div class="flex-shrink-0">
                 {% if worker.profile_pic %}
                 <img
@@ -662,7 +662,7 @@
                 {% endif %}
               </div>
 
-              <div class="flex flex-col space-y-3 w-full">
+              <div class="flex flex-col space-y-3 w-full flex-1">
                 <p class="text-2xl font-extrabold text-indigo-900 group-hover:text-pink-600 transition">{{ worker.name }}</p>
 
                 <div class="flex justify-center">
@@ -689,7 +689,7 @@
                   {% endif %}
                 </div>
 
-                <p class="text-gray-700 italic text-base leading-relaxed">{{ worker.tagline }}</p>
+                <p class="text-gray-700 italic text-base leading-relaxed line-clamp-2 min-h-[3rem] flex items-center justify-center">{{ worker.tagline }}</p>
 
                 <div class="space-y-2">
                   <!-- Worker Address Display -->
@@ -796,9 +796,8 @@
                           </svg>
                         {% endfor %}
                       </div>
-                      <div class="text-center space-y-1">
+                      <div class="text-center space-y-1 min-h-[4rem] flex flex-col justify-center">
                         <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
-                        <br>
                         <span class="text-gray-400 text-xs">Be the first to rate!</span>
                       </div>
                     {% endif %}
@@ -822,7 +821,7 @@
               </div>
             </div>
 
-            <div class="px-6 py-4 bg-indigo-100 rounded-b-xl text-center card-btn">
+            <div class="px-6 py-4 bg-indigo-100 rounded-b-xl text-center mt-auto">
               <button
                 class="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transform transition duration-300 ease-in-out"
               >
@@ -858,7 +857,7 @@
     
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
       {% for worker in recommended_workers %}
-      <div class="group relative">
+      <div class="group relative flex flex-col">
         <!-- Favorite Button -->
         {% if user.is_authenticated and user.customer %}
         <button 
@@ -871,9 +870,9 @@
         </button>
         {% endif %}
         
-        <a href="{% url 'worker_service_details' worker.id %}" class="block ">
-          <div class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full card-height">
-            <div class="p-6 flex flex-col items-center text-center space-y-4">
+        <a href="{% url 'worker_service_details' worker.id %}" class="block flex-1">
+          <div class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full flex flex-col">
+            <div class="p-6 flex flex-col items-center text-center space-y-4 flex-1">
               <div class="flex-shrink-0">
                 {% if worker.profile_pic %}
                 <img
@@ -889,7 +888,7 @@
                 {% endif %}
               </div>
 
-              <div class="flex flex-col space-y-3 w-full">
+              <div class="flex flex-col space-y-3 w-full flex-1">
                 <p class="text-2xl font-extrabold text-gray-900 group-hover:text-yellow-600 transition">{{ worker.name }}</p>
 
                 <div class="flex justify-center">
@@ -906,7 +905,7 @@
                   {% endif %}
                 </div>
 
-                <p class="text-gray-700 italic text-base leading-relaxed">{{ worker.tagline }}</p>
+                <p class="text-gray-700 italic text-base leading-relaxed line-clamp-2 min-h-[3rem] flex items-center justify-center">{{ worker.tagline }}</p>
 
                 <div class="space-y-2">
                   {% if worker.location %}
@@ -995,9 +994,8 @@
                           </svg>
                         {% endfor %}
                       </div>
-                      <div class="text-center space-y-1">
+                      <div class="text-center space-y-1 min-h-[4rem] flex flex-col justify-center">
                         <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
-                        <br>
                         <span class="text-gray-400 text-xs">Be the first to rate!</span>
                       </div>
                     {% endif %}
@@ -1009,7 +1007,7 @@
               </div>
             </div>
 
-            <div class="px-6 py-4 bg-yellow-100 rounded-b-xl text-center">
+            <div class="px-6 py-4 bg-yellow-100 rounded-b-xl text-center mt-auto">
               <button
                 class="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transform transition duration-300 ease-in-out"
               >
@@ -1077,14 +1075,23 @@
     100% { transform: scale(1); }
   }
 
-  /* Enhanced card styling */
+  /* Enhanced card styling with equal height */
   .worker-card {
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
   .worker-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Ensure all cards have equal height */
+  .grid > div {
+    display: flex;
+    flex-direction: column;
   }
 
   /* Improved grid layout */
@@ -1151,6 +1158,26 @@
     border-radius: 8px;
     font-size: 0.7rem;
     font-weight: 600;
+  }
+
+  /* Fix for consistent card heights */
+  .card-height {
+    min-height: 520px;
+  }
+
+  @media (max-width: 768px) {
+    .card-height {
+      min-height: 480px;
+    }
+  }
+
+  /* Ensure consistent spacing */
+  .flex-1 {
+    flex: 1 1 0%;
+  }
+
+  .mt-auto {
+    margin-top: auto;
   }
 </style>
 {% endblock %}

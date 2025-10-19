@@ -61,18 +61,6 @@
                     </div>
                 {% endif %}
 
-                <div id="location-status" class="mb-4 p-4 rounded-xl backdrop-blur-md bg-blue-50 border border-blue-200 text-blue-700 hidden animate-fade-in">
-                    <p class="text-sm flex items-center justify-center">
-                        <span id="location-message" class="flex items-center font-medium">
-                            <svg class="w-4 h-4 mr-2 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            📍 Getting your location...
-                        </span>
-                    </p>
-                </div>
-
                 <form method="POST" id="login-form" class="space-y-6">
                     {% csrf_token %}
                     
@@ -86,10 +74,6 @@
                             </div>
                         {% endfor %}
                     </div>
-                    
-                    <input type="hidden" name="latitude" id="latitude">
-                    <input type="hidden" name="longitude" id="longitude">
-                    <input type="hidden" name="location_accuracy" id="location_accuracy">
                     
                     <div class="relative group mt-8">
                         <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-xl blur opacity-90 group-hover:opacity-100 transition duration-500 animate-pulse-fast"></div>
@@ -131,138 +115,8 @@
     </div>
 </div>
 
-<script>
-// ... (Your original JavaScript for geolocation)
-document.addEventListener('DOMContentLoaded', function() {
-    const loginForm = document.getElementById('login-form');
-    const loginButton = document.getElementById('login-button');
-    const buttonText = document.getElementById('button-text');
-    const locationStatus = document.getElementById('location-status');
-    const locationMessage = document.getElementById('location-message');
-    
-    let locationCaptured = false;
-    let formSubmissionPending = false;
-
-    // Function to show location status
-    function showLocationStatus(message, isError = false) {
-        locationStatus.classList.remove('hidden');
-        locationMessage.innerHTML = message;
-        
-        if (isError) {
-            // Updated error style for light background
-            locationStatus.classList.remove('bg-blue-50', 'border-blue-200', 'text-blue-700');
-            locationStatus.classList.add('bg-red-50', 'border-red-300', 'text-red-700');
-        } else {
-            // Updated success/loading style for light background
-            locationStatus.classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
-            locationStatus.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-700');
-        }
-    }
-
-    // Function to capture geolocation
-    function captureLocation() {
-        return new Promise((resolve, reject) => {
-            // First check if we have recent location from landing page
-            const pendingLat = sessionStorage.getItem('pending_latitude');
-            const pendingLon = sessionStorage.getItem('pending_longitude');
-            const pendingAcc = sessionStorage.getItem('pending_accuracy');
-            
-            if (pendingLat && pendingLon) {
-                console.log('Using location from landing page');
-                document.getElementById('latitude').value = pendingLat;
-                document.getElementById('longitude').value = pendingLon;
-                document.getElementById('location_accuracy').value = pendingAcc || '';
-                
-                locationCaptured = true;
-                showLocationStatus('✅ Location ready for personalized service');
-                setTimeout(() => locationStatus.classList.add('hidden'), 2000);
-                
-                // Clear session storage
-                sessionStorage.removeItem('pending_latitude');
-                sessionStorage.removeItem('pending_longitude');
-                sessionStorage.removeItem('pending_accuracy');
-                
-                resolve({ lat: pendingLat, lon: pendingLon, accuracy: pendingAcc });
-                return;
-            }
-
-            // If no cached location, get fresh location
-            if (!navigator.geolocation) {
-                reject(new Error('Geolocation not supported'));
-                return;
-            }
-
-            showLocationStatus(`
-                <svg class="w-4 h-4 mr-2 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                📍 Detecting your location for better service...
-            `);
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    const accuracy = position.coords.accuracy;
-
-                    document.getElementById('latitude').value = lat;
-                    document.getElementById('longitude').value = lon;
-                    document.getElementById('location_accuracy').value = accuracy;
-
-                    locationCaptured = true;
-                    showLocationStatus('✅ Location detected - Personalizing your experience');
-                    
-                    setTimeout(() => locationStatus.classList.add('hidden'), 2000);
-                    resolve({ lat, lon, accuracy });
-                },
-                (error) => {
-                    console.warn('Geolocation error:', error);
-                    showLocationStatus('⚠️ Using approximate location for service matching (Location access denied/unavailable)', true);
-                    setTimeout(() => locationStatus.classList.add('hidden'), 3000);
-                    reject(error);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                }
-            );
-        });
-    }
-
-    // Intercept form submission
-    loginForm.addEventListener('submit', function(e) {
-        if (!locationCaptured && !formSubmissionPending) {
-            e.preventDefault();
-            formSubmissionPending = true;
-            loginButton.disabled = true;
-            buttonText.textContent = 'Detecting Location...';
-
-            captureLocation()
-                .then(() => {
-                    buttonText.textContent = 'Securing Access...';
-                    loginForm.submit();
-                })
-                .catch(() => {
-                    console.log('Proceeding without precise location');
-                    buttonText.textContent = 'Securing Access...';
-                    loginForm.submit();
-                });
-        }
-    });
-
-    // Proactively capture location on page load
-    setTimeout(() => {
-        captureLocation().catch(() => {
-            console.log('Background location capture failed');
-        });
-    }, 500);
-});
-</script>
-
 <style>
-/* Animations (remain largely the same, but color-related ones are slightly adjusted) */
+/* Animations */
 @keyframes fade-in {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -274,18 +128,13 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 @keyframes pulse-slow {
-    0%, 100% { opacity: 0.6; } /* Increased opacity for lighter background */
+    0%, 100% { opacity: 0.6; }
     50% { opacity: 0.8; }
 }
 
 @keyframes pulse-fast {
     0%, 100% { opacity: 0.9; }
     50% { opacity: 1; }
-}
-
-@keyframes gradient-x {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
 }
 
 @keyframes shimmer {
@@ -302,23 +151,16 @@ document.addEventListener('DOMContentLoaded', function() {
 .animate-fade-in-up { animation: fade-in-up 0.6s ease-out; }
 .animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
 .animate-pulse-fast { animation: pulse-fast 2s ease-in-out infinite; }
-
-.animate-gradient-x {
-    background-size: 200% 200%;
-    animation: gradient-x 4s ease infinite;
-}
-
 .animate-shimmer { animation: shimmer 2s infinite; }
 
 .animation-delay-2000 { animation-delay: 2s; }
 .animation-delay-4000 { animation-delay: 4s; }
 
-
-/* Particle animation (Less visible on light background) */
+/* Particle animation */
 .particle {
     position: absolute;
     border-radius: 50%;
-    background: rgba(100, 100, 100, 0.1); /* Darker, subtle particles */
+    background: rgba(100, 100, 100, 0.1);
     animation: float 8s ease-in-out infinite;
 }
 
@@ -329,31 +171,30 @@ document.addEventListener('DOMContentLoaded', function() {
 .particle-5 { width: 4px; height: 4px; top: 70%; left: 40%; animation-delay: 4s; }
 .particle-6 { width: 6px; height: 6px; top: 40%; left: 30%; animation-delay: 5s; }
 
-
-/* Custom form styling for a bright theme */
+/* Custom form styling */
 .form-control {
     transition: all 0.3s ease;
-    background: white !important; /* Pure white input */
-    border: 1px solid rgb(229 231 235) !important; /* Light gray border */
-    color: rgb(55 65 81) !important; /* Dark gray text */
-    backdrop-filter: blur(5px); /* Less blur for less contrast on light background */
+    background: white !important;
+    border: 1px solid rgb(229 231 235) !important;
+    color: rgb(55 65 81) !important;
+    backdrop-filter: blur(5px);
     padding: 1rem 1rem !important;
 }
 
 .form-control:focus {
     background: white !important;
-    border-color: rgb(99 102 241) !important; /* Indigo focus border */
-    box-shadow: 0 0 0 4px rgb(99 102 241 / 0.1) !important; /* Subtle indigo focus shadow */
+    border-color: rgb(99 102 241) !important;
+    box-shadow: 0 0 0 4px rgb(99 102 241 / 0.1) !important;
     color: rgb(55 65 81) !important;
 }
 
 .form-control::placeholder {
-    color: rgb(107 114 128) !important; /* Medium gray placeholder */
+    color: rgb(107 114 128) !important;
 }
 
 /* Custom label styling */
 .control-label {
-    color: rgb(55 65 81) !important; /* Dark gray label */
+    color: rgb(55 65 81) !important;
     font-weight: 600;
     letter-spacing: 0.05em;
 }
@@ -365,20 +206,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /* Custom checkbox styling */
 input[type="checkbox"] {
-    background: rgb(243 244 246) !important; /* Light background for checkbox */
+    background: rgb(243 244 246) !important;
     border: 1px solid rgb(209 213 219) !important;
 }
 
 input[type="checkbox"]:checked {
-    background-color: rgb(99 102 241) !important; /* Indigo checked color */
+    background-color: rgb(99 102 241) !important;
     border-color: rgb(99 102 241) !important;
 }
 
 /* Custom select styling */
 select.form-control {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234b5563' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important; /* Darker arrow for contrast */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234b5563' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
     background-position: right 1rem center !important;
     padding-right: 3rem !important;
 }
-</style>
+</style> 
 {% endblock content %}
