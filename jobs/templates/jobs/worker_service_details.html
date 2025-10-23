@@ -6,6 +6,9 @@
 <!-- Add Leaflet CSS and JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Khalti Checkout -->
+<script src="https://khalti.s3.ap-south-1.amazonaws.com/KPG/dist/2020.12.17.0.0.0/khalti-checkout.iffe.js"></script>
+
 <style>
 /* ================== GLOBAL STYLES ================== */
 :root {
@@ -42,6 +45,271 @@ body {
     min-height: 100vh;
 }
 
+/* ================== SERVICE CARDS - UPDATED FOR CONSISTENT HEIGHT & WIDTH ================== */
+.services-container {
+    max-width: none;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.service-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+    .service-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .service-grid {
+        grid-template-columns: repeat(3, 1fr); 
+    }
+}
+
+@media (min-width: 1280px) {
+    .service-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.service-card {
+    background: var(--white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+    transition: all 0.4s ease;
+    border: 1px solid var(--light-gray);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 580px;
+}
+
+.service-card.show {
+    display: flex;
+}
+
+.service-card.filtered {
+    display: flex;
+}
+
+.service-card.hidden {
+    display: none !important;
+}
+
+.service-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-xl);
+}
+
+.service-card:hover::before {
+    transform: scaleX(1);
+}
+
+.service-image {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+    background: var(--light-gray);
+    transition: transform 0.3s ease;
+}
+
+.service-card:hover .service-image {
+    transform: scale(1.05);
+}
+
+.service-content {
+    padding: 2rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.service-title-card {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.75rem;
+    line-height: 1.3;
+}
+
+.service-price {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 1.25rem 0;
+    color: var(--primary);
+}
+
+.service-duration {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--gray);
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+    font-weight: 500;
+}
+
+.service-duration svg {
+    color: var(--primary);
+    width: 16px;
+    height: 16px;
+}
+
+.service-description {
+    color: var(--gray);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+    font-weight: 400;
+    flex: 1;
+}
+
+.service-features {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+.service-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    color: var(--gray);
+    font-weight: 500;
+}
+
+.service-features li::before {
+    content: "✓";
+    color: var(--success);
+    font-weight: bold;
+    font-size: 1rem;
+    flex-shrink: 0;
+    background: var(--success);
+    color: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+.book-service-btn {
+    width: 100%;
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    padding: 1.25rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    box-shadow: var(--shadow-md);
+    margin-top: auto;
+}
+
+.book-service-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+.book-service-btn.login-required {
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    cursor: pointer;
+}
+
+.book-service-btn.login-required:hover {
+    background: linear-gradient(135deg, #4b5563, #6b7280);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* ================== SERVICE SPECS ================== */
+.service-specs {
+    background: #f8f9fa;
+    padding: 1.25rem;
+    border-radius: 10px;
+    margin: 1.25rem 0;
+    border-left: 4px solid var(--primary);
+}
+
+.spec-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.spec-item:last-child {
+    margin-bottom: 0;
+}
+
+.spec-label {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.spec-value {
+    color: var(--gray);
+}
+
+.special-offer {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000;
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 1.25rem 0;
+    text-align: center;
+    border: 2px dashed #ffc107;
+}
+
+.offer-badge {
+    background: #dc2626;
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #666;
+    margin-right: 0.5rem;
+}
+
+.offer-price {
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
 /* ================== HEADER STYLES ================== */
 .service-header {
     background: var(--white);
@@ -55,9 +323,10 @@ body {
 }
 
 .header-content {
-    max-width: 1200px;
+    max-width: none;
+    width: 100%;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 2rem;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -124,9 +393,10 @@ body {
 
 /* ================== ADD CUSTOM SERVICE SECTION ================== */
 .custom-service-section {
-    max-width: 1200px;
+    max-width: none;
+    width: 100%;
     margin: 0 auto 2rem auto;
-    padding: 0 1rem;
+    padding: 0 2rem;
     animation: slideDown 0.5s ease;
 }
 
@@ -200,9 +470,10 @@ body {
 
 /* ================== SEARCH AND FILTER SECTION ================== */
 .search-filter-section {
-    max-width: 1200px;
+    max-width: none;
+    width: 100%;
     margin: 0 auto 2rem auto;
-    padding: 0 1rem;
+    padding: 0 2rem;
 }
 
 .search-filter-container {
@@ -324,9 +595,10 @@ body {
 
 /* ================== SERVICE NAVIGATION ================== */
 .service-nav-container {
-    max-width: 1200px;
+    max-width: none;
+    width: 100%;
     margin: 0 auto 2rem auto;
-    padding: 0 1rem;
+    padding: 0 2rem;
 }
 
 .service-nav {
@@ -390,9 +662,10 @@ body {
 
 /* ================== EXPERT ASSISTANCE BANNER ================== */
 .expert-banner {
-    max-width: 1200px;
+    max-width: none;
+    width: 100%;
     margin: 0 auto 2rem auto;
-    padding: 0 1rem;
+    padding: 0 2rem;
 }
 
 .assistance-card {
@@ -482,244 +755,6 @@ body {
     transform: translateY(-3px);
     box-shadow: var(--shadow-xl);
     color: var(--primary);
-}
-
-/* ================== SERVICE CARDS ================== */
-.services-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-}
-
-.service-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.service-card {
-    background: var(--white);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
-    transition: all 0.4s ease;
-    border: 1px solid var(--light-gray);
-    position: relative;
-    display: none;
-}
-
-.service-card.show {
-    display: block;
-}
-
-.service-card.filtered {
-    display: block;
-}
-
-.service-card.hidden {
-    display: none !important;
-}
-
-.service-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--gradient-primary);
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
-}
-
-.service-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: var(--shadow-xl);
-}
-
-.service-card:hover::before {
-    transform: scaleX(1);
-}
-
-.service-image {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    background: var(--light-gray);
-    transition: transform 0.3s ease;
-}
-
-.service-card:hover .service-image {
-    transform: scale(1.05);
-}
-
-.service-content {
-    padding: 1.5rem;
-    position: relative;
-}
-
-.service-title-card {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--dark);
-    margin-bottom: 0.5rem;
-    line-height: 1.3;
-}
-
-.service-price {
-    font-size: 1.8rem;
-    font-weight: 800;
-    margin: 0 0 1rem 0;
-    color: var(--primary);
-}
-
-.service-duration {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--gray);
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    font-weight: 500;
-}
-
-.service-duration svg {
-    color: var(--primary);
-    width: 16px;
-    height: 16px;
-}
-
-.service-description {
-    color: var(--gray);
-    font-size: 0.95rem;
-    line-height: 1.5;
-    margin-bottom: 1rem;
-    font-weight: 400;
-}
-
-.service-features {
-    list-style: none;
-    padding: 0;
-    margin-bottom: 1.5rem;
-}
-
-.service-features li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--gray);
-    font-weight: 500;
-}
-
-.service-features li::before {
-    content: "✓";
-    color: var(--success);
-    font-weight: bold;
-    font-size: 1rem;
-    flex-shrink: 0;
-    background: var(--success);
-    color: white;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-}
-
-.book-service-btn {
-    width: 100%;
-    background: var(--gradient-primary);
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 1rem;
-    box-shadow: var(--shadow-md);
-}
-
-.book-service-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-xl);
-}
-
-.book-service-btn.login-required {
-    background: linear-gradient(135deg, #6b7280, #9ca3af);
-    cursor: pointer;
-}
-
-.book-service-btn.login-required:hover {
-    background: linear-gradient(135deg, #4b5563, #6b7280);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-xl);
-}
-
-/* ================== SERVICE SPECS ================== */
-.service-specs {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 8px;
-    margin: 1rem 0;
-    border-left: 4px solid var(--primary);
-}
-
-.spec-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
-}
-
-.spec-item:last-child {
-    margin-bottom: 0;
-}
-
-.spec-label {
-    font-weight: 600;
-    color: var(--dark);
-}
-
-.spec-value {
-    color: var(--gray);
-}
-
-.special-offer {
-    background: linear-gradient(135deg, #ffd700, #ffed4e);
-    color: #000;
-    padding: 0.75rem;
-    border-radius: 8px;
-    margin: 1rem 0;
-    text-align: center;
-    border: 2px dashed #ffc107;
-}
-
-.offer-badge {
-    background: #dc2626;
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-right: 0.5rem;
-}
-
-.original-price {
-    text-decoration: line-through;
-    color: #666;
-    margin-right: 0.5rem;
-}
-
-.offer-price {
-    color: #dc2626;
-    font-weight: 700;
-    font-size: 1.1rem;
 }
 
 /* ================== BOOKING MODAL ================== */
@@ -1167,6 +1202,18 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
         grid-template-columns: 1fr;
     }
     
+    .service-card {
+        min-height: 520px;
+    }
+    
+    .service-image {
+        height: 200px;
+    }
+    
+    .service-content {
+        padding: 1.5rem;
+    }
+    
     .service-nav {
         gap: 0.25rem;
     }
@@ -1206,6 +1253,255 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
     
     .custom-service-card {
         padding: 1.5rem;
+    }
+    
+    .services-container {
+        max-width: none;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+}
+
+/* ================== PAYMENT NOTICE STYLES ================== */
+.payment-notice {
+    background: #fff3cd;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+    margin: 1rem 0;
+}
+
+.payment-notice h4 {
+    color: #856404;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.payment-notice p {
+    color: #856404;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* ================== KHALTI PAYMENT STYLES - UPDATED TO MATCH WORKER_LIST ================== */
+.khalti-payment-section {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    margin: 1.5rem 0;
+    border-left: 4px solid #5C2D91;
+}
+
+.khalti-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #5C2D91, #7E3DB9);
+    border-radius: 10px;
+    color: white;
+}
+
+.khalti-logo img {
+    height: 32px;
+    width: auto;
+    filter: brightness(0) invert(1);
+}
+
+.khalti-logo span {
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.payment-amount {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #059669;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.payment-amount .label {
+    font-size: 1rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.payment-amount .amount {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #059669;
+}
+
+.khalti-btn {
+    background: linear-gradient(135deg, #5C2D91, #7E3DB9);
+    color: white;
+    border: none;
+    padding: 1.25rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+}
+
+.khalti-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #7E3DB9, #5C2D91);
+}
+
+.khalti-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.payment-processing {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    background: #f0f9ff;
+    border-radius: 12px;
+    border: 2px solid #0ea5e9;
+    margin: 1rem 0;
+}
+
+.payment-processing.active {
+    display: block;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #5C2D91;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.payment-success {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    background: #d1fae5;
+    border-radius: 12px;
+    border: 2px solid #10b981;
+    margin: 1rem 0;
+}
+
+.payment-success.active {
+    display: block;
+}
+
+.payment-success .icon {
+    font-size: 3rem;
+    color: #10b981;
+    margin-bottom: 1rem;
+}
+
+.payment-success h4 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #065f46;
+    margin-bottom: 0.5rem;
+}
+
+.payment-success p {
+    color: #065f46;
+    font-size: 1rem;
+}
+
+.payment-error {
+    display: none;
+    text-align: center;
+    padding: 1.5rem;
+    background: #fee2e2;
+    border-radius: 10px;
+    border: 2px solid #ef4444;
+    margin: 1rem 0;
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.payment-error.active {
+    display: block;
+}
+
+/* ================== CONSISTENT CARD HEIGHT STYLES ================== */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.flex-1 {
+    flex: 1 1 0%;
+}
+
+.mt-auto {
+    margin-top: auto;
+}
+
+/* Enhanced card styling with equal height */
+.service-card {
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure all cards have equal height */
+.grid > div {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Extra large screens - even larger cards */
+@media (min-width: 1536px) {
+    .service-grid {
+        gap: 3rem;
+    }
+    
+    .service-card {
+        min-height: 620px;
+    }
+    
+    .service-image {
+        height: 260px;
+    }
+    
+    .service-content {
+        padding: 2.5rem;
     }
 }
 </style>
@@ -1372,15 +1668,7 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                 </select>
             </div>
             
-            <div class="filter-group">
-                <label class="filter-label" for="categoryFilter">Filter by Category</label>
-                <select id="categoryFilter" class="filter-select">
-                    <option value="all">All Categories</option>
-                    {% for category in categories_data %}
-                        <option value="{{ category.id }}">{{ category.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+            <!-- REMOVED: Category Filter Section -->
             
             <button class="filter-reset" id="resetFilters">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
@@ -1587,6 +1875,7 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
     </div>
 </div>
 
+
 <!-- ================== BOOKING MODAL ================== -->
 <div class="booking-modal" id="bookingModal">
     <div class="modal-content">
@@ -1603,8 +1892,12 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                     <span class="summary-value" id="summaryServiceName">-</span>
                 </div>
                 <div class="summary-item">
-                    <span class="summary-label">Price:</span>
+                    <span class="summary-label">Total Price:</span>
                     <span class="summary-value" id="summaryServicePrice">-</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Initial Payment:</span>
+                    <span class="summary-value" style="color: #059669; font-weight: bold;">₹50.00</span>
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">Duration:</span>
@@ -1612,13 +1905,12 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                 </div>
             </div>
             
-            <form class="booking-form" id="bookingForm" action="{% url 'appointment_request' worker.id %}" method="post">
+            <form class="booking-form" id="bookingForm">
                 {% csrf_token %}
                 <input type="hidden" id="selectedServiceId" name="service_id">
                 <input type="hidden" id="selectedServiceName" name="service_name">
                 <input type="hidden" id="selectedServicePrice" name="service_price">
                 <input type="hidden" id="selectedTimeSlot" name="preferred_time">
-                <!-- NEW: Hidden fields for location data -->
                 <input type="hidden" id="selectedLatitude" name="latitude">
                 <input type="hidden" id="selectedLongitude" name="longitude">
                 <input type="hidden" id="selectedAddress" name="address">
@@ -1628,18 +1920,32 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                     <input type="date" id="serviceDate" name="preferred_date" required>
                     <small style="color: var(--gray); font-size: 0.8rem;">Select today or a future date</small>
                 </div>
-                
+           
                 <div class="form-group">
                     <label>Preferred Time Slot *</label>
+                    
+                    <!-- Shift Information Display -->
+                    <div class="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div class="flex items-center space-x-2 text-blue-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="text-sm font-medium">{{ shift_display }}</span>
+                        </div>
+                    </div>
+                    
                     <div class="time-slots" id="timeSlots">
-                        <div class="time-slot" data-time="09:00-11:00">09:00 - 11:00</div>
-                        <div class="time-slot" data-time="11:00-13:00">11:00 - 13:00</div>
-                        <div class="time-slot" data-time="13:00-15:00">13:00 - 15:00</div>
-                        <div class="time-slot" data-time="15:00-17:00">15:00 - 17:00</div>
-                        <div class="time-slot" data-time="17:00-19:00">17:00 - 19:00</div>
+                        {% for slot in time_slots %}
+                        <div class="time-slot" data-time="{{ slot.value }}">
+                            {{ slot.display }}
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-gray-500 py-4">
+                            No time slots available for today
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
-            
                 
                 <div class="form-group">
                     <label>Service Location *</label>
@@ -1695,9 +2001,80 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                     <small style="color: var(--gray); font-size: 0.8rem;">Pre-filled from your profile. Numbers only, no text.</small>
                 </div>
                 
-                <!-- REMOVED: Special Instructions field -->
+                <div class="form-group">
+                    <label for="address">Full Address *</label>
+                    <input type="text" id="address" name="address" required 
+                           placeholder="Enter your complete address">
+                </div>
                 
-                <button type="submit" class="submit-booking" id="submitBookingBtn">Confirm Booking</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">City *</label>
+                        <input type="text" id="city" name="city" required 
+                               placeholder="Enter your city">
+                    </div>
+                    <div class="form-group">
+                        <label for="pincode">Pincode</label>
+                        <input type="text" id="pincode" name="pincode" 
+                               placeholder="Enter pincode">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="special_instructions">Special Instructions (Optional)</label>
+                    <textarea id="special_instructions" name="special_instructions" 
+                              placeholder="Any special requirements or instructions..."
+                              rows="3"></textarea>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="payment-notice">
+                    <h4 style="color: #856404; margin: 0 0 0.5rem 0;">
+                        <i class="fas fa-info-circle"></i> Payment Required
+                    </h4>
+                    <p style="color: #856404; margin: 0; font-size: 0.9rem;">
+                        <strong>₹50 initial payment required</strong> to confirm your booking. 
+                        The remaining amount will be paid after work completion.
+                    </p>
+                </div>
+
+                <!-- Khalti Payment Section -->
+                <div class="khalti-payment-section">
+                    <div class="khalti-logo">
+                        <img src="https://khalti.com/static/img/logo.svg" alt="Khalti" onerror="this.style.display='none'">
+                        <span>Pay with Khalti</span>
+                    </div>
+                    
+                    <div class="payment-amount">
+                        <div class="label">Amount to Pay</div>
+                        <div class="amount">₹50</div>
+                    </div>
+                    
+                    <button type="button" class="khalti-btn" id="khaltiPaymentBtn">
+                        <i class="fas fa-lock mr-2"></i>
+                        Pay ₹50 with Khalti
+                    </button>
+                    
+                    <div class="payment-processing" id="paymentProcessing">
+                        <div class="spinner"></div>
+                        <p>Processing payment...</p>
+                    </div>
+                    
+                    <div class="payment-success" id="paymentSuccess">
+                        <div class="icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h4>Payment Successful!</h4>
+                        <p>Your booking has been confirmed.</p>
+                    </div>
+                </div>
+
+                <div class="payment-error" id="paymentError">
+                    Payment failed. Please try again.
+                </div>
+                
+                <!-- Hidden submit button for form validation -->
+                <button type="submit" style="display: none;" id="hiddenSubmitBtn">Submit</button>
             </form>
         {% else %}
             <!-- User is not logged in - show login prompt -->
@@ -1734,6 +2111,7 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
         {% endif %}
     </div>
 </div>
+
 
 <!-- ================== LOGIN REQUIRED MODAL ================== -->
 <div class="login-required-modal" id="loginRequiredModal">
@@ -1789,12 +2167,331 @@ let currentBookingData = {
 // Search and filter state
 let currentSearchTerm = '';
 let currentPriceFilter = 'all';
-let currentCategoryFilter = 'all';
 
 // Map variables
 let map = null;
 let marker = null;
 let selectedLocation = null;
+
+// Khalti Checkout
+let khaltiCheckout = null;
+
+// ================== KHALTI PAYMENT INTEGRATION ==================
+function initializeKhaltiPayment() {
+    console.log('🔄 Initializing Khalti Checkout...');
+    
+    // Check if Khalti Checkout is loaded
+    if (typeof KhaltiCheckout === 'undefined') {
+        console.error('❌ Khalti Checkout not loaded. Retrying...');
+        // Retry after 2 seconds
+        setTimeout(initializeKhaltiPayment, 2000);
+        return;
+    }
+
+    try {
+        // ✅ Use the actual public key from your settings
+        const publicKey = "test_public_key_dc74e0fd297a46f6aedf3c98b727a9a2";
+        
+        console.log('🔑 Using Khalti public key:', publicKey);
+        
+        khaltiCheckout = new KhaltiCheckout({
+            "publicKey": publicKey,
+            "productIdentity": "service_booking_" + workerData.id,
+            "productName": workerData.name + " - Service Booking",
+            "productUrl": window.location.href,
+            "eventHandler": {
+                onSuccess(payload) {
+                    console.log('✅ Khalti Payment Success:', payload);
+                    handlePaymentSuccess(payload);
+                },
+                onError(error) {
+                    console.log('❌ Khalti Payment Error:', error);
+                    handlePaymentError(error);
+                },
+                onClose() {
+                    console.log('ℹ️ Khalti widget closed');
+                    hidePaymentProcessing();
+                }
+            }
+        });
+
+        console.log('✅ Khalti Checkout initialized successfully');
+        
+        // ✅ SIMPLIFIED: Direct event listener attachment
+        setupKhaltiButton();
+        
+    } catch (error) {
+        console.error('❌ Khalti Checkout initialization failed:', error);
+        // Disable button and show error
+        const khaltiBtn = document.getElementById('khaltiPaymentBtn');
+        if (khaltiBtn) {
+            khaltiBtn.disabled = true;
+            khaltiBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Payment Unavailable';
+        }
+    }
+}
+
+// ✅ SIMPLIFIED Button Setup
+function setupKhaltiButton() {
+    const khaltiBtn = document.getElementById('khaltiPaymentBtn');
+    if (!khaltiBtn) {
+        console.error('❌ Khalti button not found in DOM');
+        return;
+    }
+    
+    console.log('🔘 Setting up Khalti button...');
+    
+    // Remove all existing event listeners by cloning
+    const newKhaltiBtn = khaltiBtn.cloneNode(true);
+    khaltiBtn.parentNode.replaceChild(newKhaltiBtn, khaltiBtn);
+    
+    // Add click event to the new button
+    newKhaltiBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔄 Khalti payment button clicked');
+        processKhaltiPayment();
+    });
+    
+    // Enable the button
+    newKhaltiBtn.disabled = false;
+    console.log('✅ Khalti button setup complete');
+}
+
+// Enhanced payment processing
+function processKhaltiPayment() {
+    console.log('💰 Khalti payment process started');
+    
+    // Basic validation
+    if (!validateBasicForm()) {
+        return;
+    }
+
+    // Check if Khalti is initialized
+    if (!khaltiCheckout) {
+        console.error('❌ Khalti Checkout not initialized');
+        alert('Payment system not ready. Please try again.');
+        return;
+    }
+
+    // Show payment processing
+    showPaymentProcessing();
+    console.log('🔄 Showing payment processing...');
+
+    // Prepare payment data - 50 rupees in paisa
+    const paymentData = {
+        amount: 5000, // 50 rupees in paisa
+        productIdentity: `service_${currentBookingData.serviceId || 'consultation'}`,
+        productName: currentBookingData.serviceName || 'Service Consultation',
+        productUrl: window.location.href,
+    };
+
+    console.log('💰 Payment data prepared:', paymentData);
+
+    // Show Khalti payment modal
+    try {
+        console.log('🔄 Showing Khalti checkout...');
+        khaltiCheckout.show(paymentData);
+    } catch (error) {
+        console.error('❌ Error showing Khalti checkout:', error);
+        hidePaymentProcessing();
+        alert('Unable to process payment. Please try again.');
+    }
+}
+
+// ✅ SIMPLIFIED Form Validation
+function validateBasicForm() {
+    const requiredFields = [
+        'serviceDate',
+        'customerName', 
+        'customerPhone',
+        'address'
+    ];
+    
+    for (const fieldId of requiredFields) {
+        const field = document.getElementById(fieldId);
+        if (!field || !field.value.trim()) {
+            alert(`Please fill in the ${fieldId.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+            field.focus();
+            return false;
+        }
+    }
+    
+    // Check if time slot is selected
+    const selectedTimeSlot = document.querySelector('.time-slot.selected');
+    if (!selectedTimeSlot) {
+        alert('Please select a time slot');
+        return false;
+    }
+    
+    return true;
+}
+
+function handlePaymentSuccess(payload) {
+    console.log('Payment successful:', payload);
+    
+    // Hide processing and show success
+    hidePaymentProcessing();
+    showPaymentSuccess();
+    
+    // Submit the form after successful payment
+    setTimeout(() => {
+        submitBookingForm(payload);
+    }, 2000);
+}
+
+function handlePaymentError(error) {
+    console.log('Payment error:', error);
+    hidePaymentProcessing();
+    showPaymentError('Payment failed. Please try again.');
+}
+
+function showPaymentProcessing() {
+    const processingEl = document.getElementById('paymentProcessing');
+    const khaltiBtn = document.getElementById('khaltiPaymentBtn');
+    const errorEl = document.getElementById('paymentError');
+    
+    if (processingEl) processingEl.classList.add('active');
+    if (khaltiBtn) khaltiBtn.disabled = true;
+    if (errorEl) errorEl.classList.remove('active');
+}
+
+function hidePaymentProcessing() {
+    const processingEl = document.getElementById('paymentProcessing');
+    const khaltiBtn = document.getElementById('khaltiPaymentBtn');
+    
+    if (processingEl) processingEl.classList.remove('active');
+    if (khaltiBtn) khaltiBtn.disabled = false;
+}
+
+function showPaymentSuccess() {
+    const successEl = document.getElementById('paymentSuccess');
+    if (successEl) successEl.classList.add('active');
+}
+
+function showPaymentError(message) {
+    const errorEl = document.getElementById('paymentError');
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.add('active');
+    }
+}
+
+function validateBookingForm() {
+    console.log('🔄 Validating booking form...');
+    
+    // Check if location is selected
+    if (!selectedLocation) {
+        alert('📍 Please select a service location on the map');
+        scrollToElement('locationMap');
+        return false;
+    }
+    
+    // Check if date is selected
+    const serviceDate = document.getElementById('serviceDate');
+    if (!serviceDate || !serviceDate.value) {
+        alert('📅 Please select a preferred date');
+        scrollToElement('serviceDate');
+        return false;
+    }
+    
+    // Check if time slot is selected
+    const timeSlotInput = document.getElementById('selectedTimeSlot');
+    const selectedTimeSlot = document.querySelector('.time-slot.selected');
+    
+    if (!timeSlotInput || !timeSlotInput.value || !selectedTimeSlot) {
+        alert('⏰ Please select a preferred time slot');
+        scrollToElement('timeSlots');
+        return false;
+    }
+    
+    // Validate phone number
+    const phoneInput = document.getElementById('customerPhone');
+    if (phoneInput) {
+        const phoneValue = phoneInput.value.replace(/\D/g, '');
+        if (phoneValue.length !== 10) {
+            alert('📞 Please enter a valid 10-digit phone number');
+            scrollToElement('customerPhone');
+            return false;
+        }
+    }
+    
+    // Validate name
+    const nameInput = document.getElementById('customerName');
+    if (nameInput && !nameInput.value.trim()) {
+        alert('👤 Please enter your name');
+        scrollToElement('customerName');
+        return false;
+    }
+    
+    // Validate address
+    const addressInput = document.getElementById('address');
+    if (addressInput && !addressInput.value.trim()) {
+        alert('🏠 Please enter your address');
+        scrollToElement('address');
+        return false;
+    }
+    
+    console.log('✅ Form validation passed');
+    return true;
+}
+
+// Helper function to scroll to element
+function scrollToElement(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.focus();
+    }
+}
+
+function submitBookingForm(paymentPayload) {
+    const form = document.getElementById('bookingForm');
+    const formData = new FormData(form);
+    
+    // Add payment information
+    formData.append('payment_method', 'khalti');
+    formData.append('payment_id', paymentPayload.idx);
+    formData.append('payment_amount', '50');
+    formData.append('payment_status', 'completed');
+    
+    // Submit the form
+    fetch("{% url 'appointment_request' worker.id %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showPaymentSuccessMessage('Booking confirmed successfully!');
+            
+            // Redirect to worker list page after delay
+            setTimeout(() => {
+                window.location.href = "{% url 'worker-list' %}";
+            }, 3000);
+        } else {
+            showPaymentError('Booking failed. Please contact support.');
+        }
+    })
+    .catch(error => {
+        console.error('Booking submission error:', error);
+        showPaymentError('Booking submission failed. Please try again.');
+    });
+}
+
+function showPaymentSuccessMessage(message) {
+    const successEl = document.getElementById('paymentSuccess');
+    if (successEl) {
+        const messageEl = successEl.querySelector('p');
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+        successEl.classList.add('active');
+    }
+}
 
 // ================== CUSTOM SERVICE FUNCTIONS ==================
 function initializeCustomServiceForm() {
@@ -2067,7 +2764,6 @@ function searchLocation() {
 function initializeSearchAndFilter() {
     const searchInput = document.getElementById('serviceSearch');
     const priceFilter = document.getElementById('priceFilter');
-    const categoryFilter = document.getElementById('categoryFilter');
     const resetButton = document.getElementById('resetFilters');
 
     // Search input event
@@ -2082,14 +2778,6 @@ function initializeSearchAndFilter() {
     if (priceFilter) {
         priceFilter.addEventListener('change', function(e) {
             currentPriceFilter = e.target.value;
-            filterServices();
-        });
-    }
-
-    // Category filter event
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', function(e) {
-            currentCategoryFilter = e.target.value;
             filterServices();
         });
     }
@@ -2111,8 +2799,6 @@ function filterServices() {
         const serviceDescription = card.getAttribute('data-service-description') || '';
         const serviceFeatures = card.getAttribute('data-service-features') || '';
         const servicePrice = parseFloat(card.getAttribute('data-service-price')) || 0;
-        const serviceCategory = card.getAttribute('data-service-category') || '';
-        const cardCategory = card.getAttribute('data-category');
 
         // Search filter
         const matchesSearch = !currentSearchTerm || 
@@ -2139,14 +2825,8 @@ function filterServices() {
             }
         }
 
-        // Category filter
-        let matchesCategory = true;
-        if (currentCategoryFilter !== 'all') {
-            matchesCategory = cardCategory === currentCategoryFilter;
-        }
-
         // Show/hide card based on all filters
-        if (matchesSearch && matchesPrice && matchesCategory) {
+        if (matchesSearch && matchesPrice) {
             card.classList.remove('hidden');
             card.classList.add('filtered');
             visibleCount++;
@@ -2165,7 +2845,7 @@ function updateResultsInfo(visibleCount) {
     const resultsCount = document.getElementById('resultsCount');
     
     if (resultsInfo && resultsCount) {
-        if (currentSearchTerm || currentPriceFilter !== 'all' || currentCategoryFilter !== 'all') {
+        if (currentSearchTerm || currentPriceFilter !== 'all') {
             resultsCount.textContent = visibleCount;
             resultsInfo.classList.add('show');
         } else {
@@ -2178,7 +2858,7 @@ function updateNoResultsMessage(visibleCount) {
     const noResults = document.getElementById('noResults');
     
     if (noResults) {
-        if (visibleCount === 0 && (currentSearchTerm || currentPriceFilter !== 'all' || currentCategoryFilter !== 'all')) {
+        if (visibleCount === 0 && (currentSearchTerm || currentPriceFilter !== 'all')) {
             noResults.classList.add('show');
         } else {
             noResults.classList.remove('show');
@@ -2190,16 +2870,13 @@ function resetFilters() {
     // Reset form elements
     const searchInput = document.getElementById('serviceSearch');
     const priceFilter = document.getElementById('priceFilter');
-    const categoryFilter = document.getElementById('categoryFilter');
     
     if (searchInput) searchInput.value = '';
     if (priceFilter) priceFilter.value = 'all';
-    if (categoryFilter) categoryFilter.value = 'all';
     
     // Reset state
     currentSearchTerm = '';
     currentPriceFilter = 'all';
-    currentCategoryFilter = 'all';
     
     // Reset UI
     filterServices();
@@ -2228,32 +2905,6 @@ function initializePhoneValidation() {
             
             e.target.value = value;
         });
-        
-        // Validate on form submission
-        const bookingForm = document.getElementById('bookingForm');
-        if (bookingForm) {
-            bookingForm.addEventListener('submit', function(e) {
-                // Validate location selection
-                if (!selectedLocation) {
-                    e.preventDefault();
-                    alert('Please select a service location on the map');
-                    return false;
-                }
-                
-                const phoneValue = phoneInput.value.replace(/\D/g, '');
-                
-                if (phoneValue.length !== 10) {
-                    e.preventDefault();
-                    alert('Please enter a valid 10-digit phone number');
-                    phoneInput.focus();
-                    return false;
-                }
-                
-                // Ensure the submitted value is only digits
-                phoneInput.value = phoneValue;
-                return true;
-            });
-        }
     }
 }
 
@@ -2269,6 +2920,7 @@ function initializeModal() {
         closeModal.addEventListener('click', function() {
             modal.classList.remove('active');
             document.body.style.overflow = 'auto';
+            resetPaymentUI();
         });
     }
     
@@ -2277,8 +2929,18 @@ function initializeModal() {
         if (e.target === modal) {
             modal.classList.remove('active');
             document.body.style.overflow = 'auto';
+            resetPaymentUI();
         }
     });
+}
+
+function resetPaymentUI() {
+    // Reset payment UI state
+    hidePaymentProcessing();
+    const successEl = document.getElementById('paymentSuccess');
+    const errorEl = document.getElementById('paymentError');
+    if (successEl) successEl.classList.remove('active');
+    if (errorEl) errorEl.classList.remove('active');
 }
 
 function initializeEventListeners() {
@@ -2454,12 +3116,15 @@ function getCookie(name) {
 
 // ================== INITIALIZATION ==================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - initializing...');
+    
     // Initialize everything
     initializeSearchAndFilter();
     initializeModal();
     initializeEventListeners();
     initializeFormElements();
     initializePhoneValidation();
+    initializeKhaltiPayment();
     
     // Initialize custom service form if worker is viewing their own profile
     {% if user.is_authenticated and user.worker and user.worker.id == worker.id %}
@@ -2510,7 +3175,7 @@ function filterServicesByCategory(categoryId) {
     serviceCards.forEach(card => {
         const cardCategory = card.getAttribute('data-category');
         if (cardCategory === categoryId) {
-            card.style.display = 'block';
+            card.style.display = 'flex';
         } else {
             card.style.display = 'none';
         }

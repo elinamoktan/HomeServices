@@ -193,3 +193,23 @@ SITE_ID = 1
 # CRISPY FORMS SETTINGS
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
+
+KHALTI_CONFIG = {
+    'test': {  # ✅ Changed from 'TEST' to 'test'
+        'PUBLIC_KEY': 'test_public_key_dc74e0fd297a46f6aedf3c98b727a9a2',
+        'SECRET_KEY': 'test_secret_key_f4a7e8c3e5b14a6c9e8a7b6c5d4e3f2a',
+        'BASE_URL': 'https://dev.khalti.com/api/v2'
+    },
+    'live': {  # ✅ Changed from 'LIVE' to 'live'
+        'PUBLIC_KEY': 'your_live_public_key_here',
+        'SECRET_KEY': 'your_live_secret_key_here', 
+        'BASE_URL': 'https://khalti.com/api/v2'
+    }
+}
+
+KHALTI_ENVIRONMENT = 'test'
+
+# Payment Settings
+INITIAL_PAYMENT_AMOUNT = 50.00  # 50 rupees initial payment
+KHALTI_PUBLIC_KEY = KHALTI_CONFIG[KHALTI_ENVIRONMENT]['PUBLIC_KEY']
+KHALTI_SECRET_KEY = KHALTI_CONFIG[KHALTI_ENVIRONMENT]['SECRET_KEY']

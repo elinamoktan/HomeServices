@@ -425,24 +425,28 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex flex-col sm:flex-row gap-6">
-          <form action="{% url 'customer_appointments' %}" method="get" class="flex-1">
-            <button
-              type="submit"
-              class="w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
-            >
-              📅 Manage Appointments
-            </button>
-          </form>
-          <form action="{% url 'favorite_workers_list' %}" method="get" class="flex-1">
-            <button
-              type="submit"
-              class="w-full px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
-            >
-              ⭐ My Favorites
-            </button>
-          </form>
-        </div>
+<div class="flex flex-col sm:flex-row gap-6">
+  <!-- CHANGE THIS FORM ACTION -->
+  <form action="{% url 'customer_dashboard' %}" method="get" class="flex-1">
+    <button
+      type="submit"
+      class="w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
+    >
+      📅 Manage Appointments
+    </button>
+  </form>
+  <form action="{% url 'favorite_workers_list' %}" method="get" class="flex-1">
+    <button
+      type="submit"
+      class="w-full px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
+    >
+      ⭐ My Favorites
+    </button>
+  </form>
+</div>
+
+
+
       </div>
       {% endif %}
 

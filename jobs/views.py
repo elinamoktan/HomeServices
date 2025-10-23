@@ -634,6 +634,8 @@ def calculate_recommendation_score(worker, bayesian_rating):
     except Exception as e:
         logger.error(f"Error calculating recommendation score: {e}")
         return 0.0
+    
+    
 class WorkerListView(ListView):
     model = Worker
     template_name = 'jobs/worker_list.html'
@@ -663,11 +665,30 @@ class WorkerListView(ListView):
         if service_filter:
             queryset = queryset.filter(services__service__id=service_filter)
 
-        # Get customer location for distance calculation
+        # ✅ FIX: Get customer location with session consistency
         customer_location = None
         if hasattr(self.request.user, 'customer'):
             customer = self.request.user.customer
-            customer_location = customer.get_current_location()
+            
+            # Use cached session location for consistency across page refreshes
+            session_lat = self.request.session.get('current_latitude')
+            session_lon = self.request.session.get('current_longitude')
+            
+            if session_lat and session_lon:
+                # Use session location (doesn't change during browsing session)
+                customer_location = {
+                    'latitude': float(session_lat),
+                    'longitude': float(session_lon),
+                    'source': 'session'
+                }
+            else:
+                # Fallback to database location only if no session location
+                customer_location = customer.get_current_location()
+                
+                # Cache it in session for future requests
+                if customer_location:
+                    self.request.session['current_latitude'] = customer_location['latitude']
+                    self.request.session['current_longitude'] = customer_location['longitude']
 
         # ✅ FIXED: Calculate ratings and add to each worker WITH DISTANCE SORTING
         workers_with_ratings_and_distance = []
@@ -696,7 +717,7 @@ class WorkerListView(ListView):
             worker.half_star = half_star
             worker.empty_stars = range(empty_stars)
             
-            # Calculate distance - CRITICAL FOR SORTING
+            # ✅ FIX: Calculate distance with consistent rounding
             distance_km = float('inf')  # Default to infinity if no location
             if customer_location and worker.latitude and worker.longitude:
                 try:
@@ -704,7 +725,8 @@ class WorkerListView(ListView):
                         float(worker.latitude), float(worker.longitude),
                         float(customer_location['latitude']), float(customer_location['longitude'])
                     )
-                    distance_km = round(distance_km, 2)
+                    # ✅ Round to 1 decimal for consistency
+                    distance_km = round(distance_km, 1)
                 except (ValueError, TypeError):
                     distance_km = float('inf')
             
@@ -717,8 +739,11 @@ class WorkerListView(ListView):
         # Workers with no distance (infinity) will be at the end
         workers_with_ratings_and_distance.sort(key=lambda x: x[1])
         
-        # Extract just the worker objects in sorted order
-        sorted_workers = [worker for worker, distance in workers_with_ratings_and_distance]
+        # ✅ FIX: Extract just the worker objects in sorted order AND maintain distance property
+        sorted_workers = []
+        for worker, distance in workers_with_ratings_and_distance:
+            worker.distance_km = distance  # Ensure distance is preserved
+            sorted_workers.append(worker)
         
         return sorted_workers
 
@@ -733,15 +758,115 @@ class WorkerListView(ListView):
         context['q'] = self.request.GET.get('q', '')
         context['max_distance'] = self.request.GET.get('max_distance', 50)
         
-        # Add customer location info
+        # ✅ FIX: Add customer location info with session indicator
         if hasattr(self.request.user, 'customer'):
             customer = self.request.user.customer
-            customer_location = customer.get_current_location()
+            session_lat = self.request.session.get('current_latitude')
+            session_lon = self.request.session.get('current_longitude')
+            
+            if session_lat and session_lon:
+                customer_location = {
+                    'latitude': float(session_lat),
+                    'longitude': float(session_lon),
+                    'source': 'session'
+                }
+            else:
+                customer_location = customer.get_current_location()
+            
             context['customer_location'] = customer_location
         
         return context
 
-        
+def get_dynamic_time_slots(worker_shift):
+    """
+    Generate dynamic time slots based on worker's shift preference
+    Returns list of time slots in format: {'value': '09:00-11:00', 'display': '9:00 AM - 11:00 AM'}
+    """
+    def format_time_display(hour):
+        """Helper function to format hour to 12-hour format with AM/PM"""
+        if hour == 0:
+            return "12:00 AM"
+        elif hour < 12:
+            return f"{hour}:00 AM"
+        elif hour == 12:
+            return "12:00 PM"
+        else:
+            return f"{hour-12}:00 PM"
+    
+    if worker_shift == 'day':
+        # Day shift: 6 AM to 6 PM
+        time_slots = []
+        for hour in range(6, 18, 2):  # 2-hour slots from 6 AM to 6 PM
+            start_time = f"{hour:02d}:00"
+            end_time = f"{(hour + 2):02d}:00"
+            time_slots.append({
+                'value': f"{start_time}-{end_time}",
+                'display': f"{format_time_display(hour)} - {format_time_display(hour + 2)}"
+            })
+        return time_slots
+    
+    elif worker_shift == 'night':
+        # Night shift: 6 PM to 6 AM
+        time_slots = []
+        # 6 PM to 12 AM
+        for hour in range(18, 24, 2):
+            start_time = f"{hour:02d}:00"
+            end_hour = hour + 2 if hour < 22 else 0
+            end_time = f"{end_hour:02d}:00"
+            time_slots.append({
+                'value': f"{start_time}-{end_time}",
+                'display': f"{format_time_display(hour)} - {format_time_display(end_hour if end_hour != 0 else 24)}"
+            })
+        # 12 AM to 6 AM
+        for hour in range(0, 6, 2):
+            start_time = f"{hour:02d}:00"
+            end_time = f"{(hour + 2):02d}:00"
+            time_slots.append({
+                'value': f"{start_time}-{end_time}",
+                'display': f"{format_time_display(hour)} - {format_time_display(hour + 2)}"
+            })
+        return time_slots
+    
+    else:  # 'all' shift
+        # All day: 6 AM to 6 AM next day
+        time_slots = []
+        # Day slots (6 AM - 6 PM)
+        for hour in range(6, 18, 2):
+            start_time = f"{hour:02d}:00"
+            end_time = f"{(hour + 2):02d}:00"
+            time_slots.append({
+                'value': f"{start_time}-{end_time}",
+                'display': f"{format_time_display(hour)} - {format_time_display(hour + 2)}"
+            })
+        # Evening/Night slots (6 PM - 12 AM)
+        for hour in range(18, 24, 2):
+            start_time = f"{hour:02d}:00"
+            end_hour = hour + 2 if hour < 22 else 0
+            end_time = f"{end_hour:02d}:00"
+            time_slots.append({
+                'value': f"{start_time}-{end_time}",
+                'display': f"{format_time_display(hour)} - {format_time_display(end_hour if end_hour != 0 else 24)}"
+            })
+        # Early morning slots (12 AM - 6 AM)
+        for hour in range(0, 6, 2):
+            start_time = f"{hour:02d}:00"
+            end_time = f"{(hour + 2):02d}:00"
+            time_slots.append({
+                'value': f"{start_time}-{end_time}",
+                'display': f"{format_time_display(hour)} - {format_time_display(hour + 2)}"
+            })
+        return time_slots
+
+def get_shift_display_name(shift):
+    """Get display name for shift"""
+    shift_names = {
+        'day': 'Day Shift (6 AM - 6 PM)',
+        'night': 'Night Shift (6 PM - 6 AM)', 
+        'all': '24 Hours Available'
+    }
+    return shift_names.get(shift, 'Flexible Hours')
+
+
 def send_worker_verification_email(worker, approved, rejection_reason=None):
     """Send email notification to worker about verification status - FIXED VERSION"""
     try:
@@ -1978,9 +2103,9 @@ def delete_appointment(request, appointment_id):
         messages.error(request, "You are not authorized to delete this appointment.")
         
     return redirect('worker_dashboard')
-
 @login_required
 def complete_appointment(request, appointment_id):
+    """Complete appointment and trigger final payment notification"""
     appointment = get_object_or_404(Appointment, id=appointment_id)
 
     if appointment.worker.owner != request.user:
@@ -1992,28 +2117,66 @@ def complete_appointment(request, appointment_id):
             appointment.status = 'completed'
             appointment.save()
             
-            # ✅ FIXED: Create notification for customer when worker marks as completed
+            # Get payment info
+            payment = get_object_or_404(Payment, appointment=appointment)
+            
+            # Create notification for customer to make final payment
             Notification.objects.create(
                 customer=appointment.customer,
-                notification_type='appointment_completed',
-                title='Appointment Completed',
-                message=f'{appointment.worker.name} has marked your appointment as completed. Thank you for your business!',
+                notification_type='work_completed_final_payment',
+                title='Work Completed - Final Payment Due',
+                message=f'Your work with {appointment.worker.name} has been completed. Please complete your final payment of ₹{payment.remaining_amount}.',
                 appointment=appointment
             )
             
-            # Send completion email to customer
+            # Send completion email with final payment link
             try:
-                send_appointment_completion_email(appointment)
-                logger.info(f"Appointment completion email sent for appointment {appointment.id}")
+                send_work_completion_final_payment_email(appointment, payment)
+                logger.info(f"Work completion and final payment email sent for appointment {appointment.id}")
             except Exception as email_error:
                 logger.error(f"Failed to send completion email for appointment {appointment.id}: {email_error}")
-                # Continue without failing
             
-            messages.success(request, "Appointment marked as completed.")
+            messages.success(request, f"Appointment marked as completed. Customer notified to make final payment of ₹{payment.remaining_amount}.")
         else:
-            messages.warning(request, "This appointment cannot be marked as completed (status not accepted).")
+            messages.warning(request, "This appointment cannot be marked as completed.")
 
     return redirect('worker_dashboard')
+
+
+
+def send_work_completion_final_payment_email(appointment, payment):
+    """Send email notification for work completion and final payment"""
+    try:
+        customer = appointment.customer
+        worker = appointment.worker
+        
+        subject = f"Work Completed - Final Payment Due - {worker.name}"
+        
+        context = {
+            'customer_name': customer.name,
+            'worker_name': worker.name,
+            'service_name': appointment.service_subtask.subtask.name if appointment.service_subtask else 'Service',
+            'total_amount': float(payment.amount),
+            'initial_paid': float(payment.prepayment_amount),
+            'remaining_amount': float(payment.remaining_amount),
+            'appointment_date': appointment.appointment_date.strftime('%B %d, %Y') if appointment.appointment_date else 'Not specified',
+            'final_payment_url': f"{settings.SITE_URL}/payments/final-payment/{appointment.id}/",
+            'site_url': settings.SITE_URL,
+        }
+        
+        html_message = render_to_string('emails/work_completion_final_payment.html', context)
+        plain_message = strip_tags(html_message)
+        
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
+        recipients = [customer.owner.email]
+        
+        send_email_async(subject, plain_message, from_email, recipients, html_message)
+        
+        logger.info(f"Work completion final payment email sent to {customer.name}")
+        
+    except Exception as e:
+        logger.error(f"Failed to send work completion final payment email: {str(e)}")
+
 
 @login_required
 def customer_notifications(request):
@@ -2481,6 +2644,7 @@ def customer_dashboard(request):
     }
     
     return render(request, 'jobs/customer_dashboard.html', context)
+
 def custom_logout(request):
     if request.method == 'POST':
         logout(request)
@@ -2524,7 +2688,6 @@ def notification_count(request):
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-# NEW: Add the missing view functions that your template references
 @login_required
 def customer_reviews(request):
     """View for customers to see their reviews"""
@@ -2535,9 +2698,17 @@ def customer_reviews(request):
         'worker', 'appointment'
     ).order_by('-created_at')
     
+    # ✅ CRITICAL: Get unread notification count for the template
+    unread_notification_count = Notification.objects.filter(
+        customer=customer,
+        is_read=False
+    ).count()
+    
     context = {
         'ratings': ratings,
-        'current_page': 'reviews'
+        'customer': customer,  # ✅ Make sure customer is passed to template
+        'current_page': 'reviews',
+        'unread_notification_count': unread_notification_count,  # ✅ Add notification count
     }
     
     return render(request, 'jobs/customer_reviews.html', context)
@@ -3010,6 +3181,10 @@ def appointment_request(request, worker_id):
 
 def worker_service_details(request, worker_id):
     worker = get_object_or_404(Worker, id=worker_id)
+
+    # Get dynamic time slots based on worker's shift preference
+    time_slots = get_dynamic_time_slots(worker.shift)
+    shift_display = get_shift_display_name(worker.shift)
     
     # Check for AJAX filter requests
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -3217,6 +3392,13 @@ def worker_service_details(request, worker_id):
         'worker_profile_pic': worker.profile_pic.url if worker.profile_pic else None,
         'worker_verified': worker.verified,
         'today': date.today().isoformat(),
+
+        'time_slots': time_slots,
+        'shift_display': shift_display,
+        'worker_shift': worker.shift,
+
+          # ✅ ADD THIS LINE:
+        'KHALTI_PUBLIC_KEY': settings.KHALTI_PUBLIC_KEY,
     }
     
     return render(request, 'jobs/worker_service_details.html', context)
@@ -3376,7 +3558,6 @@ def toggle_favorite_worker(request, worker_id):
             }, status=400)
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
-
 @login_required
 def favorite_workers_list(request):
     """View to display customer's favorite workers"""
@@ -3387,7 +3568,7 @@ def favorite_workers_list(request):
         customer=customer
     ).select_related('worker').order_by('-created_at')
     
-    # Calculate distance for each favorite worker
+    # Calculate distance for each favorite worker and add shift info
     workers_with_distance = []
     cust_lat = None
     cust_lon = None
@@ -3429,6 +3610,10 @@ def favorite_workers_list(request):
         worker.half_star = half_star
         worker.empty_stars = range(empty_stars)
         worker.distance_km = distance_km
+        
+        # ✅ NEW: Add shift information and time slots
+        worker.time_slots = get_dynamic_time_slots(worker.shift)
+        worker.shift_display = get_shift_display_name(worker.shift)
         
         workers_with_distance.append({
             'worker': worker,

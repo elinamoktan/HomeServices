@@ -219,68 +219,6 @@
     .notification.show {
         transform: translateX(0);
     }
-
-    /* Email Debug Styles */
-    .email-debug-panel {
-        background: #f8f9fa;
-        padding: 20px;
-        margin: 20px 0;
-        border-radius: 12px;
-        border-left: 6px solid #007bff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .email-test-panel {
-        background: #fff3cd;
-        padding: 20px;
-        margin: 25px 0;
-        border-radius: 12px;
-        border: 2px solid #ffeaa7;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-
-    .debug-status {
-        font-weight: 600;
-        margin-bottom: 10px;
-        padding: 10px;
-        border-radius: 8px;
-        text-align: center;
-    }
-
-    .debug-details {
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        font-family: 'Courier New', monospace;
-        font-size: 0.9em;
-        max-height: 200px;
-        overflow-y: auto;
-    }
-
-    .test-button {
-        background: #28a745;
-        color: white;
-        padding: 12px 20px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    .test-button:hover {
-        background: #218838;
-        transform: translateY(-2px);
-    }
-
-    .test-result {
-        margin-top: 15px;
-        padding: 12px;
-        border-radius: 8px;
-        font-weight: 600;
-        text-align: center;
-    }
 </style>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -309,20 +247,6 @@
                     </p>
                 </div>
             </div>
-        </div>
-
-        <!-- TEMPORARY EMAIL TEST PANEL - Remove after testing -->
-        <div class="email-test-panel">
-            <h4 class="font-bold text-yellow-800 mb-3 flex items-center">
-                <i class="fas fa-vial mr-2"></i> Email Test Panel
-            </h4>
-            <p class="text-yellow-700 mb-4">
-                Test if email functionality works without submitting the entire form:
-            </p>
-            <button type="button" onclick="testEmailFunction()" class="test-button">
-                <i class="fas fa-paper-plane mr-2"></i>Test Email Now
-            </button>
-            <div id="test-result" class="test-result"></div>
         </div>
 
         <!-- Form Errors Display -->
@@ -413,19 +337,6 @@
                 </div>
             </div>
 
-            <!-- EMAIL DEBUG PANEL -->
-            <div class="email-debug-panel">
-                <h4 class="font-bold text-blue-800 mb-3 flex items-center">
-                    <i class="fas fa-bug mr-2"></i> Email Debug Information
-                </h4>
-                <div id="debug-status" class="debug-status" style="background: #e3f2fd; color: #1565c0;">
-                    Waiting for form submission...
-                </div>
-                <div id="debug-details" class="debug-details">
-                    Form data will appear here when you submit...
-                </div>
-            </div>
-
             <div class="flex justify-center pt-8">
                 <button class="btn-primary" type="submit" id="submit-btn">
                     <i class="fas fa-user-plus mr-2"></i>Create Profile & Request Verification
@@ -485,124 +396,11 @@
 
     // Automatically get user's location when page loads
     document.addEventListener('DOMContentLoaded', function() {
-        console.log("🔍 DEBUG: worker_form.html loaded - Email testing enabled");
-
         // Wait for animations to complete before trying to get location
         setTimeout(() => {
             locateUserOnLoad();
         }, 1000);
-
-        // Setup form submission debugging
-        setupFormDebugging();
     });
-
-    function setupFormDebugging() {
-        const form = document.getElementById('worker-form');
-        const debugStatus = document.getElementById('debug-status');
-        const debugDetails = document.getElementById('debug-details');
-
-        form.addEventListener('submit', function(e) {
-            console.log("🔍 DEBUG: Form submit event triggered");
-            debugStatus.innerHTML = "🔄 Form submitted - processing...";
-            debugStatus.style.background = "#fff3cd";
-            debugStatus.style.color = "#856404";
-
-            // Log form data
-            const formData = new FormData(form);
-            let formDataStr = "<strong>Form Data Being Submitted:</strong><br><br>";
-            let hasAllRequiredData = true;
-            
-            for (let [key, value] of formData.entries()) {
-                if (key !== 'csrfmiddlewaretoken') {
-                    if (key === 'profile_pic' || key === 'citizenship_image' || key === 'certificate_file') {
-                        formDataStr += `📁 <strong>${key}:</strong> ${value.name || 'No file'}<br>`;
-                    } else {
-                        formDataStr += `📝 <strong>${key}:</strong> ${value}<br>`;
-                    }
-                }
-            }
-
-            // Check critical requirements
-            const latitude = document.getElementById('latitude').value;
-            const longitude = document.getElementById('longitude').value;
-            const citizenship = document.getElementById('id_citizenship_image').files[0];
-
-            formDataStr += "<br><strong>Validation Check:</strong><br>";
-
-            if (!latitude || !longitude) {
-                formDataStr += "❌ <strong>LOCATION:</strong> Missing - email may not be sent<br>";
-                hasAllRequiredData = false;
-            } else {
-                formDataStr += "✅ <strong>LOCATION:</strong> Set<br>";
-            }
-
-            if (!citizenship) {
-                formDataStr += "❌ <strong>CITIZENSHIP DOC:</strong> Missing - form validation will fail<br>";
-                hasAllRequiredData = false;
-            } else {
-                formDataStr += "✅ <strong>CITIZENSHIP DOC:</strong> Uploaded<br>";
-            }
-
-            debugDetails.innerHTML = formDataStr;
-
-            if (hasAllRequiredData) {
-                debugStatus.innerHTML = "✅ All data present - email should be sent after server validation";
-                debugStatus.style.background = "#d4edda";
-                debugStatus.style.color = "#155724";
-                console.log("✅ DEBUG: All required data present - email should trigger");
-            } else {
-                debugStatus.innerHTML = "⚠️ Missing required data - check details below";
-                debugStatus.style.background = "#f8d7da";
-                debugStatus.style.color = "#721c24";
-                console.log("❌ DEBUG: Missing required data");
-            }
-
-            console.log("🔍 DEBUG: Allowing form to submit normally...");
-        });
-    }
-
-    // Email test function
-    function testEmailFunction() {
-        const resultDiv = document.getElementById('test-result');
-        resultDiv.innerHTML = "🔄 Testing email functionality...";
-        resultDiv.style.background = "#fff3cd";
-        resultDiv.style.color = "#856404";
-
-        console.log("🧪 DEBUG: Manual email test initiated");
-
-        fetch('/test-email/', {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                resultDiv.innerHTML = "✅ Email test successful! Check Django console for email output.";
-                resultDiv.style.background = "#d4edda";
-                resultDiv.style.color = "#155724";
-                console.log("✅ DEBUG: Email test successful - check console");
-            } else {
-                resultDiv.innerHTML = "❌ Email test failed: " + (data.error || 'Unknown error');
-                resultDiv.style.background = "#f8d7da";
-                resultDiv.style.color = "#721c24";
-                console.error("❌ DEBUG: Email test failed:", data.error);
-            }
-        })
-        .catch(error => {
-            resultDiv.innerHTML = "❌ Test failed: " + error.message;
-            resultDiv.style.background = "#f8d7da";
-            resultDiv.style.color = "#721c24";
-            console.error("❌ DEBUG: Email test error:", error);
-        });
-    }
 
     function locateUserOnLoad() {
         if (navigator.geolocation) {
@@ -724,8 +522,6 @@
 
         const form = document.getElementById('worker-form');
         form.addEventListener('submit', function(e) {
-            console.log("🔍 DEBUG: Form submission started");
-            
             const submitBtn = document.getElementById('submit-btn');
             const latitude = document.getElementById('latitude').value;
             const longitude = document.getElementById('longitude').value;
@@ -735,41 +531,24 @@
             let hasErrors = false;
             
             if (!latitude || !longitude) {
-                console.log("❌ DEBUG: Location not set");
                 showNotification('Please select your location on the map before submitting.', 'error');
                 hasErrors = true;
             }
             
             if (!citizenshipFile) {
-                console.log("❌ DEBUG: Citizenship document missing");
                 showNotification('Please upload your citizenship document.', 'error');
                 hasErrors = true;
             }
             
             if (hasErrors) {
                 e.preventDefault();
-                console.log("❌ DEBUG: Form submission blocked due to errors");
                 return;
             }
-            
-            console.log("✅ DEBUG: All validations passed, submitting form...");
-            console.log("📍 DEBUG: Latitude:", latitude, "Longitude:", longitude);
-            console.log("📄 DEBUG: Citizenship file:", citizenshipFile.name);
             
             // Show loading state
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating Profile...';
             submitBtn.disabled = true;
-            
-            // Allow form to submit normally
-            console.log("✅ DEBUG: Form submission allowed - email should trigger on server");
         });
-
-        // Log when location is set
-        const originalUpdateLocation = updateLocation;
-        updateLocation = function(lat, lon) {
-            console.log("📍 DEBUG: Location updated:", lat, lon);
-            originalUpdateLocation(lat, lon);
-        };
     });
 </script>
 
