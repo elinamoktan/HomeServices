@@ -1,0 +1,486 @@
+{% extends 'jobs/_base.html' %}
+{% load static %}
+
+{% block title %}Payment - BlueCollar{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #2563eb;
+    --success: #16a34a;
+    --warning: #ea580c;
+    --danger: #dc2626;
+    --light: #f8fafc;
+    --dark: #0f172a;
+    --gray: #64748b;
+}
+
+.payment-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.payment-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.payment-header {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+}
+
+.payment-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.payment-body {
+    padding: 2rem;
+}
+
+.booking-details {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.booking-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.booking-info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.booking-info-label {
+    font-size: 0.875rem;
+    color: var(--gray);
+    margin-bottom: 0.25rem;
+}
+
+.booking-info-value {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.payment-amount {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.amount-label {
+    font-size: 1rem;
+    color: var(--gray);
+    margin-bottom: 0.5rem;
+}
+
+.amount-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--success);
+}
+
+.khalti-section {
+    text-align: center;
+    padding: 2rem;
+}
+
+.khalti-logo {
+    height: 50px;
+    margin-bottom: 1rem;
+}
+
+.khalti-description {
+    color: var(--gray);
+    margin-bottom: 2rem;
+}
+
+.khalti-btn {
+    background: linear-gradient(135deg, #5C2D91, #7E3DB9);
+    color: white;
+    border: none;
+    padding: 1.25rem 3rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 300px;
+}
+
+.khalti-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.khalti-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.security-notice {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: var(--gray);
+    font-size: 0.875rem;
+}
+
+.security-notice i {
+    color: var(--success);
+    margin-right: 0.5rem;
+}
+
+.back-btn {
+    background: var(--light);
+    color: var(--dark);
+    border: 1px solid #e2e8f0;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #e2e8f0;
+    color: var(--dark);
+}
+
+@media (max-width: 768px) {
+    .payment-container {
+        margin: 1rem auto;
+    }
+    
+    .payment-body {
+        padding: 1.5rem;
+    }
+    
+    .booking-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .amount-value {
+        font-size: 2rem;
+    }
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.loading-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error modal */
+.error-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.error-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.error-icon {
+    font-size: 3rem;
+    color: var(--danger);
+    margin-bottom: 1rem;
+}
+</style>
+
+<div class="payment-container">
+    <div class="payment-card">
+        <div class="payment-header">
+            <h1><i class="fas fa-credit-card me-2"></i>Complete Your Payment</h1>
+        </div>
+        
+        <div class="payment-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4 class="mb-3">Booking Details</h4>
+                    <div class="booking-details">
+                        <div class="booking-info">
+                            <div class="booking-info-item">
+                                <span class="booking-info-label">Service</span>
+                                <span class="booking-info-value">{{ appointment.service_subtask.subtask.name|default:"Professional Service" }}</span>
+                            </div>
+                            <div class="booking-info-item">
+                                <span class="booking-info-label">Worker</span>
+                                <span class="booking-info-value">{{ appointment.worker.name }}</span>
+                            </div>
+                            <div class="booking-info-item">
+                                <span class="booking-info-label">Date & Time</span>
+                                <span class="booking-info-value">{{ appointment.appointment_date|date:"M d, Y H:i" }}</span>
+                            </div>
+                            <div class="booking-info-item">
+                                <span class="booking-info-label">Customer</span>
+                                <span class="booking-info-value">{{ appointment.customer.name }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="payment-breakdown">
+                            <h5 class="mb-3">Payment Breakdown</h5>
+                            <div class="breakdown-item d-flex justify-content-between mb-2">
+                                <span>Service Amount:</span>
+                                <span>₹{{ payment.amount }}</span>
+                            </div>
+                            <div class="breakdown-item d-flex justify-content-between mb-2">
+                                <span>Prepayment (Required):</span>
+                                <span>₹{{ payment.prepayment_amount }}</span>
+                            </div>
+                            <div class="breakdown-item d-flex justify-content-between mb-2">
+                                <span>Platform Fee:</span>
+                                <span>Free</span>
+                            </div>
+                            <div class="breakdown-item d-flex justify-content-between pt-2 border-top">
+                                <strong>Remaining Amount:</strong>
+                                <strong>₹{{ payment.remaining_amount }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <h4 class="mb-3">Payment Method</h4>
+                    <div class="khalti-section">
+                        <img src="https://khalti.com/static/img/logo1.png" alt="Khalti" class="khalti-logo">
+                        <p class="khalti-description">Pay securely with Khalti</p>
+                        
+                        <div class="payment-amount">
+                            <div class="amount-label">Amount to Pay Now</div>
+                            <div class="amount-value">₹{{ payment.prepayment_amount }}</div>
+                            <small class="text-muted">Prepayment to secure your booking</small>
+                        </div>
+                        
+                        <button id="payment-button" class="khalti-btn">
+                            <i class="fas fa-lock me-2"></i>
+                            Pay ₹{{ payment.prepayment_amount }} with Khalti
+                        </button>
+                        
+                        <div class="security-notice">
+                            <i class="fas fa-shield-check"></i>
+                            Your payment is secured with 256-bit SSL encryption
+                        </div>
+
+                        <!-- Test Instructions (remove in production) -->
+                        <div class="mt-4 p-3 bg-warning bg-opacity-10 rounded">
+                            <small class="text-warning">
+                                <strong>Test Payment Instructions:</strong><br>
+                                Use mobile: <code>9800000001</code><br>
+                                MPIN: <code>1111</code><br>
+                                Verification Code: <code>987654</code>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'payments:checkout' appointment.id %}" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Checkout
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <h5>Processing Payment...</h5>
+        <p class="text-muted">Please wait while we prepare your payment</p>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="error-modal" id="errorModal">
+    <div class="error-content">
+        <div class="error-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h5>Payment Error</h5>
+        <p id="error-message">Payment failed. Please try again.</p>
+        <div class="d-flex gap-2 justify-content-center mt-3">
+            <button type="button" class="back-btn" onclick="closeErrorModal()">Close</button>
+            <button type="button" class="khalti-btn" onclick="retryPayment()">Try Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentButton = document.getElementById("payment-button");
+    
+    if (paymentButton) {
+        paymentButton.addEventListener("click", function (e) {
+            e.preventDefault();
+            initiateKhaltiPayment();
+        });
+    }
+});
+
+function initiateKhaltiPayment() {
+    // Show loading overlay
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    loadingOverlay.style.display = 'flex';
+    
+    // Disable payment button
+    const paymentButton = document.getElementById("payment-button");
+    paymentButton.disabled = true;
+    paymentButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+    
+    // Make request to initiate payment
+    fetch('{% url "payments:initiate_payment" appointment.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        loadingOverlay.style.display = 'none';
+        
+        if (data.success) {
+            // Redirect to Khalti payment page
+            console.log('Redirecting to Khalti payment page:', data.payment_url);
+            window.location.href = data.payment_url;
+        } else {
+            showError('Payment initiation failed: ' + (data.error || 'Unknown error'));
+            console.error('Payment initiation error:', data);
+        }
+    })
+    .catch(error => {
+        loadingOverlay.style.display = 'none';
+        console.error('Error during payment initiation:', error);
+        showError('Payment initiation failed. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable payment button
+        paymentButton.disabled = false;
+        paymentButton.innerHTML = '<i class="fas fa-lock me-2"></i> Pay ₹{{ payment.prepayment_amount }} with Khalti';
+    });
+}
+
+function retryPayment() {
+    // Close error modal and try payment again
+    closeErrorModal();
+    
+    setTimeout(function() {
+        initiateKhaltiPayment();
+    }, 500);
+}
+
+function showError(message) {
+    document.getElementById('error-message').textContent = message;
+    const errorModal = document.getElementById('errorModal');
+    errorModal.style.display = 'flex';
+}
+
+function closeErrorModal() {
+    const errorModal = document.getElementById('errorModal');
+    errorModal.style.display = 'none';
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(event) {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const errorModal = document.getElementById('errorModal');
+    
+    if (event.target === loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+    }
+    if (event.target === errorModal) {
+        closeErrorModal();
+    }
+});
+</script>
+{% endblock %}

@@ -780,7 +780,7 @@ class WorkerListView(ListView):
 def get_dynamic_time_slots(worker_shift):
     """
     Generate dynamic time slots based on worker's shift preference
-    Returns list of time slots in format: {'value': '09:00-11:00', 'display': '9:00 AM - 11:00 AM'}
+    Returns list of time slots in format: {'value': '14:00-16:00', 'display': '2:00 PM - 4:00 PM'}
     """
     def format_time_display(hour):
         """Helper function to format hour to 12-hour format with AM/PM"""
@@ -793,28 +793,27 @@ def get_dynamic_time_slots(worker_shift):
         else:
             return f"{hour-12}:00 PM"
     
+    time_slots = []
+    
     if worker_shift == 'day':
         # Day shift: 6 AM to 6 PM
-        time_slots = []
         for hour in range(6, 18, 2):  # 2-hour slots from 6 AM to 6 PM
             start_time = f"{hour:02d}:00"
             end_time = f"{(hour + 2):02d}:00"
             time_slots.append({
-                'value': f"{start_time}-{end_time}",
+                'value': f"{start_time}-{end_time}",  # ✅ FIXED: This should be time range like "14:00-16:00"
                 'display': f"{format_time_display(hour)} - {format_time_display(hour + 2)}"
             })
-        return time_slots
     
     elif worker_shift == 'night':
         # Night shift: 6 PM to 6 AM
-        time_slots = []
         # 6 PM to 12 AM
         for hour in range(18, 24, 2):
             start_time = f"{hour:02d}:00"
             end_hour = hour + 2 if hour < 22 else 0
             end_time = f"{end_hour:02d}:00"
             time_slots.append({
-                'value': f"{start_time}-{end_time}",
+                'value': f"{start_time}-{end_time}",  # ✅ FIXED
                 'display': f"{format_time_display(hour)} - {format_time_display(end_hour if end_hour != 0 else 24)}"
             })
         # 12 AM to 6 AM
@@ -822,20 +821,18 @@ def get_dynamic_time_slots(worker_shift):
             start_time = f"{hour:02d}:00"
             end_time = f"{(hour + 2):02d}:00"
             time_slots.append({
-                'value': f"{start_time}-{end_time}",
+                'value': f"{start_time}-{end_time}",  # ✅ FIXED
                 'display': f"{format_time_display(hour)} - {format_time_display(hour + 2)}"
             })
-        return time_slots
     
     else:  # 'all' shift
         # All day: 6 AM to 6 AM next day
-        time_slots = []
         # Day slots (6 AM - 6 PM)
         for hour in range(6, 18, 2):
             start_time = f"{hour:02d}:00"
             end_time = f"{(hour + 2):02d}:00"
             time_slots.append({
-                'value': f"{start_time}-{end_time}",
+                'value': f"{start_time}-{end_time}",  # ✅ FIXED
                 'display': f"{format_time_display(hour)} - {format_time_display(hour + 2)}"
             })
         # Evening/Night slots (6 PM - 12 AM)
@@ -844,7 +841,7 @@ def get_dynamic_time_slots(worker_shift):
             end_hour = hour + 2 if hour < 22 else 0
             end_time = f"{end_hour:02d}:00"
             time_slots.append({
-                'value': f"{start_time}-{end_time}",
+                'value': f"{start_time}-{end_time}",  # ✅ FIXED
                 'display': f"{format_time_display(hour)} - {format_time_display(end_hour if end_hour != 0 else 24)}"
             })
         # Early morning slots (12 AM - 6 AM)
@@ -852,10 +849,11 @@ def get_dynamic_time_slots(worker_shift):
             start_time = f"{hour:02d}:00"
             end_time = f"{(hour + 2):02d}:00"
             time_slots.append({
-                'value': f"{start_time}-{end_time}",
+                'value': f"{start_time}-{end_time}",  # ✅ FIXED
                 'display': f"{format_time_display(hour)} - {format_time_display(hour + 2)}"
             })
-        return time_slots
+    
+    return time_slots
 
 def get_shift_display_name(shift):
     """Get display name for shift"""
@@ -3060,124 +3058,193 @@ def get_time_ago(dt):
         return 'Just now'
     
 
+
 @login_required
 def appointment_request(request, worker_id):
-    """View to handle appointment request form"""
+    """View to handle appointment request form - supports both form and JSON"""
     worker = get_object_or_404(Worker, id=worker_id)
     
     # Check if user has a customer profile
     try:
         customer = request.user.customer
     except AttributeError:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.content_type == 'application/json':
+            return JsonResponse({'error': 'You need a customer profile to book appointments.'}, status=403)
         messages.error(request, "You need a customer profile to book appointments.")
         return redirect('customer-create')
 
     if request.method == "POST":
-        # Get form data from the booking modal
-        service_id = request.POST.get("service_id")
-        preferred_date = request.POST.get("preferred_date")
-        preferred_time = request.POST.get("preferred_time")
-        preferred_shift = request.POST.get("preferred_shift")
-        address = request.POST.get("address", "")
-        pincode = request.POST.get("pincode", "")
-        city = request.POST.get("city", "")
-        customer_name = request.POST.get("customer_name", "")
-        customer_phone = request.POST.get("customer_phone", "")
-        special_instructions = request.POST.get("special_instructions", "")
-
-        # Debug logging
-        print(f"POST data received: service_id={service_id}, date={preferred_date}, time={preferred_time}")
-
-        # Validate required fields
-        if not all([preferred_date, preferred_time, address, customer_name, customer_phone]):
-            messages.error(request, "Please fill in all required fields.")
-            return redirect('worker_service_details', worker_id=worker_id)
-
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.content_type == 'application/json'
+        
         try:
-            # Parse preferred time slot (e.g., "09:00-11:00")
-            if '-' in preferred_time:
-                start_time = preferred_time.split('-')[0].strip()
+            if is_ajax and request.content_type == 'application/json':
+                data = json.loads(request.body)
             else:
-                start_time = preferred_time.strip()
-            
-            # Create appointment datetime
-            datetime_str = f"{preferred_date} {start_time}"
-            appointment_datetime = make_aware(datetime.strptime(datetime_str, "%Y-%m-%d %H:%M"))
-            
-            # Check if appointment is in the future
-            if appointment_datetime <= now():
-                messages.error(request, "You can only book appointments for future dates/times.")
-                return redirect('worker_service_details', worker_id=worker_id)
+                data = request.POST
+                
+            service_id = data.get("service_id")
+            preferred_date = data.get("preferred_date")
+            preferred_time = data.get("preferred_time")  # This is "14:00-16:00"
+            address = data.get("address", "")
+            special_instructions = data.get("special_instructions", "")
+            customer_name = data.get("customer_name", "")
+            customer_phone = data.get("customer_phone", "")
+            latitude = data.get("latitude")
+            longitude = data.get("longitude")
 
-            # Check for conflicting appointments
-            conflicting_appointments = Appointment.objects.filter(
-                worker=worker,
-                appointment_date__date=appointment_datetime.date(),
-                appointment_date__hour__range=(
-                    appointment_datetime.hour, 
-                    appointment_datetime.hour + 2
-                ),
-                status__in=['pending', 'accepted']
-            )
-            
-            if conflicting_appointments.exists():
-                messages.error(request, "Worker already has an appointment during this time slot.")
-                return redirect('worker_service_details', worker_id=worker_id)
+            print(f"📥 Received data - Date: {preferred_date}, Time: {preferred_time}")
 
-            # Get service subtask pricing if service_id is provided
-            service_subtask = None
-            if service_id and service_id != 'default' and service_id != '':
-                try:
-                    service_subtask = WorkerSubTaskPricing.objects.get(id=service_id)
-                    print(f"Found service subtask: {service_subtask}")
-                except WorkerSubTaskPricing.DoesNotExist:
-                    print(f"Service subtask not found for ID: {service_id}")
-                    pass
+            # Validate required fields
+            if not all([preferred_date, preferred_time, address]):
+                error_msg = "Please fill in all required fields."
+                if is_ajax:
+                    return JsonResponse({'error': error_msg}, status=400)
+                messages.error(request, error_msg)
+                return redirect('worker-detail', pk=worker_id)
 
-            # Build complete location string
-            complete_location = f"{address}, {city}"
-            if pincode:
-                complete_location += f" - {pincode}"
-
-            # Create appointment
-            appointment = Appointment.objects.create(
-                customer=customer,
-                worker=worker,
-                appointment_date=appointment_datetime,
-                status="pending",
-                service_subtask=service_subtask,
-                shift_type=preferred_shift if preferred_shift else 'day',
-                location=complete_location,
-                special_instructions=special_instructions
-            )
-
-            print(f"Appointment created: ID={appointment.id}")
-
-            # Send email notification to worker (with error handling)
             try:
-                send_appointment_request_email(worker, appointment)
-                logger.info(f"Appointment request email sent successfully for appointment {appointment.id}")
-            except Exception as email_error:
-                logger.error(f"Email sending failed for appointment {appointment.id}: {email_error}")
-                # Don't show warning to user - appointment is still created successfully
-                # messages.warning(request, "Appointment created but email notification may have failed.")
-            
-            messages.success(request, f"Appointment request sent successfully to {worker.name}! They will be notified shortly.")
-            return redirect('customer_appointments')
+                # ✅ FIXED: Extract start time from time range
+                if '-' in preferred_time:
+                    start_time_str = preferred_time.split('-')[0].strip()  # Gets "14:00"
+                    print(f"🕒 Extracted start time: {start_time_str}")
+                else:
+                    start_time_str = preferred_time
+                    print(f"🕒 Using single time: {start_time_str}")
 
-        except ValueError as e:
-            logger.error(f"Error parsing datetime: {e}")
-            messages.error(request, f"Invalid appointment date or time format: {str(e)}")
-            return redirect('worker_service_details', worker_id=worker_id)
+                # Combine date with start time for appointment_date
+                datetime_str = f"{preferred_date} {start_time_str}"
+                print(f"🕒 Final datetime string: {datetime_str}")
+                
+                # Try different datetime formats for the start time
+                datetime_formats = [
+                    "%Y-%m-%d %H:%M",    # 2024-01-15 14:00
+                    "%Y-%m-%d %H:%M:%S", # 2024-01-15 14:00:00
+                    "%Y-%m-%d %I:%M %p", # 2024-01-15 02:00 PM
+                ]
+                
+                appointment_datetime = None
+                for fmt in datetime_formats:
+                    try:
+                        naive_datetime = datetime.strptime(datetime_str, fmt)
+                        appointment_datetime = make_aware(naive_datetime)
+                        print(f"✅ Successfully parsed with format: {fmt}")
+                        break
+                    except ValueError:
+                        continue
+                
+                if not appointment_datetime:
+                    error_msg = f"Invalid appointment date or time format. Received time range: {preferred_time}"
+                    print(f"❌ {error_msg}")
+                    if is_ajax:
+                        return JsonResponse({'error': error_msg}, status=400)
+                    messages.error(request, error_msg)
+                    return redirect('worker-detail', pk=worker_id)
+                
+                # Check if appointment is in the future
+                if appointment_datetime <= now():
+                    error_msg = "You can only book appointments for future dates/times."
+                    print(f"❌ {error_msg}")
+                    if is_ajax:
+                        return JsonResponse({'error': error_msg}, status=400)
+                    messages.error(request, error_msg)
+                    return redirect('worker-detail', pk=worker_id)
+
+                # Check for conflicting appointments
+                conflicting_appointments = Appointment.objects.filter(
+                    worker=worker,
+                    appointment_date=appointment_datetime,
+                    status__in=['pending', 'accepted']
+                )
+                
+                if conflicting_appointments.exists():
+                    error_msg = "Worker already has an appointment at this time."
+                    print(f"❌ {error_msg}")
+                    if is_ajax:
+                        return JsonResponse({'error': error_msg}, status=400)
+                    messages.error(request, error_msg)
+                    return redirect('worker-detail', pk=worker_id)
+
+                # Get service subtask pricing if service_id is provided
+                service_subtask = None
+                if service_id and service_id not in ['default', 'consultation', 'null', '']:
+                    try:
+                        service_subtask = WorkerSubTaskPricing.objects.get(id=service_id)
+                        print(f"✅ Found service subtask: {service_subtask}")
+                    except (WorkerSubTaskPricing.DoesNotExist, ValueError) as e:
+                        print(f"⚠️ Service subtask not found with ID: {service_id}, error: {e}")
+                        pass
+
+                # ✅ FIXED: Create appointment with BOTH time_slot and appointment_date
+                appointment = Appointment.objects.create(
+                    customer=customer,
+                    worker=worker,
+                    appointment_date=appointment_datetime,  # This is the start time
+                    time_slot=preferred_time,  # ✅ Store the original time range
+                    status="pending",
+                    service_subtask=service_subtask,
+                    location=address,
+                    special_instructions=special_instructions,
+                    customer_latitude=latitude,
+                    customer_longitude=longitude
+                )
+
+                print(f"✅ Appointment created: {appointment.id}")
+
+                # Update customer info if provided
+                if customer_name and customer_name != customer.name:
+                    customer.name = customer_name
+                if customer_phone and customer_phone != str(customer.phone_number):
+                    try:
+                        customer.phone_number = customer_phone
+                    except ValidationError:
+                        print(f"⚠️ Invalid phone number provided: {customer_phone}")
+                        pass
+                customer.save()
+
+                # Send email notification to worker
+                try:
+                    send_appointment_request_email(worker, appointment)
+                    print(f"✅ Email sent for appointment {appointment.id}")
+                except Exception as email_error:
+                    print(f"⚠️ Email sending failed: {email_error}")
+
+                # Return success response for AJAX
+                if is_ajax:
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Appointment request sent successfully!',
+                        'appointment_id': appointment.id
+                    })
+
+                messages.success(request, "Appointment request sent successfully!")
+                return redirect('customer_appointments')
+
+            except ValueError as e:
+                error_msg = f"Invalid appointment date or time format: {str(e)}"
+                print(f"❌ {error_msg}")
+                if is_ajax:
+                    return JsonResponse({'error': error_msg}, status=400)
+                messages.error(request, error_msg)
+                return redirect('worker-detail', pk=worker_id)
+                
+        except json.JSONDecodeError as e:
+            error_msg = f"Invalid JSON data: {str(e)}"
+            print(f"❌ {error_msg}")
+            if is_ajax:
+                return JsonResponse({'error': error_msg}, status=400)
+            messages.error(request, "Invalid form data.")
+            return redirect('worker-detail', pk=worker_id)
         except Exception as e:
-            logger.error(f"Unexpected error in appointment_request: {e}")
-            import traceback
-            traceback.print_exc()
-            messages.error(request, f"An error occurred: {str(e)}. Please try again.")
-            return redirect('worker_service_details', worker_id=worker_id)
+            error_msg = f"Unexpected error: {str(e)}"
+            print(f"❌ {error_msg}")
+            if is_ajax:
+                return JsonResponse({'error': error_msg}, status=500)
+            messages.error(request, "An error occurred while processing your request.")
+            return redirect('worker-detail', pk=worker_id)
     
-    # GET request - redirect to worker service details
-    return redirect('worker_service_details', worker_id=worker_id)
+    # GET request - redirect to worker detail
+    return redirect('worker-detail', pk=worker_id)
+
 
 def worker_service_details(request, worker_id):
     worker = get_object_or_404(Worker, id=worker_id)

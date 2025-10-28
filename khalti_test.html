@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Khalti Test</title>
+    <script src="https://khalti.s3.ap-south-1.amazonaws.com/KPG/dist/2020.12.17.0.0.0/khalti-checkout.iffe.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background: #5C2D91;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #7E3DB9;
+        }
+        .info {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .mode-toggle {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Khalti Payment Test</h1>
+    
+    <div class="mode-toggle">
+        <label>
+            <input type="radio" name="mode" value="test" checked> Test Mode (Use test wallet)
+        </label>
+        <label>
+            <input type="radio" name="mode" value="live"> Live Mode (Real payment)
+        </label>
+    </div>
+    
+    <div class="info" id="info">
+        <h3>Test Mode Details:</h3>
+        <p><strong>Amount:</strong> Rs. 50 (5000 paisa)</p>
+        <p><strong>Public Key:</strong> <span id="currentKey">test_public_key_dc74e0fd797d4cd693c3f7e4051e0c56</span></p>
+        <p style="color: #856404; background: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 10px;">
+            <strong>Test Credentials:</strong><br>
+            Mobile: 9800000000<br>
+            PIN: 1111<br>
+            OTP: 987654
+        </p>
+    </div>
+    
+    <button id="payment-button">Pay Rs. 50 with Khalti</button>
+    
+    <div id="result" style="margin-top: 20px;"></div>
+    
+    <script>
+        console.log('Khalti Test Page Loaded');
+        
+        // Keys configuration
+        const KEYS = {
+            test: {
+                publicKey: "test_public_key_dc74e0fd797d4cd693c3f7e4051e0c56",
+                label: "Test Mode"
+            },
+            live: {
+                publicKey: "930eae3209a94d14b7f141775a2e6930",
+                label: "Live Mode"
+            }
+        };
+        
+        let currentMode = 'test';
+        let checkout = null;
+        
+        function initKhalti(mode) {
+            console.log('Initializing Khalti in', mode, 'mode');
+            
+            const config = {
+                "publicKey": KEYS[mode].publicKey,
+                "productIdentity": "1234567890",
+                "productName": "Test Product - " + KEYS[mode].label,
+                "productUrl": window.location.href,
+                "eventHandler": {
+                    onSuccess (payload) {
+                        console.log('✅ Payment Success:', payload);
+                        document.getElementById('result').innerHTML = 
+                            '<div style="color: green; padding: 15px; background: #d1fae5; border-radius: 8px;">' +
+                            '<h3>Payment Successful! ✅</h3>' +
+                            '<p><strong>Token:</strong> ' + payload.token + '</p>' +
+                            '<p><strong>Amount:</strong> Rs. ' + (payload.amount / 100) + '</p>' +
+                            '<p><strong>Mode:</strong> ' + KEYS[mode].label + '</p>' +
+                            '</div>';
+                    },
+                    onError (error) {
+                        console.error('❌ Payment Error:', error);
+                        document.getElementById('result').innerHTML = 
+                            '<div style="color: red; padding: 15px; background: #fee2e2; border-radius: 8px;">' +
+                            '<h3>Payment Failed! ❌</h3>' +
+                            '<p>' + JSON.stringify(error) + '</p>' +
+                            '</div>';
+                    },
+                    onClose () {
+                        console.log('ℹ️ Widget closed');
+                        document.getElementById('result').innerHTML = 
+                            '<div style="color: orange; padding: 15px; background: #fff3cd; border-radius: 8px;">' +
+                            '<p>Payment widget closed</p>' +
+                            '</div>';
+                    }
+                }
+            };
+
+            checkout = new KhaltiCheckout(config);
+            console.log('Khalti Checkout initialized with key:', KEYS[mode].publicKey);
+        }
+        
+        // Initialize with test mode
+        initKhalti('test');
+        
+        // Mode toggle
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                currentMode = this.value;
+                initKhalti(currentMode);
+                
+                // Update info display
+                document.getElementById('currentKey').textContent = KEYS[currentMode].publicKey;
+                
+                if (currentMode === 'test') {
+                    document.querySelector('.info p:last-child').style.display = 'block';
+                } else {
+                    document.querySelector('.info p:last-child').style.display = 'none';
+                }
+            });
+        });
+        
+        // Payment button
+        document.getElementById("payment-button").onclick = function () {
+            console.log('Payment button clicked - Mode:', currentMode);
+            document.getElementById('result').innerHTML = 
+                '<div style="padding: 15px; background: #f0f9ff; border-radius: 8px;">' +
+                '<p>Opening Khalti widget in <strong>' + KEYS[currentMode].label + '</strong>...</p>' +
+                '</div>';
+            
+            checkout.show({
+                amount: 5000,
+                mobile: "9800000000"
+            });
+        }
+    </script>
+</body>
+</html>

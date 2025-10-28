@@ -119,12 +119,21 @@ urlpatterns = [
     path('customer/appointments/mark-completed/<int:pk>/', views.mark_customer_completed, name='mark_customer_completed'),
     path('worker/appointments/mark-completed/<int:pk>/', views.mark_worker_completed, name='mark_worker_completed'),
     
-    
+    # Add this to your urlpatterns
+    path('worker/<int:worker_id>/appointment-request/', views.appointment_request, name='appointment_request'),
     # ✅ NEW: Cache management URLs
     path('api/clear-location-cache/', views.clear_location_cache, name='clear_location_cache'),
     path('api/get-cached-location/', views.get_cached_location, name='get_cached_location'),
 
     path('resubmit-verification/', views.resubmit_verification, name='resubmit_verification'),
     path('check-resubmission-status/', views.check_resubmission_status, name='check_resubmission_status'),
-    path('debug-verification/', views.debug_verification, name='debug_verification'),
+
+     # Location-based sorting
+    # path('update-location-and-sort/', views.update_location_and_sort, name='update_location_and_sort'),
+    path('update-current-location/', views.update_current_location, name='update_current_location'),
+    path('clear-location-cache/', views.clear_location_cache, name='clear_location_cache'),
+
+    # path('appointment/<int:appointment_id>/report-delay/', views.report_delay, name='report_delay'),
+    # path('worker/appointments-for-delay/', views.get_worker_appointments_for_delay, name='worker_appointments_for_delay'),
+    
 ]

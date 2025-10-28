@@ -10,6 +10,191 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
 
+<!-- Add Leaflet CSS and JS for maps -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+<style>
+    /* Enhanced map styling */
+    #locationMap {
+        height: 450px;
+        width: 100%;
+        border-radius: 16px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border: 2px solid #e2e8f0;
+        transition: all 0.4s ease;
+    }
+    
+    .locate-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background-color: #ffffff;
+        border: 1px solid #cbd5e0;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    
+    .locate-btn:hover {
+        transform: scale(1.1) translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .locate-btn i {
+        font-size: 1.5rem;
+        color: #4f46e5;
+    }
+    
+    .custom-marker {
+        background: transparent !important;
+        border: none !important;
+    }
+    
+    .location-status {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    
+    .location-status.success {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    
+    .location-status.error {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+    
+    .location-status.info {
+        background-color: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #93c5fd;
+    }
+    
+    .location-status.loading {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fcd34d;
+    }
+    
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.4s ease;
+    }
+    
+    .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .modal-content {
+        background-color: white;
+        color: #1f2937;
+        padding: 2.5rem;
+        border-radius: 20px;
+        max-width: 450px;
+        text-align: center;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        transform: scale(0.9) translateY(30px);
+        opacity: 0;
+        transition: all 0.4s ease;
+    }
+    
+    .modal-overlay.active .modal-content {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+    
+    .notification {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 10000;
+        transform: translateX(120%);
+        transition: transform 0.4s ease-in-out;
+    }
+    
+    .notification.show {
+        transform: translateX(0);
+    }
+    
+    .auto-location-badge {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Recommended section specific styles */
+    .recommended-section {
+        background: linear-gradient(135deg, #fefce8, #fef3c7);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-top: 3rem;
+        border: 2px solid #fbbf24;
+    }
+
+    .recommended-badge {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+
+    .top-rated-card {
+        border: 2px solid #fbbf24;
+        background: linear-gradient(135deg, #ffffff, #fefce8);
+    }
+
+    .rating-badge {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 10;
+    }
+</style>
+
 <script>
   $(document).ready(function() {
     $('#slider1').owlCarousel({
@@ -59,8 +244,6 @@
       const workerId = btn.data('worker-id');
       const isCurrentlyFavorite = btn.hasClass('favorited');
       
-      console.log('Toggling favorite for worker:', workerId, 'Current state:', isCurrentlyFavorite);
-      
       $.ajax({
         url: '{% url "toggle_favorite_worker" 0 %}'.replace('0', workerId),
         type: 'POST',
@@ -69,7 +252,6 @@
           'X-CSRFToken': '{{ csrf_token }}'
         },
         success: function(response) {
-          console.log('Favorite response:', response);
           if (response.success) {
             if (response.is_favorite) {
               btn.addClass('favorited');
@@ -83,10 +265,7 @@
               btn.find('.favorite-text').text('Add to Favorites');
             }
             
-            // Show temporary message
             showMessage(response.message, 'success');
-            
-            // Update favorite count in dashboard if available
             updateFavoriteCount();
           }
         },
@@ -130,11 +309,8 @@
     // Function to get worker address from coordinates
     function getWorkerAddress(workerId, latitude, longitude) {
       if (!latitude || !longitude) {
-        console.log(`No coordinates for worker ${workerId}`);
         return;
       }
-
-      console.log(`🔍 Getting address for worker ${workerId}: ${latitude}, ${longitude}`);
 
       $.ajax({
         url: '{% url "get_worker_address" %}',
@@ -149,16 +325,11 @@
           longitude: longitude
         },
         success: function(response) {
-          console.log(`✅ Address response for worker ${workerId}:`, response);
-          
           if (response.success && response.address) {
-            // Update the address element for this worker
             const addressElement = $(`#worker-address-${workerId}`);
             addressElement.text(response.address);
             addressElement.removeClass('hidden');
-            console.log(`✅ Updated address for worker ${workerId}: ${response.address}`);
           } else {
-            console.log(`❌ No address for worker ${workerId}:`, response.error);
             const addressElement = $(`#worker-address-${workerId}`);
             addressElement.text(response.error || 'Address not available');
             addressElement.removeClass('hidden');
@@ -166,7 +337,6 @@
           }
         },
         error: function(xhr, status, error) {
-          console.error(`❌ Error getting address for worker ${workerId}:`, error);
           const addressElement = $(`#worker-address-${workerId}`);
           addressElement.text('Address service unavailable');
           addressElement.removeClass('hidden');
@@ -187,18 +357,12 @@
         const longitude = card.data('longitude');
         
         if (workerId && latitude && longitude) {
-          // Stagger requests to avoid hitting API limits
           setTimeout(() => {
-            console.log(`🕒 Making request for worker ${workerId} after ${delay}ms delay`);
             getWorkerAddress(workerId, latitude, longitude);
           }, delay);
-          delay += 2000; // 2 seconds between requests to respect API limits
-        } else {
-          console.log(`❌ No coordinates for worker ${workerId}`);
+          delay += 2000;
         }
       });
-      
-      console.log(`📊 Total workers with coordinates: ${workerCards.filter('[data-latitude][data-longitude]').length}`);
     }
 
     // Initialize addresses when page loads
@@ -224,75 +388,383 @@
     }
 
     function updateFavoriteCount() {
-      // This function would update the favorite count in the dashboard
-      // You can implement this if you have a real-time counter
       console.log('Favorite count updated');
     }
   });
 
-  document.addEventListener('DOMContentLoaded', function() {
-    // Function to update location
-    function updateCurrentLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    const latitude = position.coords.latitude;
-                    const longitude = position.coords.longitude;
-                    const accuracy = position.coords.accuracy;
-                    
-                    // Send to server to update session
-                    fetch('{% url "update_current_location" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({
-                            latitude: latitude,
-                            longitude: longitude,
-                            accuracy: accuracy
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log('Location updated:', data);
-                            // Optionally reload the page to re-sort workers by new location
-                            // window.location.reload();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error updating location:', error);
-                    });
-                },
-                function(error) {
-                    console.warn('Location unavailable:', error.message);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 300000 // Cache for 5 minutes
-                }
-            );
+  // Enhanced Map functionality for automatic location detection
+  let map;
+  let marker;
+  let selectedLocation = null;
+  let isAutoLocated = false;
+
+  function initMap() {
+    console.log('🟢 Initializing map...');
+    
+    // Initialize map with default location (Kathmandu)
+    map = L.map('locationMap', { zoomControl: false }).setView([27.7172, 85.3240], 10);
+    
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Add locate button
+    const locateButton = L.control({ position: 'topright' });
+    locateButton.onAdd = function(map) {
+      const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+      div.innerHTML = '<button class="locate-btn" title="Use my current location" onclick="locateUser()"><i class="fas fa-location-arrow"></i></button>';
+      return div;
+    };
+    locateButton.addTo(map);
+
+    // Set initial location from URL parameters or use automatic detection
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = urlParams.get('lat');
+    const lng = urlParams.get('lng');
+    
+    if (lat && lng) {
+      console.log('🟢 Using URL location parameters');
+      selectedLocation = { lat: parseFloat(lat), lng: parseFloat(lng) };
+      updateMapMarker(selectedLocation.lat, selectedLocation.lng);
+      updateLocationStatus(selectedLocation.lat, selectedLocation.lng, 'manual');
+    } else {
+      // Automatically get user's location when page loads
+      console.log('🟢 Starting automatic location detection...');
+      setTimeout(() => {
+        locateUserOnLoad();
+      }, 1000);
+    }
+
+    // Add click event to map - Auto-update location on click
+    map.on('click', function(e) {
+      console.log('🟢 Map clicked at:', e.latlng.lat, e.latlng.lng);
+      selectedLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
+      updateMapMarker(selectedLocation.lat, selectedLocation.lng);
+      updateLocationStatus(selectedLocation.lat, selectedLocation.lng, 'manual');
+      isAutoLocated = false;
+      
+      // Automatically update customer location in database and refresh
+      updateCustomerLocation(selectedLocation.lat, selectedLocation.lng);
+    });
+
+    // Fix map size after initialization
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+  }
+
+  function locateUserOnLoad() {
+    console.log('🟢 locateUserOnLoad called');
+    updateLocationStatus(null, null, 'loading');
+    
+    if (!navigator.geolocation) {
+      console.log('❌ Geolocation not supported');
+      updateLocationStatus(null, null, 'error', 'Geolocation is not supported by your browser.');
+      setDefaultLocation();
+      return;
+    }
+
+    console.log('🟢 Requesting geolocation...');
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        console.log('✅ Location found:', lat, lon);
+        
+        selectedLocation = { lat: lat, lng: lon };
+        updateMapMarker(lat, lon);
+        updateLocationStatus(lat, lon, 'auto');
+        isAutoLocated = true;
+        
+        // Show auto-location badge
+        showAutoLocationBadge();
+        
+        // Automatically update customer location in database and refresh
+        updateCustomerLocation(lat, lon);
+      },
+      function (error) {
+        console.log('❌ Geolocation error:', error);
+        let errorMessage = "Could not get your location. ";
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "Please enable location access in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "Location request timed out.";
+            break;
+          default:
+            errorMessage += "An unknown error occurred.";
         }
+        updateLocationStatus(null, null, 'error', errorMessage);
+        setDefaultLocation();
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  }
+
+  function setDefaultLocation() {
+    console.log('🟢 Setting default location');
+    selectedLocation = { lat: 27.7172, lng: 85.3240 };
+    updateMapMarker(selectedLocation.lat, selectedLocation.lng);
+    updateLocationStatus(selectedLocation.lat, selectedLocation.lng, 'default');
+    isAutoLocated = false;
+  }
+
+  function locateUser() {
+    console.log('🟢 Manual location request');
+    updateLocationStatus(null, null, 'loading');
+    
+    if (!navigator.geolocation) {
+      showErrorModal("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        console.log('✅ Manual location found:', lat, lon);
+        
+        selectedLocation = { lat: lat, lng: lon };
+        updateMapMarker(lat, lon);
+        updateLocationStatus(lat, lon, 'auto');
+        isAutoLocated = true;
+        
+        showAutoLocationBadge();
+        showNotification('Location found successfully!', 'success');
+        
+        // Automatically update customer location in database and refresh
+        updateCustomerLocation(lat, lon);
+      },
+      function (error) {
+        console.log('❌ Manual geolocation error:', error);
+        let errorMessage;
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "You denied the request for Geolocation. Please enable location access in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is currently unavailable. Please try again or select manually.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "The request to get your location timed out. Please try again.";
+            break;
+          default:
+            errorMessage = "An unknown error occurred while trying to get your location.";
+        }
+        showErrorModal(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0 // Always get fresh location
+      }
+    );
+  }
+
+  function updateMapMarker(lat, lng) {
+    if (marker) {
+      marker.setLatLng([lat, lng]);
+    } else {
+      const customIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<i class="fas fa-map-marker-alt" style="color: #4f46e5; font-size: 32px; text-shadow: 0 2px 10px rgba(0,0,0,0.3);"></i>',
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+        popupAnchor: [0, -40]
+      });
+      marker = L.marker([lat, lng], { icon: customIcon })
+        .addTo(map)
+        .bindPopup("<b>Your Selected Location</b><br>Workers will be sorted by distance from this point")
+        .openPopup();
+    }
+    map.setView([lat, lng], 14);
+  }
+
+  function updateLocationStatus(lat, lng, type, customMessage = null) {
+    const statusElement = document.getElementById('locationStatus');
+    if (!statusElement) return;
+
+    if (type === 'loading') {
+      statusElement.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Detecting your location...';
+      statusElement.className = "location-status loading";
+      return;
+    }
+
+    if (type === 'error') {
+      statusElement.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${customMessage || 'Location error'}`;
+      statusElement.className = "location-status error";
+      return;
+    }
+
+    let statusText = '';
+    let statusClass = 'location-status ';
+
+    if (type === 'auto') {
+      statusText = `📍 Auto-detected location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      statusClass += 'success';
+    } else if (type === 'manual') {
+      statusText = `📌 Selected location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      statusClass += 'info';
+    } else if (type === 'default') {
+      statusText = `🗺️ Default location: ${lat.toFixed(4)}, ${lng.toFixed(4)} (Kathmandu)`;
+      statusClass += 'info';
+    }
+
+    statusElement.textContent = statusText;
+    statusElement.className = statusClass;
+  }
+
+  function showAutoLocationBadge() {
+    if (!document.getElementById('autoLocationBadge')) {
+      const badge = document.createElement('div');
+      badge.id = 'autoLocationBadge';
+      badge.className = 'auto-location-badge';
+      badge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Auto-detected';
+      
+      const mapContainer = document.getElementById('locationMap');
+      mapContainer.style.position = 'relative';
+      mapContainer.appendChild(badge);
+      
+      // Remove badge after 5 seconds
+      setTimeout(() => {
+        if (badge.parentNode) {
+          badge.parentNode.removeChild(badge);
+        }
+      }, 5000);
+    }
+  }
+
+  // Function to update customer location in database and refresh page
+  function updateCustomerLocation(latitude, longitude) {
+    console.log('🟢 Updating customer location:', latitude, longitude);
+    
+    // Show loading state
+    const statusElement = document.getElementById('locationStatus');
+    if (statusElement) {
+      statusElement.innerHTML = '<i class="fas fa-sync-alt fa-spin mr-2"></i>Updating worker list...';
+      statusElement.className = "location-status loading";
     }
     
-    // Update location on page load
-    updateCurrentLocation();
-    
-    // Optionally update location every 5 minutes while on the page
-    setInterval(updateCurrentLocation, 300000);
-    
-    // Show location indicator if available
-    const customerLocation = {{ customer_location|safe|default:'null' }};
-    if (customerLocation) {
-        console.log('Current location:', customerLocation.latitude, customerLocation.longitude);
-        console.log('Location source:', customerLocation.source);
+    $.ajax({
+      url: '{% url "update_current_location" %}',
+      type: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      contentType: 'application/json',
+      data: JSON.stringify({
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: 50
+      }),
+      success: function(response) {
+        console.log('✅ Location updated successfully:', response);
+        showNotification('Location updated! Refreshing worker list...', 'success');
+        
+        // Refresh the page to show sorted workers
+        setTimeout(() => {
+          window.location.href = '{% url "worker-list" %}?lat=' + latitude + '&lng=' + longitude;
+        }, 1000);
+      },
+      error: function(xhr, status, error) {
+        console.error('❌ Error updating location:', error);
+        showNotification('Error updating location. Please try again.', 'error');
+        
+        // Reset status
+        if (statusElement && selectedLocation) {
+          updateLocationStatus(selectedLocation.lat, selectedLocation.lng, isAutoLocated ? 'auto' : 'manual');
+        }
+      }
+    });
+  }
+
+  function showErrorModal(message) {
+    const modal = document.getElementById('error-modal');
+    const errorMessage = document.getElementById('error-message');
+    if (errorMessage) {
+      errorMessage.textContent = message;
     }
-});
+    if (modal) {
+      modal.classList.add('active');
+      modal.classList.remove('hidden');
+    }
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('error-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    }
+  }
+
+  function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification px-6 py-4 rounded-lg shadow-lg text-white font-medium flex items-center ${
+      type === 'success' ? 'bg-green-500' : 
+      type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    }`;
+    notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} mr-3"></i><span>${message}</span>`;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => { notification.classList.add('show'); }, 10);
+    
+    setTimeout(() => {
+      notification.classList.remove('show');
+      setTimeout(() => { 
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification); 
+        }
+      }, 400);
+    }, 4000);
+  }
+
+  function clearLocationFilter() {
+    console.log('🟢 Clearing location filter');
+    
+    $.ajax({
+      url: '{% url "clear_location_cache" %}',
+      type: 'GET',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      success: function(response) {
+        console.log('✅ Location cache cleared:', response);
+        showNotification('Location filter cleared. Showing all workers.', 'success');
+        
+        // Refresh the page without location parameters
+        setTimeout(() => {
+          window.location.href = '{% url "worker-list" %}';
+        }, 1000);
+      },
+      error: function(xhr, status, error) {
+        console.error('❌ Error clearing location cache:', error);
+        window.location.href = '{% url "worker-list" %}';
+      }
+    });
+  }
+
+  // Initialize map when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('🟢 DOM loaded, initializing map...');
+    initMap();
+  });
 </script>
 
 <div class="max-w-7xl mx-auto mb-12 px-4" style="max-width:unset;width:100%;padding:0">
+  <!-- Your existing header content remains the same -->
   <div class="relative bg-gradient-to-r from-blue-600 to-indigo-800 rounded-2xl shadow-2xl overflow-hidden transform hover:scale-[1.01] transition duration-500">
     <div class="absolute inset-0 bg-[url('{% static 'landing/img/pattern.svg' %}')] opacity-10"></div>
     <div class="relative z-10 px-8 py-12 sm:p-16 flex flex-col md:flex-row items-center">
@@ -421,35 +893,85 @@
             </form>
           </div>
 
-          <!-- REMOVED: Sort Options Section -->
+          <!-- Enhanced Location Selection Map -->
+          <div class="mt-6 pt-6 border-t border-gray-200">
+            <h3 class="text-xl font-semibold text-indigo-800 mb-4 flex items-center">
+              <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+              Select Your Location for Distance-Based Sorting
+            </h3>
+            
+            <div class="bg-gray-50 rounded-xl p-4 mb-4">
+              <div class="relative">
+                <div id="locationMap"></div>
+              </div>
+              
+              <div id="locationStatus" class="location-status loading mt-3">
+                <i class="fas fa-spinner fa-spin mr-2"></i>Detecting your location...
+              </div>
+              
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-4">
+                <div class="flex-1">
+                  <p class="text-gray-600 text-sm">
+                    Workers will be automatically sorted by distance from your selected location.
+                    {% if request.GET.lat and request.GET.lng %}
+                      <br><strong>Currently showing workers near your selected location.</strong>
+                    {% endif %}
+                  </p>
+                </div>
+                
+                <div class="flex gap-2 flex-shrink-0">
+                  {% if request.GET.lat and request.GET.lng or customer_location %}
+                  <button
+                    onclick="clearLocationFilter()"
+                    class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm font-semibold"
+                  >
+                    Clear Location
+                  </button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Information about automatic sorting -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex items-start">
+                <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                <div>
+                  <p class="text-blue-800 font-medium text-sm">
+                    <strong>How it works:</strong> Your location is automatically detected when you visit this page. 
+                    Click anywhere on the map to change your location. 
+                    The system will automatically update and sort workers by distance from your selected location.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Action Buttons -->
-<div class="flex flex-col sm:flex-row gap-6">
-  <!-- CHANGE THIS FORM ACTION -->
-  <form action="{% url 'customer_dashboard' %}" method="get" class="flex-1">
-    <button
-      type="submit"
-      class="w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
-    >
-      📅 Manage Appointments
-    </button>
-  </form>
-  <form action="{% url 'favorite_workers_list' %}" method="get" class="flex-1">
-    <button
-      type="submit"
-      class="w-full px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
-    >
-      ⭐ My Favorites
-    </button>
-  </form>
-</div>
-
-
+        <!-- Your existing action buttons remain the same -->
+        <div class="flex flex-col sm:flex-row gap-6">
+          <form action="{% url 'customer_dashboard' %}" method="get" class="flex-1">
+            <button
+              type="submit"
+              class="w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
+            >
+              📅 Manage Appointments
+            </button>
+          </form>
+          <form action="{% url 'favorite_workers_list' %}" method="get" class="flex-1">
+            <button
+              type="submit"
+              class="w-full px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 text-lg"
+            >
+              ⭐ My Favorites
+            </button>
+          </form>
+        </div>
 
       </div>
       {% endif %}
 
+      <!-- Your existing worker appointments section remains the same -->
       {% if user.worker.name %}
       <div class="max-w-full mx-auto my-10 p-8 bg-white bg-opacity-90 rounded-xl shadow-lg w-full">
         <h2 class="text-3xl font-extrabold text-indigo-700 mb-8 border-b-2 border-indigo-300 pb-2">My Appointments</h2>
@@ -522,7 +1044,7 @@
     <div class="w-full">
       <div class="flex flex-col gap-6 w-full">
         
-        <!-- Search and Filter Section -->
+        <!-- Your existing non-authenticated user content remains the same -->
         <div class="bg-white rounded-2xl shadow-xl p-6">
           <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
             <!-- Search Form -->
@@ -586,13 +1108,30 @@
             </form>
           </div>
 
-          <!-- REMOVED: Sort Options for non-authenticated users -->
+          <!-- Enhanced Location Selection Map for non-authenticated users -->
+          <div class="mt-6 pt-6 border-t border-gray-200">
+            <h3 class="text-xl font-semibold text-indigo-800 mb-4 flex items-center">
+              <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+              Select Location for Distance Sorting
+            </h3>
+            
+            <div class="bg-gray-50 rounded-xl p-4 mb-4">
+              <div class="relative">
+                <div id="locationMap"></div>
+              </div>
+              
+              <div id="locationStatus" class="location-status loading mt-3">
+                <i class="fas fa-spinner fa-spin mr-2"></i>Detecting your location...
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     {% endif %}
   </div>
 
+  <!-- Your existing worker list display remains the same -->
   <!-- Search Results Header -->
   {% if q %}
   <div class="max-w-7xl mx-auto px-4 mb-8">
@@ -605,7 +1144,21 @@
   <div class="max-w-7xl mx-auto px-4 mb-6">
     <div class="text-center">
       <p class="text-lg text-indigo-700 font-semibold">
-        Showing workers within <span class="text-indigo-900 font-bold">{{ max_distance }} km</span> of your location
+        {% if request.GET.lat and request.GET.lng %}
+          Showing workers within <span class="text-indigo-900 font-bold">{{ max_distance }} km</span> of selected location
+          ({{ request.GET.lat|floatformat:4 }}, {{ request.GET.lng|floatformat:4 }})
+        {% else %}
+          Showing workers within <span class="text-indigo-900 font-bold">{{ max_distance }} km</span> of your location
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  {% elif request.GET.lat and request.GET.lng %}
+  <div class="max-w-7xl mx-auto px-4 mb-6">
+    <div class="text-center">
+      <p class="text-lg text-indigo-700 font-semibold">
+        Workers sorted by distance from selected location 
+        ({{ request.GET.lat|floatformat:4 }}, {{ request.GET.lng|floatformat:4 }})
       </p>
     </div>
   </div>
@@ -613,17 +1166,31 @@
   <div class="max-w-7xl mx-auto px-4 mb-6">
     <div class="text-center">
       <p class="text-lg text-indigo-700 font-semibold">
-        Workers sorted by distance from your location
+        Workers sorted by distance from your current location
       </p>
     </div>
   </div>
   {% endif %}
 
-  <!-- ✅ SECTION 1: Workers Near Your Location (Sorted by Distance) -->
+  <!-- ✅ SECTION 1: Workers List -->
   <div class="max-w-7xl mx-auto mb-16 px-4">
     <div class="text-center mb-8">
-      <h2 class="text-3xl font-bold text-indigo-800">📍 Workers Near Your Location</h2>
-      <p class="text-gray-600 mt-2">Sorted by distance from your current location</p>
+      <h2 class="text-3xl font-bold text-indigo-800">
+        {% if request.GET.lat and request.GET.lng or customer_location %}
+          📍 Workers Sorted by Distance
+        {% else %}
+          📍 Available Workers
+        {% endif %}
+      </h2>
+      <p class="text-gray-600 mt-2">
+        {% if request.GET.lat and request.GET.lng %}
+          Sorted by distance from your selected location
+        {% elif customer_location %}
+          Sorted by distance from your current location
+        {% else %}
+          Browse through our list of professional service providers
+        {% endif %}
+      </p>
     </div>
     
     {% if object_list %}
@@ -724,12 +1291,12 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
-                    <span class="text-sm">{{ worker.distance_km }} km away</span>
+                    <span class="text-sm">{{ worker.distance_km|floatformat:1 }} km away</span>
                   </p>
                   {% endif %}
                 </div>
                 
-                <!-- ✅ FIXED: Bayesian Rating Calculation -->
+                <!-- Rating Display -->
                 <div class="flex flex-col items-center space-y-2 mt-3">
                   <div class="text-center">
                     <!-- Calculate Bayesian Average Rating -->
@@ -739,11 +1306,6 @@
                     <!-- Bayesian Average Calculation -->
                     {% if total_ratings > 0 %}
                       {% with bayesian_rating=avg_rating|bayesian_average:total_ratings %}
-                      
-                      <!-- Debug info (remove in production) -->
-                      <div class="text-xs text-gray-500 mb-1 debug-info" style="display: none;">
-                        Debug: Avg={{ avg_rating|floatformat:2 }}, Total={{ total_ratings }}, Bayesian={{ bayesian_rating|floatformat:2 }}
-                      </div>
                       
                       <!-- Star Rating for workers with ratings -->
                       <div class="flex items-center justify-center space-x-1 mb-2">
@@ -782,12 +1344,6 @@
                             ({{ total_ratings }} review{{ total_ratings|pluralize }})
                           </span>
                         </div>
-                        <div class="text-xs text-green-600 font-semibold flex items-center justify-center mt-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                          </svg>
-                          Bayesian Rating
-                        </div>
                       </div>
                       
                       {% endwith %}
@@ -810,18 +1366,6 @@
                     {% endwith %}
                   </div>
                 </div>
-
-                <!-- User's Own Rating Display -->
-                {% if worker.user_rating %}
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center mt-2">
-                  <p class="text-blue-800 font-semibold text-sm flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    Your Rating: {{ worker.user_rating }}/5
-                  </p>
-                </div>
-                {% endif %}
               </div>
             </div>
 
@@ -851,181 +1395,211 @@
     {% endif %}
   </div>
 
-  <!-- ✅ SECTION 2: Top Recommended Workers (Sorted by Highest Rating) -->
-  {% if recommended_workers %}
+  <!-- ✅ SECTION 2: Top Recommended Workers (Sorted by Highest Bayesian Rating) -->
   <div class="max-w-7xl mx-auto mt-16 px-4">
-    <div class="text-center mb-8">
-      <h2 class="text-3xl font-bold text-indigo-800">🌟 Top Recommended Workers</h2>
-      <p class="text-gray-600 mt-2">Highest rated professionals based on Bayesian rating system</p>
-    </div>
-    
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-      {% for worker in recommended_workers %}
-      <div class="group relative flex flex-col">
-        <!-- Favorite Button -->
-        {% if user.is_authenticated and user.customer %}
-        <button 
-          class="favorite-btn absolute top-4 right-4 z-10 bg-white bg-opacity-90 rounded-full p-2 shadow-lg hover:scale-110 transition-transform duration-200"
-          data-worker-id="{{ worker.id }}"
-          title="Add to favorites"
-        >
-          <span class="favorite-icon text-xl">🤍</span>
-          <span class="favorite-text sr-only">Add to Favorites</span>
-        </button>
-        {% endif %}
-        
-        <a href="{% url 'worker_service_details' worker.id %}" class="block flex-1">
-          <div class="worker-card bg-white bg-opacity-90 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full flex flex-col">
-            <div class="p-6 flex flex-col items-center text-center space-y-4 flex-1">
-              <div class="flex-shrink-0">
-                {% if worker.profile_pic %}
-                <img
-                  class="w-28 h-28 object-cover rounded-full border-4 border-yellow-400 group-hover:border-yellow-500 transition"
-                  src="{{ worker.profile_pic.url }}"
-                  alt="Profile pic"
-                  loading="lazy"
-                >
-                {% else %}
-                <div class="w-28 h-28 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-600 font-bold text-2xl">
-                  {{ worker.name|slice:":1" }}
-                </div>
-                {% endif %}
-              </div>
-
-              <div class="flex flex-col space-y-3 w-full flex-1">
-                <p class="text-2xl font-extrabold text-gray-900 group-hover:text-yellow-600 transition">{{ worker.name }}</p>
-
-                <div class="flex justify-center">
-                  {% if worker.verified %}
-                  <span
-                    class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold flex items-center space-x-2 text-sm"
-                    title="Verified Worker"
+    <div class="recommended-section">
+      <div class="text-center mb-8">
+        <span class="recommended-badge">🌟 TOP RATED</span>
+        <h2 class="text-3xl font-bold text-gray-800">Top Recommended Workers</h2>
+        <p class="text-gray-600 mt-2">Highest rated professionals based on our Bayesian rating system</p>
+      </div>
+      
+      {% if recommended_workers %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {% for worker in recommended_workers %}
+        <div class="group relative flex flex-col">
+          <!-- Rating Badge -->
+          <div class="rating-badge">
+            #{{ forloop.counter }}
+          </div>
+          
+          <!-- Favorite Button -->
+          {% if user.is_authenticated and user.customer %}
+          <button 
+            class="favorite-btn absolute top-4 right-4 z-10 bg-white bg-opacity-90 rounded-full p-2 shadow-lg hover:scale-110 transition-transform duration-200"
+            data-worker-id="{{ worker.id }}"
+            title="Add to favorites"
+          >
+            <span class="favorite-icon text-xl">🤍</span>
+            <span class="favorite-text sr-only">Add to Favorites</span>
+          </button>
+          {% endif %}
+          
+          <a href="{% url 'worker_service_details' worker.id %}" class="block flex-1">
+            <div class="worker-card top-rated-card rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out overflow-hidden h-full flex flex-col">
+              <div class="p-6 flex flex-col items-center text-center space-y-4 flex-1">
+                <div class="flex-shrink-0">
+                  {% if worker.profile_pic %}
+                  <img
+                    class="w-28 h-28 object-cover rounded-full border-4 border-yellow-400 group-hover:border-yellow-500 transition"
+                    src="{{ worker.profile_pic.url }}"
+                    alt="Profile pic"
+                    loading="lazy"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Verified</span>
-                  </span>
+                  {% else %}
+                  <div class="w-28 h-28 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-600 font-bold text-2xl">
+                    {{ worker.name|slice:":1" }}
+                  </div>
                   {% endif %}
                 </div>
 
-                <p class="text-gray-700 italic text-base leading-relaxed line-clamp-2 min-h-[3rem] flex items-center justify-center">{{ worker.tagline }}</p>
+                <div class="flex flex-col space-y-3 w-full flex-1">
+                  <p class="text-2xl font-extrabold text-gray-900 group-hover:text-yellow-600 transition">{{ worker.name }}</p>
 
-                <div class="space-y-2">
-                  {% if worker.location %}
-                  <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span class="text-sm">{{ worker.location }}</span>
-                  </p>
-                  {% endif %}
+                  <div class="flex justify-center">
+                    {% if worker.verified %}
+                    <span
+                      class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold flex items-center space-x-2 text-sm"
+                      title="Verified Worker"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Verified</span>
+                    </span>
+                    {% endif %}
+                  </div>
 
-                  {% if worker.distance_km %}
-                  <p class="text-indigo-700 font-semibold flex items-center justify-center space-x-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                    <span class="text-sm">{{ worker.distance_km }} km away</span>
-                  </p>
-                  {% endif %}
-                </div>
-                
-                <!-- ✅ FIXED: Rating Display for Recommended Workers -->
-                <div class="flex flex-col items-center space-y-2 mt-3">
-                  <div class="text-center">
-                    <!-- Calculate Bayesian Average Rating -->
-                    {% with total_ratings=worker.ratings.count %}
-                    {% with avg_rating=worker.ratings.all|avg_rating %}
-                    
-                    <!-- Bayesian Average Calculation -->
-                    {% if total_ratings > 0 %}
-                      {% with bayesian_rating=avg_rating|bayesian_average:total_ratings %}
+                  <p class="text-gray-700 italic text-base leading-relaxed line-clamp-2 min-h-[3rem] flex items-center justify-center">{{ worker.tagline }}</p>
+
+                  <div class="space-y-2">
+                    {% if worker.location %}
+                    <p class="text-gray-600 font-medium flex items-center justify-center space-x-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span class="text-sm">{{ worker.location }}</span>
+                    </p>
+                    {% endif %}
+
+                    {% if worker.distance_km %}
+                    <p class="text-indigo-700 font-semibold flex items-center justify-center space-x-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                      <span class="text-sm">{{ worker.distance_km|floatformat:1 }} km away</span>
+                    </p>
+                    {% endif %}
+                  </div>
+                  
+                  <!-- Rating Display for Recommended Workers -->
+                  <div class="flex flex-col items-center space-y-2 mt-3">
+                    <div class="text-center">
+                      <!-- Calculate Bayesian Average Rating -->
+                      {% with total_ratings=worker.ratings.count %}
+                      {% with avg_rating=worker.ratings.all|avg_rating %}
                       
-                      <!-- Star Rating for workers with ratings -->
-                      <div class="flex items-center justify-center space-x-1 mb-2">
-                        {% for i in "12345" %}
-                          {% if forloop.counter <= bayesian_rating %}
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
-                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      <!-- Bayesian Average Calculation -->
+                      {% if total_ratings > 0 %}
+                        {% with bayesian_rating=avg_rating|bayesian_average:total_ratings %}
+                        
+                        <!-- Star Rating for workers with ratings -->
+                        <div class="flex items-center justify-center space-x-1 mb-2">
+                          {% for i in "12345" %}
+                            {% if forloop.counter <= bayesian_rating %}
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="gold" class="drop-shadow-md">
+                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                              </svg>
+                            {% elif forloop.counter|add:"-0.5" <= bayesian_rating %}
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
+                                <defs>
+                                  <linearGradient id="half-gradient-rec-{{ worker.id }}-{{ forloop.counter }}">
+                                    <stop offset="50%" stop-color="gold" />
+                                    <stop offset="50%" stop-color="lightgray" />
+                                  </linearGradient>
+                                </defs>
+                                <path fill="url(#half-gradient-rec-{{ worker.id }}-{{ forloop.counter }})"
+                                      d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                              </svg>
+                            {% else %}
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
+                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                              </svg>
+                            {% endif %}
+                          {% endfor %}
+                        </div>
+
+                        <!-- Rating Number and Review Count -->
+                        <div class="space-y-1">
+                          <div class="text-center">
+                            <span class="text-gray-900 font-bold text-xl">{{ bayesian_rating|floatformat:1 }}</span>
+                            <span class="text-gray-500 text-sm">/5</span>
+                          </div>
+                          <div class="text-center">
+                            <span class="text-gray-600 font-medium text-sm">
+                              ({{ total_ratings }} review{{ total_ratings|pluralize }})
+                            </span>
+                          </div>
+                          <div class="text-xs text-green-600 font-semibold flex items-center justify-center mt-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                             </svg>
-                          {% elif forloop.counter|add:"-0.5" <= bayesian_rating %}
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="drop-shadow-md">
-                              <defs>
-                                <linearGradient id="half-gradient-rec-{{ worker.id }}-{{ forloop.counter }}">
-                                  <stop offset="50%" stop-color="gold" />
-                                  <stop offset="50%" stop-color="lightgray" />
-                                </linearGradient>
-                              </defs>
-                              <path fill="url(#half-gradient-rec-{{ worker.id }}-{{ forloop.counter }})"
-                                    d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                            </svg>
-                          {% else %}
+                            Bayesian Rating
+                          </div>
+                        </div>
+                        
+                        {% endwith %}
+                      {% else %}
+                        <!-- No ratings section -->
+                        <div class="flex items-center justify-center space-x-1 mb-2">
+                          {% for _ in "12345" %}
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
                               <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                             </svg>
-                          {% endif %}
-                        {% endfor %}
-                      </div>
-
-                      <!-- Rating Number and Review Count -->
-                      <div class="space-y-1">
-                        <div class="text-center">
-                          <span class="text-gray-900 font-bold text-xl">{{ bayesian_rating|floatformat:1 }}</span>
-                          <span class="text-gray-500 text-sm">/5</span>
+                          {% endfor %}
                         </div>
-                        <div class="text-center">
-                          <span class="text-gray-600 font-medium text-sm">
-                            ({{ total_ratings }} review{{ total_ratings|pluralize }})
-                          </span>
+                        <div class="text-center space-y-1 min-h-[4rem] flex flex-col justify-center">
+                          <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
+                          <span class="text-gray-400 text-xs">Be the first to rate!</span>
                         </div>
-                        <div class="text-xs text-green-600 font-semibold flex items-center justify-center mt-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                          </svg>
-                          Bayesian Rating
-                        </div>
-                      </div>
+                      {% endif %}
                       
                       {% endwith %}
-                    {% else %}
-                      <!-- No ratings section -->
-                      <div class="flex items-center justify-center space-x-1 mb-2">
-                        {% for _ in "12345" %}
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="lightgray" class="drop-shadow-sm">
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
-                        {% endfor %}
-                      </div>
-                      <div class="text-center space-y-1 min-h-[4rem] flex flex-col justify-center">
-                        <span class="text-gray-500 font-medium text-sm">No ratings yet</span>
-                        <span class="text-gray-400 text-xs">Be the first to rate!</span>
-                      </div>
-                    {% endif %}
-                    
-                    {% endwith %}
-                    {% endwith %}
+                      {% endwith %}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div class="px-6 py-4 bg-yellow-100 rounded-b-xl text-center mt-auto">
-              <button
-                class="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transform transition duration-300 ease-in-out"
-              >
-                View Details
-              </button>
+              <div class="px-6 py-4 bg-yellow-100 rounded-b-xl text-center mt-auto">
+                <button
+                  class="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transform transition duration-300 ease-in-out"
+                >
+                  View Details
+                </button>
+              </div>
             </div>
-          </div>
-        </a>
+          </a>
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
+      {% else %}
+      <div class="text-center py-12">
+        <p class="text-xl text-gray-700 font-semibold">
+          No recommended workers available at the moment.
+        </p>
+      </div>
+      {% endif %}
     </div>
   </div>
-  {% endif %}
 
+</div>
+
+<!-- Error Modal -->
+<div id="error-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="flex items-center justify-center mb-5">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+            </div>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-3">Location Access Required</h3>
+        <p id="error-message" class="text-gray-600 mb-6"></p>
+        <button onclick="closeModal()" class="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md">
+            Understand
+        </button>
+    </div>
 </div>
 
 <style>
@@ -1098,81 +1672,11 @@
     flex-direction: column;
   }
 
-  /* Improved grid layout */
-  .worker-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 2rem;
-  }
-
-  @media (min-width: 640px) {
-    .worker-grid {
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .worker-grid {
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-  }
-
-  @media (min-width: 1280px) {
-    .worker-grid {
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    }
-  }
-
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-
-  .recommendation-badge {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    color: white;
-  }
-
-  .bayesian-indicator {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-  }
-
-  /* Recommended section styles */
-  .recommended-badge {
-    position: absolute;
-    top: -8px;
-    left: -8px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    z-index: 20;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-
-  .top-rated-indicator {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 8px;
-    font-size: 0.7rem;
-    font-weight: 600;
-  }
-
-  /* Fix for consistent card heights */
-  .card-height {
-    min-height: 520px;
-  }
-
-  @media (max-width: 768px) {
-    .card-height {
-      min-height: 480px;
-    }
   }
 
   /* Ensure consistent spacing */
@@ -1182,6 +1686,24 @@
 
   .mt-auto {
     margin-top: auto;
+  }
+
+  /* Map styles */
+  .leaflet-control-zoom {
+    border: none !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+  }
+
+  .leaflet-control-zoom a {
+    background-color: white !important;
+    color: #4f46e5 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    font-weight: bold;
+  }
+
+  .leaflet-control-zoom a:hover {
+    background-color: #f8fafc !important;
   }
 </style>
 {% endblock %}

@@ -6,8 +6,6 @@
 <!-- Add Leaflet CSS and JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Khalti Checkout -->
-<script src="https://khalti.s3.ap-south-1.amazonaws.com/KPG/dist/2020.12.17.0.0.0/khalti-checkout.iffe.js"></script>
 
 <style>
 /* ================== GLOBAL STYLES ================== */
@@ -1286,171 +1284,6 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
     font-size: 0.9rem;
 }
 
-/* ================== KHALTI PAYMENT STYLES - UPDATED TO MATCH WORKER_LIST ================== */
-.khalti-payment-section {
-    background: #f8fafc;
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 2px solid #e2e8f0;
-    margin: 1.5rem 0;
-    border-left: 4px solid #5C2D91;
-}
-
-.khalti-logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: linear-gradient(135deg, #5C2D91, #7E3DB9);
-    border-radius: 10px;
-    color: white;
-}
-
-.khalti-logo img {
-    height: 32px;
-    width: auto;
-    filter: brightness(0) invert(1);
-}
-
-.khalti-logo span {
-    font-weight: 700;
-    font-size: 1.2rem;
-}
-
-.payment-amount {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    padding: 1.25rem;
-    background: white;
-    border-radius: 10px;
-    border: 2px solid #059669;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.payment-amount .label {
-    font-size: 1rem;
-    color: #64748b;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-.payment-amount .amount {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #059669;
-}
-
-.khalti-btn {
-    background: linear-gradient(135deg, #5C2D91, #7E3DB9);
-    color: white;
-    border: none;
-    padding: 1.25rem 2rem;
-    border-radius: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 1.1rem;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    border: 2px solid transparent;
-}
-
-.khalti-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    background: linear-gradient(135deg, #7E3DB9, #5C2D91);
-}
-
-.khalti-btn:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
-
-.payment-processing {
-    display: none;
-    text-align: center;
-    padding: 2rem;
-    background: #f0f9ff;
-    border-radius: 12px;
-    border: 2px solid #0ea5e9;
-    margin: 1rem 0;
-}
-
-.payment-processing.active {
-    display: block;
-}
-
-.spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #5C2D91;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.payment-success {
-    display: none;
-    text-align: center;
-    padding: 2rem;
-    background: #d1fae5;
-    border-radius: 12px;
-    border: 2px solid #10b981;
-    margin: 1rem 0;
-}
-
-.payment-success.active {
-    display: block;
-}
-
-.payment-success .icon {
-    font-size: 3rem;
-    color: #10b981;
-    margin-bottom: 1rem;
-}
-
-.payment-success h4 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #065f46;
-    margin-bottom: 0.5rem;
-}
-
-.payment-success p {
-    color: #065f46;
-    font-size: 1rem;
-}
-
-.payment-error {
-    display: none;
-    text-align: center;
-    padding: 1.5rem;
-    background: #fee2e2;
-    border-radius: 10px;
-    border: 2px solid #ef4444;
-    margin: 1rem 0;
-    color: #dc2626;
-    font-weight: 600;
-}
-
-.payment-error.active {
-    display: block;
-}
-
 /* ================== CONSISTENT CARD HEIGHT STYLES ================== */
 .line-clamp-2 {
     display: -webkit-box;
@@ -1896,10 +1729,6 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                     <span class="summary-value" id="summaryServicePrice">-</span>
                 </div>
                 <div class="summary-item">
-                    <span class="summary-label">Initial Payment:</span>
-                    <span class="summary-value" style="color: #059669; font-weight: bold;">₹50.00</span>
-                </div>
-                <div class="summary-item">
                     <span class="summary-label">Duration:</span>
                     <span class="summary-value" id="summaryServiceDuration">-</span>
                 </div>
@@ -2030,51 +1859,17 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                 <!-- Payment Information -->
                 <div class="payment-notice">
                     <h4 style="color: #856404; margin: 0 0 0.5rem 0;">
-                        <i class="fas fa-info-circle"></i> Payment Required
+                        <i class="fas fa-info-circle"></i> Payment Information
                     </h4>
                     <p style="color: #856404; margin: 0; font-size: 0.9rem;">
-                        <strong>₹50 initial payment required</strong> to confirm your booking. 
-                        The remaining amount will be paid after work completion.
+                        Payment will be processed after service completion. You'll receive payment details once your booking is confirmed.
                     </p>
                 </div>
 
-                <!-- Khalti Payment Section -->
-                <div class="khalti-payment-section">
-                    <div class="khalti-logo">
-                        <img src="https://khalti.com/static/img/logo.svg" alt="Khalti" onerror="this.style.display='none'">
-                        <span>Pay with Khalti</span>
-                    </div>
-                    
-                    <div class="payment-amount">
-                        <div class="label">Amount to Pay</div>
-                        <div class="amount">₹50</div>
-                    </div>
-                    
-                    <button type="button" class="khalti-btn" id="khaltiPaymentBtn">
-                        <i class="fas fa-lock mr-2"></i>
-                        Pay ₹50 with Khalti
-                    </button>
-                    
-                    <div class="payment-processing" id="paymentProcessing">
-                        <div class="spinner"></div>
-                        <p>Processing payment...</p>
-                    </div>
-                    
-                    <div class="payment-success" id="paymentSuccess">
-                        <div class="icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <h4>Payment Successful!</h4>
-                        <p>Your booking has been confirmed.</p>
-                    </div>
-                </div>
-
-                <div class="payment-error" id="paymentError">
-                    Payment failed. Please try again.
-                </div>
-                
-                <!-- Hidden submit button for form validation -->
-                <button type="submit" style="display: none;" id="hiddenSubmitBtn">Submit</button>
+                <button type="submit" class="submit-booking">
+                    <i class="fas fa-calendar-check mr-2"></i>
+                    Confirm Booking
+                </button>
             </form>
         {% else %}
             <!-- User is not logged in - show login prompt -->
@@ -2173,324 +1968,21 @@ let map = null;
 let marker = null;
 let selectedLocation = null;
 
-// Khalti Checkout
-let khaltiCheckout = null;
-
-// ================== KHALTI PAYMENT INTEGRATION ==================
-function initializeKhaltiPayment() {
-    console.log('🔄 Initializing Khalti Checkout...');
-    
-    // Check if Khalti Checkout is loaded
-    if (typeof KhaltiCheckout === 'undefined') {
-        console.error('❌ Khalti Checkout not loaded. Retrying...');
-        // Retry after 2 seconds
-        setTimeout(initializeKhaltiPayment, 2000);
-        return;
-    }
-
-    try {
-        // ✅ Use the actual public key from your settings
-        const publicKey = "test_public_key_dc74e0fd297a46f6aedf3c98b727a9a2";
-        
-        console.log('🔑 Using Khalti public key:', publicKey);
-        
-        khaltiCheckout = new KhaltiCheckout({
-            "publicKey": publicKey,
-            "productIdentity": "service_booking_" + workerData.id,
-            "productName": workerData.name + " - Service Booking",
-            "productUrl": window.location.href,
-            "eventHandler": {
-                onSuccess(payload) {
-                    console.log('✅ Khalti Payment Success:', payload);
-                    handlePaymentSuccess(payload);
-                },
-                onError(error) {
-                    console.log('❌ Khalti Payment Error:', error);
-                    handlePaymentError(error);
-                },
-                onClose() {
-                    console.log('ℹ️ Khalti widget closed');
-                    hidePaymentProcessing();
-                }
+// ✅ ADD getCookie FUNCTION HERE (at the top with other utility functions)
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
             }
-        });
-
-        console.log('✅ Khalti Checkout initialized successfully');
-        
-        // ✅ SIMPLIFIED: Direct event listener attachment
-        setupKhaltiButton();
-        
-    } catch (error) {
-        console.error('❌ Khalti Checkout initialization failed:', error);
-        // Disable button and show error
-        const khaltiBtn = document.getElementById('khaltiPaymentBtn');
-        if (khaltiBtn) {
-            khaltiBtn.disabled = true;
-            khaltiBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Payment Unavailable';
         }
     }
-}
-
-// ✅ SIMPLIFIED Button Setup
-function setupKhaltiButton() {
-    const khaltiBtn = document.getElementById('khaltiPaymentBtn');
-    if (!khaltiBtn) {
-        console.error('❌ Khalti button not found in DOM');
-        return;
-    }
-    
-    console.log('🔘 Setting up Khalti button...');
-    
-    // Remove all existing event listeners by cloning
-    const newKhaltiBtn = khaltiBtn.cloneNode(true);
-    khaltiBtn.parentNode.replaceChild(newKhaltiBtn, khaltiBtn);
-    
-    // Add click event to the new button
-    newKhaltiBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🔄 Khalti payment button clicked');
-        processKhaltiPayment();
-    });
-    
-    // Enable the button
-    newKhaltiBtn.disabled = false;
-    console.log('✅ Khalti button setup complete');
-}
-
-// Enhanced payment processing
-function processKhaltiPayment() {
-    console.log('💰 Khalti payment process started');
-    
-    // Basic validation
-    if (!validateBasicForm()) {
-        return;
-    }
-
-    // Check if Khalti is initialized
-    if (!khaltiCheckout) {
-        console.error('❌ Khalti Checkout not initialized');
-        alert('Payment system not ready. Please try again.');
-        return;
-    }
-
-    // Show payment processing
-    showPaymentProcessing();
-    console.log('🔄 Showing payment processing...');
-
-    // Prepare payment data - 50 rupees in paisa
-    const paymentData = {
-        amount: 5000, // 50 rupees in paisa
-        productIdentity: `service_${currentBookingData.serviceId || 'consultation'}`,
-        productName: currentBookingData.serviceName || 'Service Consultation',
-        productUrl: window.location.href,
-    };
-
-    console.log('💰 Payment data prepared:', paymentData);
-
-    // Show Khalti payment modal
-    try {
-        console.log('🔄 Showing Khalti checkout...');
-        khaltiCheckout.show(paymentData);
-    } catch (error) {
-        console.error('❌ Error showing Khalti checkout:', error);
-        hidePaymentProcessing();
-        alert('Unable to process payment. Please try again.');
-    }
-}
-
-// ✅ SIMPLIFIED Form Validation
-function validateBasicForm() {
-    const requiredFields = [
-        'serviceDate',
-        'customerName', 
-        'customerPhone',
-        'address'
-    ];
-    
-    for (const fieldId of requiredFields) {
-        const field = document.getElementById(fieldId);
-        if (!field || !field.value.trim()) {
-            alert(`Please fill in the ${fieldId.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-            field.focus();
-            return false;
-        }
-    }
-    
-    // Check if time slot is selected
-    const selectedTimeSlot = document.querySelector('.time-slot.selected');
-    if (!selectedTimeSlot) {
-        alert('Please select a time slot');
-        return false;
-    }
-    
-    return true;
-}
-
-function handlePaymentSuccess(payload) {
-    console.log('Payment successful:', payload);
-    
-    // Hide processing and show success
-    hidePaymentProcessing();
-    showPaymentSuccess();
-    
-    // Submit the form after successful payment
-    setTimeout(() => {
-        submitBookingForm(payload);
-    }, 2000);
-}
-
-function handlePaymentError(error) {
-    console.log('Payment error:', error);
-    hidePaymentProcessing();
-    showPaymentError('Payment failed. Please try again.');
-}
-
-function showPaymentProcessing() {
-    const processingEl = document.getElementById('paymentProcessing');
-    const khaltiBtn = document.getElementById('khaltiPaymentBtn');
-    const errorEl = document.getElementById('paymentError');
-    
-    if (processingEl) processingEl.classList.add('active');
-    if (khaltiBtn) khaltiBtn.disabled = true;
-    if (errorEl) errorEl.classList.remove('active');
-}
-
-function hidePaymentProcessing() {
-    const processingEl = document.getElementById('paymentProcessing');
-    const khaltiBtn = document.getElementById('khaltiPaymentBtn');
-    
-    if (processingEl) processingEl.classList.remove('active');
-    if (khaltiBtn) khaltiBtn.disabled = false;
-}
-
-function showPaymentSuccess() {
-    const successEl = document.getElementById('paymentSuccess');
-    if (successEl) successEl.classList.add('active');
-}
-
-function showPaymentError(message) {
-    const errorEl = document.getElementById('paymentError');
-    if (errorEl) {
-        errorEl.textContent = message;
-        errorEl.classList.add('active');
-    }
-}
-
-function validateBookingForm() {
-    console.log('🔄 Validating booking form...');
-    
-    // Check if location is selected
-    if (!selectedLocation) {
-        alert('📍 Please select a service location on the map');
-        scrollToElement('locationMap');
-        return false;
-    }
-    
-    // Check if date is selected
-    const serviceDate = document.getElementById('serviceDate');
-    if (!serviceDate || !serviceDate.value) {
-        alert('📅 Please select a preferred date');
-        scrollToElement('serviceDate');
-        return false;
-    }
-    
-    // Check if time slot is selected
-    const timeSlotInput = document.getElementById('selectedTimeSlot');
-    const selectedTimeSlot = document.querySelector('.time-slot.selected');
-    
-    if (!timeSlotInput || !timeSlotInput.value || !selectedTimeSlot) {
-        alert('⏰ Please select a preferred time slot');
-        scrollToElement('timeSlots');
-        return false;
-    }
-    
-    // Validate phone number
-    const phoneInput = document.getElementById('customerPhone');
-    if (phoneInput) {
-        const phoneValue = phoneInput.value.replace(/\D/g, '');
-        if (phoneValue.length !== 10) {
-            alert('📞 Please enter a valid 10-digit phone number');
-            scrollToElement('customerPhone');
-            return false;
-        }
-    }
-    
-    // Validate name
-    const nameInput = document.getElementById('customerName');
-    if (nameInput && !nameInput.value.trim()) {
-        alert('👤 Please enter your name');
-        scrollToElement('customerName');
-        return false;
-    }
-    
-    // Validate address
-    const addressInput = document.getElementById('address');
-    if (addressInput && !addressInput.value.trim()) {
-        alert('🏠 Please enter your address');
-        scrollToElement('address');
-        return false;
-    }
-    
-    console.log('✅ Form validation passed');
-    return true;
-}
-
-// Helper function to scroll to element
-function scrollToElement(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        element.focus();
-    }
-}
-
-function submitBookingForm(paymentPayload) {
-    const form = document.getElementById('bookingForm');
-    const formData = new FormData(form);
-    
-    // Add payment information
-    formData.append('payment_method', 'khalti');
-    formData.append('payment_id', paymentPayload.idx);
-    formData.append('payment_amount', '50');
-    formData.append('payment_status', 'completed');
-    
-    // Submit the form
-    fetch("{% url 'appointment_request' worker.id %}", {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showPaymentSuccessMessage('Booking confirmed successfully!');
-            
-            // Redirect to worker list page after delay
-            setTimeout(() => {
-                window.location.href = "{% url 'worker-list' %}";
-            }, 3000);
-        } else {
-            showPaymentError('Booking failed. Please contact support.');
-        }
-    })
-    .catch(error => {
-        console.error('Booking submission error:', error);
-        showPaymentError('Booking submission failed. Please try again.');
-    });
-}
-
-function showPaymentSuccessMessage(message) {
-    const successEl = document.getElementById('paymentSuccess');
-    if (successEl) {
-        const messageEl = successEl.querySelector('p');
-        if (messageEl) {
-            messageEl.textContent = message;
-        }
-        successEl.classList.add('active');
-    }
+    console.log('🍪 CSRF Token:', cookieValue ? 'Found' : 'NOT FOUND');
+    return cookieValue;
 }
 
 // ================== CUSTOM SERVICE FUNCTIONS ==================
@@ -2908,6 +2400,218 @@ function initializePhoneValidation() {
     }
 }
 
+// ================== FORM SUBMISSION HANDLER ==================
+function initializeFormSubmission() {
+    const bookingForm = document.getElementById('bookingForm');
+    
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitBookingForm();
+        });
+    }
+}
+
+function submitBookingForm() {
+    const form = document.getElementById('bookingForm');
+    const submitButton = form.querySelector('.submit-booking');
+    
+    // Basic validation
+    const serviceDate = document.getElementById('serviceDate').value;
+    const selectedTimeSlot = document.getElementById('selectedTimeSlot').value;
+    const address = document.getElementById('address').value;
+    const customerName = document.getElementById('customerName').value;
+    const customerPhone = document.getElementById('customerPhone').value;
+    
+    console.log('📅 Date value:', serviceDate);
+    console.log('⏰ Time slot value:', selectedTimeSlot);
+    console.log('📍 Address:', address);
+    
+    if (!serviceDate || !selectedTimeSlot || !address || !customerName || !customerPhone) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+    
+    // Phone number validation
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(customerPhone)) {
+        alert('Please enter a valid 10-digit phone number.');
+        return;
+    }
+    
+    // ✅ CRITICAL FIX: Validate time slot format
+    if (!selectedTimeSlot.includes('-')) {
+        console.error('❌ ERROR: Invalid time slot format:', selectedTimeSlot);
+        showBookingError('Please select a valid time slot from the available options.');
+        return;
+    }
+    
+    // Extract start time from the time slot range (e.g., "14:00-16:00" -> "14:00")
+    const startTime = selectedTimeSlot.split('-')[0].trim();
+    console.log('🔍 DEBUG: Extracted start time:', startTime);
+    
+    // Validate the time format
+    if (!startTime.includes(':') || startTime.length !== 5) {
+        console.error('❌ ERROR: Invalid time format extracted:', startTime);
+        showBookingError('Invalid time format selected. Please try again.');
+        return;
+    }
+    
+    // Disable submit button to prevent multiple submissions
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    
+    // ✅ FIXED: Send the time slot as-is (e.g., "14:00-16:00") and let Django handle it
+    const bookingData = {
+        'service_id': document.getElementById('selectedServiceId').value || 'consultation',
+        'preferred_date': serviceDate,
+        'preferred_time': selectedTimeSlot, // ✅ Send the time range like "14:00-16:00"
+        'address': address,
+        'customer_name': customerName,
+        'customer_phone': customerPhone,
+        'city': document.getElementById('city').value || '',
+        'pincode': document.getElementById('pincode').value || '',
+        'special_instructions': document.getElementById('special_instructions').value || '',
+        'latitude': document.getElementById('selectedLatitude').value || '',
+        'longitude': document.getElementById('selectedLongitude').value || ''
+    };
+    
+    console.log('📤 Full booking data being sent:', bookingData);
+    
+    // Send AJAX request
+    fetch(`/worker/{{ worker.id }}/appointment-request/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData)
+    })
+    .then(response => {
+        console.log('📥 Response status:', response.status);
+        const contentType = response.headers.get('content-type');
+        console.log('📥 Content type:', contentType);
+        
+        if (contentType && contentType.includes('application/json')) {
+            return response.json().then(data => {
+                console.log('📥 JSON response:', data);
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+                return data;
+            });
+        } else {
+            return response.text().then(text => {
+                console.log('📥 Non-JSON response:', text.substring(0, 500));
+                throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}`);
+            });
+        }
+    })
+    .then(data => {
+        if (data.success) {
+            showBookingSuccess(data.message || 'Appointment request sent successfully!');
+        } else {
+            throw new Error(data.error || 'Failed to book appointment');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Booking error:', error);
+        showBookingError(error.message);
+    })
+    .finally(() => {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-calendar-check mr-2"></i>Confirm Booking';
+    });
+}
+
+function showBookingSuccess(message) {
+    // Create success modal
+    const successModal = document.createElement('div');
+    successModal.className = 'booking-modal active';
+    successModal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Booking Confirmed!</h3>
+                <button class="close-modal" onclick="closeSuccessModal()">&times;</button>
+            </div>
+            <div class="p-6 text-center">
+                <div class="text-6xl mb-4 text-green-500">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h4 class="text-xl font-bold text-gray-900 mb-2">Appointment Request Sent</h4>
+                <p class="text-gray-600 mb-6">${message}</p>
+                <div class="space-y-3">
+                    <button onclick="redirectToDashboard()" class="btn-primary w-full">
+                        <i class="fas fa-tachometer-alt mr-2"></i>
+                        Go to Dashboard
+                    </button>
+                    <button onclick="closeSuccessModal()" class="btn-secondary w-full">
+                        <i class="fas fa-times mr-2"></i>
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(successModal);
+    document.body.style.overflow = 'hidden';
+}
+
+function showBookingError(message) {
+    // Create error modal instead of alert for better UX
+    const errorModal = document.createElement('div');
+    errorModal.className = 'booking-modal active';
+    errorModal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Booking Failed</h3>
+                <button class="close-modal" onclick="closeErrorModal()">&times;</button>
+            </div>
+            <div class="p-6 text-center">
+                <div class="text-6xl mb-4 text-red-500">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <h4 class="text-xl font-bold text-gray-900 mb-2">Unable to Book Appointment</h4>
+                <p class="text-gray-600 mb-6">${message}</p>
+                <button onclick="closeErrorModal()" class="btn-primary w-full">
+                    <i class="fas fa-times mr-2"></i>
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(errorModal);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeErrorModal() {
+    const modal = document.querySelector('.booking-modal.active');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function redirectToDashboard() {
+    window.location.href = "{% url 'customer_dashboard' %}";
+}
+
+function closeSuccessModal() {
+    const modal = document.querySelector('.booking-modal.active');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+        
+        // Also close the booking modal
+        const bookingModal = document.getElementById('bookingModal');
+        if (bookingModal) {
+            bookingModal.classList.remove('active');
+        }
+    }
+}
 // ================== MODAL FUNCTIONS ==================
 function initializeModal() {
     const modal = document.getElementById('bookingModal');
@@ -2920,7 +2624,6 @@ function initializeModal() {
         closeModal.addEventListener('click', function() {
             modal.classList.remove('active');
             document.body.style.overflow = 'auto';
-            resetPaymentUI();
         });
     }
     
@@ -2929,18 +2632,8 @@ function initializeModal() {
         if (e.target === modal) {
             modal.classList.remove('active');
             document.body.style.overflow = 'auto';
-            resetPaymentUI();
         }
     });
-}
-
-function resetPaymentUI() {
-    // Reset payment UI state
-    hidePaymentProcessing();
-    const successEl = document.getElementById('paymentSuccess');
-    const errorEl = document.getElementById('paymentError');
-    if (successEl) successEl.classList.remove('active');
-    if (errorEl) errorEl.classList.remove('active');
 }
 
 function initializeEventListeners() {
@@ -3124,7 +2817,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     initializeFormElements();
     initializePhoneValidation();
-    initializeKhaltiPayment();
+    initializeFormSubmission(); 
     
     // Initialize custom service form if worker is viewing their own profile
     {% if user.is_authenticated and user.worker and user.worker.id == worker.id %}

@@ -30,7 +30,8 @@ class Payment(models.Model):
     final_payment_paid_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+    khalti_initial_token = models.CharField(max_length=255, blank=True, null=True)  # ADD THIS
+    khalti_final_token = models.CharField(max_length=255, blank=True, null=True)    # ADD THIS
     class Meta:
         ordering = ['-created_at']
     
@@ -60,3 +61,5 @@ class Payment(models.Model):
         self.payment_status = 'completed'
         self.final_payment_paid_at = timezone.now()
         self.save()
+
+        

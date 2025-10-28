@@ -3,14 +3,11 @@
 
 {% block content %}
 <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8 px-4 sm:px-6 lg:px-8">
-    <!-- Main Card Container -->
     <div class="w-full max-w-lg z-10">
         <div class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/60 overflow-hidden">
-            <!-- Header Bar -->
             <div class="h-2 bg-gradient-to-r from-amber-400 via-purple-500 to-indigo-600"></div>
             
             <div class="p-8 sm:p-10">
-                <!-- Header Section -->
                 <div class="flex flex-col items-center mb-10">
                     <div class="mb-6">
                         <div class="h-24 w-24 rounded-3xl bg-gradient-to-br from-amber-400 to-purple-600 flex items-center justify-center shadow-2xl">
@@ -26,7 +23,6 @@
                     </div>
                 </div>
 
-                <!-- Messages -->
                 {% if messages %}
                     <div class="mb-8 space-y-4">
                         {% for message in messages %}
@@ -40,11 +36,9 @@
                     </div>
                 {% endif %}
 
-                <!-- Signup Form -->
                 <form method="POST" action="{% url 'otp_auth:send_signup_otp' %}" id="signupForm" class="space-y-6" novalidate>
                     {% csrf_token %}
                     
-                    <!-- Email Field -->
                     <div>
                         <label for="id_email" class="block text-sm font-semibold text-slate-700 mb-2">Email Address *</label>
                         <input type="email" name="email" id="id_email" required
@@ -55,7 +49,6 @@
                         <p class="mt-1 text-xs text-slate-500">Enter a valid email address</p>
                     </div>
 
-                    <!-- Password Field -->
                     <div>
                         <label for="id_password1" class="block text-sm font-semibold text-slate-700 mb-2">Password *</label>
                         <div class="relative">
@@ -102,7 +95,6 @@
                         <div id="password1-error" class="mt-1 text-xs text-rose-600 hidden"></div>
                     </div>
 
-                    <!-- Confirm Password Field -->
                     <div>
                         <label for="id_password2" class="block text-sm font-semibold text-slate-700 mb-2">Confirm Password *</label>
                         <div class="relative">
@@ -122,7 +114,6 @@
                         </div>
                     </div>
 
-                    <!-- Terms Agreement -->
                     <div class="flex items-start pt-3">
                         <div class="flex items-center h-5">
                             <input id="terms" name="terms" type="checkbox" required
@@ -139,7 +130,6 @@
                     </div>
                     <div id="terms-error" class="mt-1 text-xs text-rose-600 hidden">You must agree to the terms and conditions</div>
                     
-                    <!-- Submit Button -->
                     <div class="pt-4">
                         <button type="submit" id="submitButton"
                             class="w-full py-4 px-8 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300 transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
@@ -153,7 +143,6 @@
                     </div>
                 </form>
                 
-                <!-- Login Redirect -->
                 <div class="mt-8 pt-6 border-t border-slate-200 text-center">
                     <p class="text-slate-600">
                         Already have an account?
@@ -163,7 +152,6 @@
                     </p>
                 </div>
                 
-                <!-- OTP Information -->
                 <div class="mt-6 p-4 rounded-xl bg-purple-50 border border-purple-200">
                     <div class="flex items-start space-x-3">
                         <div class="flex-shrink-0">
@@ -220,14 +208,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function togglePasswordVisibility(input, button) {
-        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        const isPasswordVisible = input.getAttribute('type') === 'password';
+        const type = isPasswordVisible ? 'text' : 'password';
         input.setAttribute('type', type);
         
         // Update icon
         const icon = button.querySelector('svg');
+        // Clear current path
+        icon.innerHTML = ''; 
+        
+        // The password is now visible (type is 'text'), so show the crossed-out eye
         if (type === 'text') {
+            // Icon for: Eye with a slash (Password Visible)
             icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>';
         } else {
+            // Icon for: Regular eye (Password Hidden)
             icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
         }
     }
@@ -350,7 +345,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         hideError(emailError);
         emailInput.classList.remove('border-rose-500');
-        emailInput.classList.add('border-emerald-500');
+        emailInput.classList.add('border-slate-200'); // Revert to default
+        emailInput.classList.remove('border-emerald-500');
+        // Add a temporary green border on valid entry if you want
+        emailInput.classList.add('border-emerald-500'); 
         return true;
     }
 
@@ -445,12 +443,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateSubmitButton() {
-        const isEmailValid = validateEmailField();
-        const isPassword1Valid = validatePassword1Field();
-        const isPasswordMatchValid = validatePasswordMatch();
-        const isTermsValid = validateTermsField();
+        // Only validate if inputs have content, otherwise we'll get errors on load
+        const isEmailEntered = emailInput.value.trim().length > 0;
+        const isPassword1Entered = password1Input.value.length > 0;
+        const isPassword2Entered = password2Input.value.length > 0;
+
+        let isEmailValid = true;
+        let isPassword1Valid = true;
+        let isPasswordMatchValid = false;
+        let isTermsValid = validateTermsField();
+
+        if (isEmailEntered) {
+            isEmailValid = validateEmailField();
+        }
         
-        const isValid = isEmailValid && isPassword1Valid && isPasswordMatchValid && isTermsValid;
+        if (isPassword1Entered) {
+            isPassword1Valid = validatePassword1Field();
+        }
+        
+        if (isPassword1Entered && isPassword2Entered) {
+             isPasswordMatchValid = validatePasswordMatch();
+        }
+
+        // We only enable the button if all required fields have content and are valid
+        const isValid = isEmailValid && isPassword1Valid && isPasswordMatchValid && isTermsValid && isEmailEntered && isPassword1Entered && isPassword2Entered;
         
         submitButton.disabled = !isValid;
     }
@@ -459,6 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
+        // Final, full validation check on submit
         const isEmailValid = validateEmailField();
         const isPassword1Valid = validatePassword1Field();
         const isPasswordMatchValid = validatePasswordMatch();

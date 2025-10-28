@@ -139,10 +139,10 @@ admin_site = BlueCollarAdminSite(name='bluecollar_admin')
 # Custom ModelAdmin classes with enhanced features
 @admin.register(Worker, site=admin_site)
 class WorkerAdmin(admin.ModelAdmin):
-    list_display = ['name', 'phone_number', 'verified', 'average_rating', 'total_ratings', 'is_available', 'created_at']
+    list_display = ['name', 'phone_number', 'verified', 'average_rating', 'rating_count', 'is_available', 'created_at']
     list_filter = ['verified', 'is_available', 'shift', 'created_at']
     search_fields = ['name', 'phone_number', 'tagline']
-    readonly_fields = ['average_rating', 'total_ratings', 'created_at', 'updated_at']
+    readonly_fields = ['average_rating', 'rating_count', 'created_at', 'updated_at']
     actions = ['verify_workers', 'unverify_workers', 'toggle_availability']
     
     fieldsets = (
@@ -150,7 +150,7 @@ class WorkerAdmin(admin.ModelAdmin):
             'fields': ('owner', 'name', 'phone_number', 'tagline', 'bio', 'profile_pic')
         }),
         ('Verification & Status', {
-            'fields': ('verified', 'is_available', 'shift', 'average_rating', 'total_ratings')
+            'fields': ('verified', 'is_available', 'shift', 'average_rating', 'rating_count')
         }),
         ('Location Information', {
             'fields': ('latitude', 'longitude', 'location_address', 'location_updated_at')

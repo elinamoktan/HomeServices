@@ -126,6 +126,20 @@
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
+
+@media (max-width: 768px) {
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .success-card {
+        padding: 2rem 1rem;
+    }
+    
+    .success-title {
+        font-size: 2rem;
+    }
+}
 </style>
 
 <div class="success-container">
@@ -145,11 +159,23 @@
         <div class="details-card">
             <div class="detail-item">
                 <span class="detail-label">Transaction ID:</span>
-                <span class="detail-value">{{ transaction_id|default:payment.khalti_transaction_id }}</span>
+                <span class="detail-value">
+                    {% if payment and payment.khalti_transaction_id %}
+                        {{ payment.khalti_transaction_id }}
+                    {% else %}
+                        Processing...
+                    {% endif %}
+                </span>
             </div>
             <div class="detail-item">
                 <span class="detail-label">Service:</span>
-                <span class="detail-value">{{ appointment.service_subtask.subtask.name }}</span>
+                <span class="detail-value">
+                    {% if appointment.service_subtask and appointment.service_subtask.subtask %}
+                        {{ appointment.service_subtask.subtask.name }}
+                    {% else %}
+                        Professional Service
+                    {% endif %}
+                </span>
             </div>
             <div class="detail-item">
                 <span class="detail-label">Worker:</span>
@@ -157,23 +183,35 @@
             </div>
             <div class="detail-item">
                 <span class="detail-label">Amount Paid:</span>
-                <span class="detail-value">₹{{ payment.prepayment_amount }}</span>
+                <span class="detail-value">
+                    {% if payment %}
+                        ₹{{ payment.prepayment_amount }}
+                    {% else %}
+                        ₹50.00
+                    {% endif %}
+                </span>
             </div>
             <div class="detail-item">
                 <span class="detail-label">Date & Time:</span>
                 <span class="detail-value">{{ appointment.appointment_date|date:"M d, Y H:i" }}</span>
             </div>
+            <div class="detail-item">
+                <span class="detail-label">Booking Status:</span>
+                <span class="detail-value" style="color: #059669; font-weight: 700;">
+                    {{ appointment.get_status_display|default:"Confirmed" }}
+                </span>
+            </div>
         </div>
         
         <div class="action-buttons">
-            <a href="{% url 'customer_appointments' %}" class="btn btn-primary">
+            <a href="{% url 'customer_dashboard' %}" class="btn btn-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
                     <line x1="8" y1="2" x2="8" y2="6"></line>
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
-                View Appointments
+                View Dashboard
             </a>
             <a href="{% url 'worker-list' %}" class="btn btn-secondary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -182,6 +220,13 @@
                 </svg>
                 Find More Services
             </a>
+        </div>
+        
+        <div style="margin-top: 2rem; padding: 1rem; background: #f0f9ff; border-radius: 8px;">
+            <p style="margin: 0; color: #0369a1; font-size: 0.9rem;">
+                <strong>Next Steps:</strong> The worker will contact you before the appointment. 
+                The remaining amount (₹{{ payment.remaining_amount|default:"50.00" }}) will be paid after service completion.
+            </p>
         </div>
     </div>
 </div>

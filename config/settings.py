@@ -13,9 +13,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from decouple import config 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -27,7 +27,6 @@ SECRET_KEY = 'django-insecure-8(z6*f@ze*b_d32&yff$ikszth-c5w3sot(=fkz+g-cu2rr6f$
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
 
 # Application definition
 
@@ -56,9 +55,11 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_tailwind',
     'otp_auth',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -71,6 +72,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
+# Add this to your TEMPLATES context_processors
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -82,13 +84,14 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # Add this context processor
+                'payments.context_processors.khalti_config',
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -103,7 +106,6 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -123,7 +125,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -136,7 +137,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -167,7 +167,6 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
-
 # MAKE CHANGES HERE!!!! FOR THE LANDING PAGE
 LOGIN_REDIRECT_URL = 'handle-login'
 ACCOUNT_LOGOUT_REDIRECT = 'worker-list'
@@ -193,23 +192,16 @@ SITE_ID = 1
 # CRISPY FORMS SETTINGS
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
+# CORRECT SETUP WITH TEST KEYS
 
-KHALTI_CONFIG = {
-    'test': {  # ✅ Changed from 'TEST' to 'test'
-        'PUBLIC_KEY': 'test_public_key_dc74e0fd297a46f6aedf3c98b727a9a2',
-        'SECRET_KEY': 'test_secret_key_f4a7e8c3e5b14a6c9e8a7b6c5d4e3f2a',
-        'BASE_URL': 'https://dev.khalti.com/api/v2'
-    },
-    'live': {  # ✅ Changed from 'LIVE' to 'live'
-        'PUBLIC_KEY': 'your_live_public_key_here',
-        'SECRET_KEY': 'your_live_secret_key_here', 
-        'BASE_URL': 'https://khalti.com/api/v2'
-    }
-}
+# CORS settings for Khalti
+CORS_ALLOW_ALL_ORIGINS = True  # Only for development!
+CORS_ALLOW_CREDENTIALS = True
 
-KHALTI_ENVIRONMENT = 'test'
+# settings.py - UPDATE WITH CORRECT TEST KEYS
+KHALTI_PUBLIC_KEY = "test_public_key_dc74e0fd297a46f6aedf3c98b727a9a2"
+KHALTI_SECRET_KEY = "05bf95cc57244045b8df5fad06748dab"  # Use this exact test key from your ecommerce
+KHALTI_BASE_URL = "https://dev.khalti.com/api/v2"
+KHALTI_LIVE_MODE = False
 
-# Payment Settings
-INITIAL_PAYMENT_AMOUNT = 50.00  # 50 rupees initial payment
-KHALTI_PUBLIC_KEY = KHALTI_CONFIG[KHALTI_ENVIRONMENT]['PUBLIC_KEY']
-KHALTI_SECRET_KEY = KHALTI_CONFIG[KHALTI_ENVIRONMENT]['SECRET_KEY']
+INITIAL_PAYMENT_AMOUNT = 50.00

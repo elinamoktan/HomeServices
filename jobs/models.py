@@ -112,16 +112,15 @@ def _haversine_km(lat1, lon1, lat2, lon2):
     r = 6371  # Radius of earth in kilometers
     return c * r
 
-# Worker Model# Worker Model
 class Worker(models.Model):
     owner = models.OneToOneField(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)  # ✅ Changed from 100 to 255
+    name = models.CharField(max_length=255)
     phone_number = PhoneNumberField(region="NP")
     tagline = models.CharField(max_length=200, blank=True, null=True)
     bio = models.TextField(blank=True)
     profile_pic = models.ImageField(upload_to="worker_profiles/", blank=True, null=True)
     
-    # Verification fields - ✅ ADDED verification_status
+    # Verification fields
     verified = models.BooleanField(default=False)
     verification_status = models.CharField(
         max_length=20,
@@ -144,10 +143,11 @@ class Worker(models.Model):
     appointed = models.BooleanField(default=False)
     appointment_date = models.DateTimeField(null=True, blank=True)
     
-    # Rating fields
+    # ✅ FIXED: Remove redundant total_ratings field
+    # Rating fields - keep only rating_count
     average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
-    total_ratings = models.PositiveIntegerField(default=0)
     rating_count = models.PositiveIntegerField(default=0)
+    # REMOVED: total_ratings = models.PositiveIntegerField(default=0)
     
     # Availability
     shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, default=SHIFT_ALL)
@@ -164,7 +164,7 @@ class Worker(models.Model):
     longitude = models.FloatField(null=True, blank=True)
     location_address = models.TextField(blank=True, null=True)
     location_updated_at = models.DateTimeField(null=True, blank=True)
-    location_accuracy = models.FloatField(null=True, blank=True)  # Accuracy in meters
+    location_accuracy = models.FloatField(null=True, blank=True)
     location_source = models.CharField(
         max_length=20, 
         choices=[
@@ -196,8 +196,8 @@ class Worker(models.Model):
             elif not self.verified and self.verification_status == 'approved':
                 self.verification_status = 'pending'
         
-        # Sync total_ratings with rating_count
-        self.total_ratings = self.rating_count
+        # ✅ FIXED: Remove redundant field assignment
+        # self.total_ratings = self.rating_count  # REMOVE THIS LINE
         
         super().save(*args, **kwargs)
 
@@ -269,11 +269,11 @@ class Worker(models.Model):
         return _haversine_km(self.latitude, self.longitude, other_lat, other_lon)
 
     def can_resubmit_verification(self):
-            """Check if worker can resubmit for verification after 15 minutes"""
-            if not self.last_rejection_date:
-                return True
-            # Allow resubmission after 15 minutes
-            return timezone.now() >= self.last_rejection_date + timedelta(minutes=15)
+        """Check if worker can resubmit for verification after 15 minutes"""
+        if not self.last_rejection_date:
+            return True
+        # Allow resubmission after 15 minutes
+        return timezone.now() >= self.last_rejection_date + timedelta(minutes=15)
     
     def get_resubmission_wait_time(self):
         """Get remaining wait time in minutes for resubmission"""
@@ -296,7 +296,6 @@ class Worker(models.Model):
             hours = minutes // 60
             remaining_minutes = minutes % 60
             return f"{hours}h {remaining_minutes}m"
-
 
     def bayesian_average_rating(self, confidence=5.0, default_rating=0.0):
         """
@@ -337,7 +336,7 @@ class Worker(models.Model):
             return default_rating
 
     def get_rating_display_data(self):
-        """✅ ADDED: Get rating display data for templates"""
+        """Get rating display data for templates"""
         bayesian_rating = self.bayesian_average_rating()
         
         full_stars = int(bayesian_rating)
@@ -387,10 +386,10 @@ class Worker(models.Model):
             else:
                 self.average_rating = 0
 
-            # Also update total_ratings field for consistency
-            self.total_ratings = self.rating_count
+            # ✅ FIXED: Remove redundant field assignment
+            # self.total_ratings = self.rating_count  # REMOVE THIS LINE
             
-            self.save(update_fields=['average_rating', 'rating_count', 'total_ratings'])
+            self.save(update_fields=['average_rating', 'rating_count'])
             
         except Exception as e:
             logger.error(f"Error updating average rating for worker {self.id}: {e}")
@@ -456,10 +455,10 @@ class Worker(models.Model):
 
     def reject_worker(self, reason="Profile does not meet requirements"):
         """Reject worker with reason AND set rejection date"""
-        self.verified = False  # ✅ IMPORTANT: Set verified to False
+        self.verified = False
         self.verification_status = 'rejected'
         self.rejection_reason = reason
-        self.last_rejection_date = timezone.now()  # ✅ CRITICAL: Set this!
+        self.last_rejection_date = timezone.now()
         self.save()
         
         # Create notification for worker
@@ -474,7 +473,6 @@ class Worker(models.Model):
         logger.info(f"Worker {self.name} rejected at {self.last_rejection_date}")
         return True
         
-    # Add this class method to your Worker model
     @classmethod
     def get_visible_workers(cls):
         """Get all workers that should be visible to customers"""
@@ -483,8 +481,6 @@ class Worker(models.Model):
             verification_status='approved',
             is_available=True
         ).select_related('owner').prefetch_related('ratings')
-
-
 # Worker Services (Many-to-Many through model)
 class WorkerService(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='worker_services')
@@ -702,7 +698,6 @@ class Customer(models.Model):
     def __str__(self):
         return f"{self.name}"
 
-
 class Appointment(models.Model):
     """
     Appointment model for booking services between customers and workers
@@ -710,8 +705,24 @@ class Appointment(models.Model):
     # Primary key
     id = models.BigAutoField(primary_key=True)
     
+    # ✅ ADD THIS FIELD to store time ranges
+    time_slot = models.CharField(
+        max_length=20, 
+        blank=True, 
+        null=True,
+        help_text="Time slot in format '14:00-16:00'"
+    )
+    
+    # Add these delay-related fields
+    estimated_completion_time = models.DateTimeField(null=True, blank=True)
+    delay_reason = models.TextField(blank=True, null=True)
+    delay_reported_at = models.DateTimeField(null=True, blank=True)
+    original_end_time = models.DateTimeField(null=True, blank=True) 
+    is_delayed = models.BooleanField(default=False) 
+    
     # Status choices
     STATUS_CHOICES = [
+        ('pending_payment', 'Pending Payment'),
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
@@ -747,12 +758,12 @@ class Appointment(models.Model):
     # Appointment details
     appointment_date = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
-        max_length=10, 
+        max_length=30, 
         choices=STATUS_CHOICES, 
-        default='pending'
+        default='pending_payment'
     )
     shift_type = models.CharField(
-        max_length=10, 
+        max_length=20, 
         choices=SHIFT_TYPES, 
         default='day'
     )
@@ -770,7 +781,7 @@ class Appointment(models.Model):
     customer_latitude = models.FloatField(null=True, blank=True)
     customer_longitude = models.FloatField(null=True, blank=True)
     
-    # Pricing fields - REQUIRED TO FIX THE ERROR
+    # Pricing fields
     total_price = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
@@ -837,9 +848,23 @@ class Appointment(models.Model):
         
         super().save(*args, **kwargs)
 
+    # ✅ ADD THESE METHODS to handle time slot parsing
+    def get_start_time_from_slot(self):
+        """Extract start time from time slot format '14:00-16:00'"""
+        if self.time_slot and '-' in self.time_slot:
+            return self.time_slot.split('-')[0].strip()
+        return None
+
+    def get_end_time_from_slot(self):
+        """Extract end time from time slot format '14:00-16:00'"""
+        if self.time_slot and '-' in self.time_slot:
+            return self.time_slot.split('-')[1].strip()
+        return None
+
     def get_status_display_color(self):
         """Return Bootstrap color class for status"""
         status_colors = {
+            'pending_payment': 'warning',
             'pending': 'warning',
             'accepted': 'info',
             'rejected': 'danger',
@@ -894,7 +919,18 @@ class Appointment(models.Model):
         if not self.appointment_date:
             return False
         return self.appointment_date > timezone.now()
-
+    
+    def requires_payment(self):
+        """Check if appointment requires payment"""
+        return self.status == 'pending_payment'
+    
+    def get_payment_info(self):
+        """Get payment information for this appointment"""
+        try:
+            from payments.models import Payment
+            return Payment.objects.get(appointment=self)
+        except Payment.DoesNotExist:
+            return None
 
 class WorkerRating(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='ratings')
