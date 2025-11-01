@@ -1,0 +1,697 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile - BlueCollar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --secondary: #8b5cf6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #0f172a;
+      --light: #f8fafc;
+      --sidebar-gradient-start: #1e1b4b; 
+      --sidebar-gradient-end: #312e81;  
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      min-height: 100vh;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .glass-dark {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Sidebar */
+        
+    .sidebar {
+      background: linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
+      backdrop-filter: blur(20px);
+      box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 1000;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 280px;
+    }
+
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+
+    .logo-container {
+      padding: 2rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+
+    .logo-box {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #6366f1, #ec4899);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-box::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shine 3s infinite;
+    }
+
+    @keyframes shine {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+
+    .logo-text {
+      font-size: 1.75rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff, #e0e7ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-item {
+      padding: 0.875rem 1.25rem;
+      margin: 0.5rem 1rem;
+      border-radius: 14px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-item i {
+      font-size: 1.1rem;
+      width: 24px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      transform: translateX(4px);
+    }
+
+    .nav-item:hover i {
+      transform: scale(1.2);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(236, 72, 153, 0.3));
+      color: white;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, #6366f1, #ec4899);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .main-content {
+      margin-left: 280px;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    .sidebar.mobile-hidden {
+      transform: translateX(-100%);
+    }
+
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .customer-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+      flex-shrink: 0;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    /* Location Helper Buttons */
+    .location-helper {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn-location {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .btn-location:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .btn-location i {
+      font-size: 0.875rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .sidebar {
+        width: 260px;
+      }
+      .main-content {
+        margin-left: 260px;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 240px;
+      }
+      .main-content {
+        margin-left: 240px;
+        padding: 1.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: block;
+      }
+      
+      .sidebar {
+        width: 280px;
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      
+      .main-content {
+        margin-left: 0;
+        padding: 1rem;
+        padding-top: 4rem;
+      }
+      
+      .dashboard-header {
+        padding: 1.25rem;
+        border-radius: 14px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .main-content {
+        padding: 0.75rem;
+        padding-top: 4rem;
+      }
+      
+      .dashboard-header {
+        padding: 1rem;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 3px;
+    }
+
+    /* Mobile overlay for sidebar */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      backdrop-filter: blur(4px);
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile Menu Button -->
+  <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <i class="fas fa-bars text-lg"></i>
+  </button>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar Navigation -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo-container">
+      <div class="flex items-center gap-3">
+        <div class="logo-box">
+          <span class="logo-text">BC</span>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-white">BlueCollar</h1>
+          <p class="text-sm text-indigo-200">Worker Portal</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="p-4 flex-1 overflow-y-auto" style="max-height: calc(100vh - 240px);">
+      <a href="{% url 'worker_dashboard' %}" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="{% url 'worker_service_details' worker.id %}" class="nav-item">
+        <i class="fas fa-concierge-bell"></i>
+        <span>My Services</span>
+      </a>
+      <a href="{% url 'worker_calendar' %}" class="nav-item">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Calendar</span>
+      </a>
+      <a href="{% url 'worker_reviews' %}" class="nav-item">
+        <i class="fas fa-star"></i>
+        <span>Reviews</span>
+      </a>
+      <a href="{% url 'worker_analytics' %}" class="nav-item">
+        <i class="fas fa-chart-line"></i>
+        <span>Analytics</span>
+      </a>
+      <a href="{% url 'worker_earnings' %}" class="nav-item">
+        <i class="fas fa-wallet"></i>
+        <span>Earnings</span>
+      </a>
+      <a href="{% url 'worker_profile' %}" class="nav-item active">
+        <i class="fas fa-user"></i>
+        <span>My Profile</span>
+      </a>
+      <a href="{% url 'worker_settings' %}" class="nav-item">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </a>
+    </nav>
+
+    <div style="position: absolute; bottom: 0; width: 100%; padding: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.2);">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="customer-avatar">
+          {% if worker.profile_pic %}
+            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" style="width: 100%; height: 100%; border-radius: 12px; object-fit: cover;">
+          {% else %}
+            <span>{{ worker.name|first }}</span>
+          {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-white truncate">{{ worker.name }}</p>
+          <p class="text-xs text-indigo-200 truncate">Professional Worker</p>
+        </div>
+      </div>
+      <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" style="width: 100%; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; background: linear-gradient(135deg, #64748b, #475569); color: white; border: none; cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="mainContent">
+    <!-- Header -->
+    <div class="dashboard-header fade-in-up">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="flex-1">
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
+          <p class="text-gray-600 text-base sm:text-lg">Manage your personal information and preferences</p>
+        </div>
+      </div>
+    </div>
+
+    {% if messages %}
+    <div class="mb-6">
+      {% for message in messages %}
+        <div class="p-4 rounded-xl {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200{% else %}bg-blue-100 text-blue-800 border border-blue-200{% endif %}">
+          <div class="flex items-center">
+            <i class="fas fa-check-circle mr-3"></i>
+            <span>{{ message }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+      <!-- Profile Header -->
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-8">
+        <div class="flex items-center space-x-6">
+          <div class="relative">
+            {% if worker.profile_pic %}
+              <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="w-28 h-28 rounded-full border-4 border-white object-cover shadow-lg">
+            {% else %}
+              <div class="w-28 h-28 bg-white rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                <span class="text-indigo-600 font-bold text-3xl">{{ worker.name|first }}</span>
+              </div>
+            {% endif %}
+            <label for="profile_pic" class="absolute bottom-0 right-0 bg-white rounded-full p-3 cursor-pointer shadow-lg hover:shadow-xl transition-all">
+              <i class="fas fa-camera text-gray-600"></i>
+            </label>
+          </div>
+          <div class="text-white">
+            <h2 class="text-3xl font-bold">{{ worker.name }}</h2>
+            <p class="opacity-90 text-lg">Worker since {{ worker.owner.date_joined|date:"F Y" }}</p>
+            {% if worker.phone_number %}
+              <p class="opacity-90 mt-2"><i class="fas fa-phone mr-2"></i>{{ worker.phone_number }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Form -->
+      <div class="p-8">
+        <form method="post" enctype="multipart/form-data" class="space-y-8">
+          {% csrf_token %}
+          
+          <!-- Hidden file input for profile picture -->
+          <input type="file" id="profile_pic" name="profile_pic" accept="image/*" class="hidden" onchange="this.form.submit()">
+          
+          <!-- Basic Information -->
+          <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200">Basic Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <input type="text" id="name" name="name" value="{{ worker.name }}" 
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+              </div>
+              
+              <div>
+                <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <input type="tel" id="phone_number" name="phone_number" value="{{ worker.phone_number }}" 
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+              </div>
+            </div>
+          </div>
+
+          <!-- Location Information -->
+          <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200">
+              <i class="fas fa-map-marker-alt text-indigo-600 mr-2"></i>
+              Location Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="latitude" class="block text-sm font-medium text-gray-700 mb-2">Latitude</label>
+                <input type="number" id="latitude" name="latitude" step="any" 
+       value="{{ worker.latitude|default:'' }}" 
+       placeholder="e.g., 27.7172"
+       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                
+                       <p class="text-xs text-gray-500 mt-1">Enter your location's latitude coordinate</p>
+              </div>
+              
+              <div>
+                <label for="longitude" class="block text-sm font-medium text-gray-700 mb-2">Longitude</label>
+                <input type="number" id="longitude" name="longitude" step="any" 
+       value="{{ worker.longitude|default:'' }}" 
+       placeholder="e.g., 85.3240"
+       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                       <p class="text-xs text-gray-500 mt-1">Enter your location's longitude coordinate</p>
+              </div>
+            </div>
+            
+            <!-- Location Helper Buttons -->
+            <div class="location-helper mt-4">
+              <button type="button" onclick="getCurrentLocation()" class="btn-location">
+                <i class="fas fa-crosshairs"></i>
+                Use Current Location
+              </button>
+              <a href="https://www.google.com/maps" target="_blank" class="btn-location">
+                <i class="fas fa-map"></i>
+                Find on Google Maps
+              </a>
+            </div>
+            
+            <div id="locationStatus" class="mt-3 text-sm"></div>
+          </div>
+
+          <!-- Account Information -->
+          <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200">Account Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <input type="email" id="email" name="email" value="{{ worker.owner.email }}" disabled
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-500">
+                <p class="text-xs text-gray-500 mt-2">Email cannot be changed from this page</p>
+              </div>
+              
+              <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                <input type="text" id="username" name="username" value="{{ worker.owner.username }}" disabled
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-500">
+                <p class="text-xs text-gray-500 mt-2">Username cannot be changed</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex justify-end space-x-4 pt-6 border-t">
+            <a href="{% url 'worker_dashboard' %}" class="px-8 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium">
+              Cancel
+            </a>
+            <button type="submit" class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all font-medium">
+              <i class="fas fa-save mr-2"></i>
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Account Statistics -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white rounded-2xl shadow-lg p-6 text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-calendar text-blue-600 text-2xl"></i>
+        </div>
+        <h3 class="text-3xl font-bold text-gray-800">{{ worker.worker_appointments.count }}</h3>
+        <p class="text-gray-600 font-medium">Total Appointments</p>
+      </div>
+      
+      <div class="bg-white rounded-2xl shadow-lg p-6 text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+        </div>
+        <h3 class="text-3xl font-bold text-gray-800">{{ completed_appointments_count }}</h3>
+        <p class="text-gray-600 font-medium">Completed</p>
+      </div>
+      
+      <div class="bg-white rounded-2xl shadow-lg p-6 text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="w-16 h-16 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-star text-yellow-600 text-2xl"></i>
+        </div>
+        <h3 class="text-3xl font-bold text-gray-800">{{ worker.received_ratings.count }}</h3>
+        <p class="text-gray-600 font-medium">Reviews Received</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Get Current Location
+    function getCurrentLocation() {
+      const statusDiv = document.getElementById('locationStatus');
+      
+      if (!navigator.geolocation) {
+        statusDiv.innerHTML = '<span class="text-red-600"><i class="fas fa-exclamation-circle mr-1"></i>Geolocation is not supported by your browser</span>';
+        return;
+      }
+      
+      statusDiv.innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner fa-spin mr-1"></i>Getting your location...</span>';
+      
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+          document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+          statusDiv.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>Location updated successfully!</span>';
+          
+          setTimeout(() => {
+            statusDiv.innerHTML = '';
+          }, 3000);
+        },
+        function(error) {
+          let errorMsg = 'Unable to get location. ';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg += 'Please allow location access.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg += 'Location information unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMsg += 'Request timed out.';
+              break;
+          }
+          statusDiv.innerHTML = `<span class="text-red-600"><i class="fas fa-exclamation-circle mr-1"></i>${errorMsg}</span>`;
+        }
+      );
+    }
+
+    // Mobile menu functionality
+    function toggleMobileMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('mobile-open');
+      overlay.classList.toggle('active');
+    }
+
+    // Close mobile menu when clicking overlay
+    document.getElementById('sidebarOverlay').addEventListener('click', toggleMobileMenu);
+
+    // Initialize mobile menu button
+    document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+
+    // Close mobile menu when clicking on a nav item (on mobile)
+    if (window.innerWidth <= 768) {
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', toggleMobileMenu);
+      });
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 768) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
+      }
+    });
+  </script>
+</body>
+</html>

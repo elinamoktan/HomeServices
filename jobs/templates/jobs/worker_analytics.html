@@ -476,7 +476,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Total Earnings</p>
-            <p class="text-4xl font-bold text-indigo-600" id="totalEarnings">₹{{ total_earnings }}</p>
+            <p class="text-4xl font-bold text-indigo-600" id="totalEarnings">Rs{{ total_earnings }}</p>
             <p class="text-xs text-gray-500 mt-2" id="earningsTrend">+12.5% from last period</p>
           </div>
           <div class="stat-icon" style="--gradient-start: #6366f1; --gradient-end: #4f46e5; --shadow-color: rgba(99, 102, 241, 0.3);">
@@ -624,7 +624,7 @@
         data: {
           labels: JSON.parse('{{ appointments_trend.labels|escapejs }}'),
           datasets: [{
-            label: currentMetric === 'count' ? 'Appointments' : 'Revenue (₹)',
+            label: currentMetric === 'count' ? 'Appointments' : 'Revenue (Rs)',
             data: JSON.parse('{{ appointments_trend.data|escapejs }}'),
             borderColor: '#6366f1',
             backgroundColor: 'rgba(99, 102, 241, 0.1)',
@@ -646,7 +646,7 @@
                   if (currentMetric === 'count') {
                     return `Appointments: ${context.parsed.y}`;
                   } else {
-                    return `Revenue: ₹${context.parsed.y}`;
+                    return `Revenue: Rs${context.parsed.y}`;
                   }
                 }
               }
@@ -777,7 +777,7 @@
       // Update appointments chart
       appointmentsChart.data.labels = data.appointments_trend.labels;
       appointmentsChart.data.datasets[0].data = data.appointments_trend.data;
-      appointmentsChart.data.datasets[0].label = currentMetric === 'count' ? 'Appointments' : 'Revenue (₹)';
+      appointmentsChart.data.datasets[0].label = currentMetric === 'count' ? 'Appointments' : 'Revenue (Rs)';
       appointmentsChart.update();
       
       // Update services chart
@@ -788,7 +788,7 @@
 
     function updateMetrics(metrics) {
       document.getElementById('completionRate').textContent = `${metrics.completion_rate}%`;
-      document.getElementById('totalEarnings').textContent = `₹${metrics.total_earnings}`;
+      document.getElementById('totalEarnings').textContent = `Rs${metrics.total_earnings}`;
       document.getElementById('satisfactionRate').textContent = `${metrics.satisfaction_rate}%`;
       document.getElementById('totalJobs').textContent = metrics.total_appointments;
       document.getElementById('peakHours').textContent = metrics.peak_hours;

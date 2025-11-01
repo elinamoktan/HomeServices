@@ -36,7 +36,7 @@ class Payment(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Payment {self.id} - {self.appointment.customer.name} - ₹{self.amount}"
+        return f"Payment {self.id} - {self.appointment.customer.name} - Rs{self.amount}"
     
     def save(self, *args, **kwargs):
         # Calculate remaining amount when saving

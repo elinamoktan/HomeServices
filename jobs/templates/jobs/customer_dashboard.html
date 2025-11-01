@@ -1111,148 +1111,139 @@
           </div>
         </div>
 
-        <!-- In your customer dashboard template - Update the status display -->
+        <!-- Fallback Recent Activity Section -->
 <div class="dashboard-card">
   <div class="card-header">
     <h2 class="card-title">
-      <i class="fas fa-paper-plane"></i>
-      My Appointment Requests
+      <i class="fas fa-history"></i>
+      Recent Activity
     </h2>
-    {% if worker_requests %}
-    <div class="flex items-center gap-3">
-      <!-- ✅ FIXED: This now correctly shows the count including pending_payment -->
-      <span class="request-badge" id="pendingRequestsCount">
-        {{ worker_requests.count }} Pending Request{{ worker_requests.count|pluralize }}
+  </div>
+
+  <div class="space-y-4">
+    <!-- Favorite Workers Activity -->
+    {% if favorite_workers_count > 0 %}
+    <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+      <div class="flex-shrink-0">
+        <i class="fas fa-heart text-red-500 text-lg mt-1"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-medium text-gray-900">
+            Favorite Workers
+          </h4>
+          <span class="text-xs text-gray-500">Recently</span>
+        </div>
+        <p class="text-sm text-gray-600 mt-1">
+          You have {{ favorite_workers_count }} favorite worker{{ favorite_workers_count|pluralize }}
+        </p>
+        <a href="{% url 'favorite_workers_list' %}" class="text-xs text-red-600 hover:text-red-800 font-semibold mt-2 inline-block">
+          View Favorites
+        </a>
+      </div>
+      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+        Favorites
       </span>
-      <button id="autoRefreshToggle" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg text-sm font-semibold hover:bg-indigo-200 transition-colors">
-        <i class="fas fa-sync-alt mr-1"></i>
-        Auto-refresh: <span id="autoRefreshStatus">ON</span>
-      </button>
+    </div>
+    {% endif %}
+
+    <!-- Completed Appointments Activity -->
+    {% if completed_appointments %}
+    <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+      <div class="flex-shrink-0">
+        <i class="fas fa-check-circle text-green-500 text-lg mt-1"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-medium text-gray-900">
+            Completed Services
+          </h4>
+          <span class="text-xs text-gray-500">Recently</span>
+        </div>
+        <p class="text-sm text-gray-600 mt-1">
+          You've completed {{ completed_count }} service{{ completed_count|pluralize }}
+        </p>
+        {% for appointment in completed_appointments|slice:":2" %}
+          {% if not appointment.has_rated %}
+          <a href="{% url 'rate_worker' appointment.id %}" class="text-xs text-yellow-600 hover:text-yellow-800 font-semibold mt-1 inline-block mr-2">
+            Rate {{ appointment.worker.name }}
+          </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+        Completed
+      </span>
+    </div>
+    {% endif %}
+
+    <!-- Pending Requests Activity -->
+    {% if pending_count > 0 %}
+    <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+      <div class="flex-shrink-0">
+        <i class="fas fa-clock text-blue-500 text-lg mt-1"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-medium text-gray-900">
+            Pending Requests
+          </h4>
+          <span class="text-xs text-gray-500">Active</span>
+        </div>
+        <p class="text-sm text-gray-600 mt-1">
+          You have {{ pending_count }} pending appointment{{ pending_count|pluralize }}
+        </p>
+        <a href="{% url 'customer_appointments' %}" class="text-xs text-blue-600 hover:text-blue-800 font-semibold mt-2 inline-block">
+          View Requests
+        </a>
+      </div>
+      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        Pending
+      </span>
+    </div>
+    {% endif %}
+
+    <!-- Ratings Given Activity -->
+    {% if rated_appointments_count > 0 %}
+    <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+      <div class="flex-shrink-0">
+        <i class="fas fa-star text-yellow-500 text-lg mt-1"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-medium text-gray-900">
+            Reviews Submitted
+          </h4>
+          <span class="text-xs text-gray-500">Total</span>
+        </div>
+        <p class="text-sm text-gray-600 mt-1">
+          You've submitted {{ rated_appointments_count }} review{{ rated_appointments_count|pluralize }}
+        </p>
+        <a href="{% url 'customer_reviews' %}" class="text-xs text-yellow-600 hover:text-yellow-800 font-semibold mt-2 inline-block">
+          View Reviews
+        </a>
+      </div>
+      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+        Reviews
+      </span>
+    </div>
+    {% endif %}
+
+    <!-- Empty State -->
+    {% if not favorite_workers_count and not completed_appointments and not pending_count and not rated_appointments_count %}
+    <div class="empty-state">
+      <i class="fas fa-inbox text-gray-300 text-4xl mb-3"></i>
+      <p class="text-gray-500 text-sm">No recent activities yet</p>
+      <p class="text-gray-400 text-xs mt-1">Start by exploring services and booking appointments</p>
+      <a href="{% url 'worker-list' %}" class="btn btn-view-details mt-4">
+        <i class="fas fa-search mr-2"></i>Find Services
+      </a>
     </div>
     {% endif %}
   </div>
-
-  <div id="appointmentRequestsContainer">
-    {% if worker_requests %}
-      {% for request in worker_requests %}
-        <div class="request-card" id="request-{{ request.id }}" data-status="{{ request.status }}">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center flex-1">
-              <div class="worker-avatar">
-                {% if request.worker.profile_pic %}
-                  <img src="{{ request.worker.profile_pic.url }}" alt="{{ request.worker.name }}">
-                {% else %}
-                  <span class="text-white font-bold">{{ request.worker.name|first }}</span>
-                {% endif %}
-              </div>
-              <div class="flex-1">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h4 class="font-semibold text-gray-800 text-lg">{{ request.worker.name }}</h4>
-                    <p class="text-sm text-gray-600">
-                      <i class="fas fa-briefcase mr-1"></i>
-                      {{ request.service_subtask.subtask.name|default:"General Service" }}
-                    </p>
-                    <p class="text-sm text-gray-600">
-                      <i class="far fa-calendar mr-1"></i>
-                      {{ request.appointment_date|date:"M j, Y" }}
-                      <i class="far fa-clock ml-3 mr-1"></i>
-                      {{ request.appointment_date|time:"g:i A" }}
-                    </p>
-                    <!-- ✅ FIXED: Payment Status Display for pending_payment -->
-                    {% if request.status == 'pending_payment' %}
-                    <p class="text-sm text-yellow-600 font-semibold mt-1">
-                      <i class="fas fa-money-bill-wave mr-1"></i>
-                      Waiting for ₹50 prepayment
-                    </p>
-                    {% endif %}
-                    {% if request.location %}
-                      <p class="text-sm text-gray-600">
-                        <i class="fas fa-map-marker-alt mr-1"></i>
-                        {{ request.location|truncatewords:5 }}
-                      </p>
-                    {% endif %}
-                    {% if request.special_instructions %}
-                      <p class="text-sm text-gray-600 mt-1">
-                        <i class="fas fa-sticky-note mr-1"></i>
-                        {{ request.special_instructions|truncatewords:10 }}
-                      </p>
-                    {% endif %}
-                  </div>
-                  <div class="text-right">
-                    <span class="status-badge {% if request.status == 'pending_payment' %}status-pending-payment{% else %}status-{{ request.status }}{% endif %}" id="status-{{ request.id }}">
-                      {% if request.status == 'pending_payment' %}
-                        ⏳ Waiting for Payment
-                      {% elif request.status == 'pending' %}
-                        Waiting for Response
-                      {% elif request.status == 'accepted' %}
-                        Accepted ✓
-                      {% elif request.status == 'rejected' %}
-                        Declined ✗
-                      {% else %}
-                        {{ request.status|title }}
-                      {% endif %}
-                    </span>
-                    <p class="text-xs text-gray-500 mt-1">
-                      Sent {{ request.created_at|timesince }} ago
-                    </p>
-                  </div>
-                </div>
-                
-                <div class="request-actions" id="actions-{{ request.id }}">
-                  {% if request.status == 'pending_payment' %}
-                    <!-- ✅ FIXED: Payment action for pending_payment -->
-                    <a href="{% url 'payments:checkout' request.id %}" class="btn btn-accept">
-                      <i class="fas fa-credit-card mr-1"></i>Complete Prepayment (₹50)
-                    </a>
-                    <form method="post" action="{% url 'delete_appointment' request.id %}" class="inline">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
-                        <i class="fas fa-trash mr-1"></i>Cancel Request
-                      </button>
-                    </form>
-                  {% elif request.status == 'pending' %}
-                    <form method="post" action="{% url 'delete_appointment' request.id %}" class="inline">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
-                        <i class="fas fa-trash mr-1"></i>Cancel Request
-                      </button>
-                    </form>
-                  {% endif %}
-                  <button class="btn btn-view-details" onclick="showRequestDetails({{ request.id }})">
-                    <i class="fas fa-eye mr-1"></i>View Details
-                  </button>
-                  {% if request.status == 'pending' %}
-                    <a href="{% url 'worker_service_details' request.worker.id %}" class="btn btn-view-details">
-                      <i class="fas fa-edit mr-1"></i>Modify Request
-                    </a>
-                  {% elif request.status == 'accepted' %}
-                    <a href="{% url 'customer_appointments' %}" class="btn btn-accept">
-                      <i class="fas fa-calendar-check mr-1"></i>View Booking
-                    </a>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
-    {% else %}
-      <div class="empty-state">
-        <i class="fas fa-paper-plane"></i>
-        <h3>No appointment requests sent yet</h3>
-        <p>When you book a service, your appointment requests will appear here.</p>
-        <a href="{% url 'worker-list' %}" class="btn btn-view-details mt-4">
-          Book Your First Service
-        </a>
-      </div>
-    {% endif %}
-  </div>
 </div>
-
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-
+          <!-- Upcoming Bookings Section -->
           <div class="dashboard-card">
             <div class="card-header">
               <h2 class="card-title">
@@ -1264,6 +1255,7 @@
 
             {% if appointments %}
               {% for appointment in appointments|slice:":3" %}
+                {% if appointment.status != 'completed' %}
                 <div class="appointment-preview">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center flex-1">
@@ -1275,38 +1267,31 @@
                         {% endif %}
                       </div>
                       <div>
-                        <h4 class="font-semibold text-gray-800 text-lg">{{ appointment.worker.name }}</h4>
+                        <h4 class="font-semibold text-gray-800">{{ appointment.worker.name }}</h4>
+                        <p class="text-sm text-gray-600">
+                          <i class="fas fa-briefcase mr-1"></i>
+                          {{ appointment.get_service_name }}
+                        </p>
                         <p class="text-sm text-gray-600">
                           <i class="far fa-calendar mr-1"></i>
-                          {{ appointment.appointment_date|date:"M j, Y" }}
-                          <i class="far fa-clock ml-3 mr-1"></i>
-                          {{ appointment.appointment_date|time:"g:i A" }}
+                          {{ appointment.appointment_date|date:"M j, Y" }} at {{ appointment.appointment_date|time:"g:i A" }}
                         </p>
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
-                      <span class="status-badge status-{{ appointment.status }}">{{ appointment.status }}</span>
-                      {% if appointment.status == 'accepted' and not appointment.customer_completed %}
-                      <form method="post" action="{% url 'mark_customer_completed' appointment.id %}" class="ml-2">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-accept">
-                          Mark Completed
-                        </button>
-                      </form>
-                      {% elif appointment.status == 'accepted' and appointment.customer_completed %}
-                      <span class="text-green-600 text-sm font-semibold ml-2">
-                        <i class="fas fa-check-circle mr-1"></i>Waiting for worker confirmation
+                      <span class="status-badge status-{{ appointment.status }}">
+                        {{ appointment.get_status_display }}
                       </span>
-                      {% endif %}
                     </div>
                   </div>
                 </div>
+                {% endif %}
               {% endfor %}
             {% else %}
               <div class="empty-state">
                 <i class="fas fa-calendar-times"></i>
-                <h3>No confirmed bookings yet</h3>
-                <p>Your confirmed appointments will appear here once workers accept your requests.</p>
+                <h3>No upcoming appointments</h3>
+                <p>Your upcoming appointments will appear here.</p>
               </div>
             {% endif %}
           </div>
@@ -1395,65 +1380,6 @@
             </a>
           </div>
         </div>
-
-        <div class="dashboard-card">
-          <div class="card-header">
-            <h2 class="card-title">
-              <i class="fas fa-history"></i>
-              Recent Activity
-            </h2>
-          </div>
-
-          {% if appointments %}
-            {% for appointment in appointments|slice:":4" %}
-              {% if appointment.status == 'completed' %}
-              <div class="appointment-preview" style="border-left-color: var(--primary);">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center flex-1">
-                    <div class="worker-avatar">
-                      {% if appointment.worker.profile_pic %}
-                        <img src="{{ appointment.worker.profile_pic.url }}" alt="{{ appointment.worker.name }}">
-                      {% else %}
-                        <span class="text-white font-bold">{{ appointment.worker.name|first }}</span>
-                      {% endif %}
-                    </div>
-                    <div>
-                      <h4 class="font-semibold text-gray-800">{{ appointment.worker.name }}</h4>
-                      <p class="text-sm text-gray-600">Completed on {{ appointment.appointment_date|date:"M j, Y" }}</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-3">
-                    <span class="status-badge status-completed">
-                      <i class="fas fa-check mr-1"></i>Completed
-                    </span>
-                    {% if not appointment.has_rated %}
-                    <a href="{% url 'rate_worker' appointment.id %}" class="rate-worker-btn">
-                      <i class="fas fa-star"></i>
-                      Rate Worker
-                    </a>
-                    {% else %}
-                    <span class="text-green-500 flex items-center gap-2" title="Already rated">
-                      <i class="fas fa-check-circle text-xl"></i>
-                      <span class="text-sm font-semibold">Rated</span>
-                    </span>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-              {% endif %}
-            {% empty %}
-              <div class="empty-state">
-                <i class="fas fa-clipboard-list"></i>
-                <h3>No completed appointments yet</h3>
-              </div>
-            {% endfor %}
-          {% else %}
-            <div class="empty-state">
-              <i class="fas fa-clipboard-list"></i>
-              <h3>No activity yet</h3>
-            </div>
-          {% endif %}
-        </div>
       </div>
     </div>
   </div>
@@ -1473,7 +1399,7 @@
     </div>
   </div>
 
-  <!-- NEW: Notifications Panel -->
+  <!-- Notifications Panel -->
   <div id="notificationsPanel" class="notifications-panel">
     <div class="notifications-header">
       <h3 class="font-bold text-gray-800 text-lg">Notifications</h3>
@@ -1604,95 +1530,91 @@
     }
 
     function getStatusDisplayText(status) {
-  switch(status) {
-    case 'pending_payment':
-      return '⏳ Waiting for Payment';
-    case 'pending':
-      return 'Waiting for Response';
-    case 'accepted':
-      return 'Accepted ✓';
-    case 'rejected':
-      return 'Declined ✗';
-    case 'completed':
-      return 'Completed ✓';
-    default:
-      return status.charAt(0).toUpperCase() + status.slice(1);
-  }
-}
+      switch(status) {
+        case 'pending_payment':
+          return '⏳ Waiting for Payment';
+        case 'pending':
+          return 'Waiting for Response';
+        case 'accepted':
+          return 'Accepted ✓';
+        case 'rejected':
+          return 'Declined ✗';
+        case 'completed':
+          return 'Completed ✓';
+        default:
+          return status.charAt(0).toUpperCase() + status.slice(1);
+      }
+    }
 
-// Initialize the count when page loads
-document.addEventListener('DOMContentLoaded', function() {
-  updatePendingRequestsCount();
-});
-    // Update request actions based on status - UPDATED: Added pending_payment case
+    // Update request actions based on status
     function updateRequestActions(appointmentId, status) {
-  const requestElement = document.getElementById(`request-${appointmentId}`);
-  const actionsContainer = requestElement?.querySelector('.request-actions');
-  
-  if (!actionsContainer) return;
-  
-  let newActionsHTML = '';
-  
-  if (status === 'pending_payment') {
-    newActionsHTML = `
-      <a href="/payments/checkout/${appointmentId}/" class="btn btn-accept">
-        <i class="fas fa-credit-card mr-1"></i>Complete Prepayment (₹50)
-      </a>
-      <form method="post" action="/appointments/${appointmentId}/delete/" class="inline">
-        <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
-        <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
-          <i class="fas fa-trash mr-1"></i>Cancel Request
-        </button>
-      </form>
-      <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
-        <i class="fas fa-eye mr-1"></i>View Details
-      </button>
-    `;
-  } else if (status === 'pending') {
-    newActionsHTML = `
-      <form method="post" action="/appointments/${appointmentId}/delete/" class="inline">
-        <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
-        <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
-          <i class="fas fa-trash mr-1"></i>Cancel Request
-        </button>
-      </form>
-      <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
-        <i class="fas fa-eye mr-1"></i>View Details
-      </button>
-      <a href="/worker/service-details/${appointmentId}/" class="btn btn-view-details">
-        <i class="fas fa-edit mr-1"></i>Modify Request
-      </a>
-    `;
-  } else if (status === 'accepted') {
-    newActionsHTML = `
-      <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
-        <i class="fas fa-eye mr-1"></i>View Details
-      </button>
-      <a href="{% url 'customer_appointments' %}" class="btn btn-accept">
-        <i class="fas fa-calendar-check mr-1"></i>View Booking
-      </a>
-    `;
-  } else if (status === 'rejected') {
-    newActionsHTML = `
-      <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
-        <i class="fas fa-eye mr-1"></i>View Details
-      </button>
-      <a href="{% url 'worker-list' %}" class="btn btn-view-details">
-        <i class="fas fa-search mr-1"></i>Find Another Worker
-      </a>
-    `;
-  }
-  
-  actionsContainer.innerHTML = newActionsHTML;
-}
+      const requestElement = document.getElementById(`request-${appointmentId}`);
+      const actionsContainer = requestElement?.querySelector('.request-actions');
+      
+      if (!actionsContainer) return;
+      
+      let newActionsHTML = '';
+      
+      if (status === 'pending_payment') {
+        newActionsHTML = `
+          <a href="/payments/checkout/${appointmentId}/" class="btn btn-accept">
+            <i class="fas fa-credit-card mr-1"></i>Complete Prepayment (Rs50)
+          </a>
+          <form method="post" action="/appointments/${appointmentId}/delete/" class="inline">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
+            <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
+              <i class="fas fa-trash mr-1"></i>Cancel Request
+            </button>
+          </form>
+          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
+            <i class="fas fa-eye mr-1"></i>View Details
+          </button>
+        `;
+      } else if (status === 'pending') {
+        newActionsHTML = `
+          <form method="post" action="/appointments/${appointmentId}/delete/" class="inline">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
+            <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
+              <i class="fas fa-trash mr-1"></i>Cancel Request
+            </button>
+          </form>
+          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
+            <i class="fas fa-eye mr-1"></i>View Details
+          </button>
+          <a href="/worker/service-details/${appointmentId}/" class="btn btn-view-details">
+            <i class="fas fa-edit mr-1"></i>Modify Request
+          </a>
+        `;
+      } else if (status === 'accepted') {
+        newActionsHTML = `
+          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
+            <i class="fas fa-eye mr-1"></i>View Details
+          </button>
+          <a href="{% url 'customer_appointments' %}" class="btn btn-accept">
+            <i class="fas fa-calendar-check mr-1"></i>View Booking
+          </a>
+        `;
+      } else if (status === 'rejected') {
+        newActionsHTML = `
+          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
+            <i class="fas fa-eye mr-1"></i>View Details
+          </button>
+          <a href="{% url 'worker-list' %}" class="btn btn-view-details">
+            <i class="fas fa-search mr-1"></i>Find Another Worker
+          </a>
+        `;
+      }
+      
+      actionsContainer.innerHTML = newActionsHTML;
+    }
 
     function updatePendingRequestsCount() {
-  const pendingRequests = document.querySelectorAll('.request-card[data-status="pending"], .request-card[data-status="pending_payment"]');
-  const countElement = document.getElementById('pendingRequestsCount');
-  if (countElement) {
-    countElement.textContent = `${pendingRequests.length} Pending Request${pendingRequests.length !== 1 ? 's' : ''}`;
-  }
-}
+      const pendingRequests = document.querySelectorAll('.request-card[data-status="pending"], .request-card[data-status="pending_payment"]');
+      const countElement = document.getElementById('pendingRequestsCount');
+      if (countElement) {
+        countElement.textContent = `${pendingRequests.length} Pending Request${pendingRequests.length !== 1 ? 's' : ''}`;
+      }
+    }
 
     // Show status notification toast
     function showStatusNotification(update) {

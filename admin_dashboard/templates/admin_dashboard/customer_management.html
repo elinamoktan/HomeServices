@@ -58,7 +58,7 @@
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                             Total Revenue
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ total_revenue }}</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Rs{{ total_revenue }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
@@ -173,13 +173,13 @@
                                     <small class="text-muted d-block">appointments</small>
                                 </div>
                                 <div>
-                                    <strong class="text-success">₹{{ customer.total_spent|default:0 }}</strong>
+                                    <strong class="text-success">Rs{{ customer.total_spent|default:0 }}</strong>
                                     <small class="text-muted d-block">total spent</small>
                                 </div>
                                 {% if customer.appointment_count > 0 %}
                                 <div class="mt-1">
                                     <small class="text-muted">
-                                        ₹{{ customer.avg_spending|default:0 }} avg
+                                        Rs{{ customer.avg_spending|default:0 }} avg
                                     </small>
                                 </div>
                                 {% endif %}
@@ -292,7 +292,7 @@
                                     <strong>{{ top_customer.name }}</strong>
                                     <small class="text-muted d-block">{{ top_customer.appointment_count }} appointments</small>
                                 </div>
-                                <span class="badge bg-success rounded-pill">₹{{ top_customer.total_spent }}</span>
+                                <span class="badge bg-success rounded-pill">Rs{{ top_customer.total_spent }}</span>
                             </div>
                             {% endfor %}
                         </div>

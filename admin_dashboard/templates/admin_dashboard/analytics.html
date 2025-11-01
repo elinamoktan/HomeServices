@@ -126,7 +126,7 @@
         data: {
             labels: {{ revenue_data|safe }}.map(item => item.date),
             datasets: [{
-                label: 'Daily Revenue (₹)',
+                label: 'Daily Revenue (Rs)',
                 data: {{ revenue_data|safe }}.map(item => item.revenue || 0),
                 backgroundColor: '#27ae60'
             }]

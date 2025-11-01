@@ -69,7 +69,22 @@
                             <div class="relative group">
                                 <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-500 group-focus-within:opacity-30"></div>
                                 <div class="relative">
-                                    {{ field|as_crispy_field }}
+                                    {% if field.name == 'password' %}
+                                    <div class="relative">
+                                        {{ field|as_crispy_field }}
+                                        <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none" id="togglePassword">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="eye-icon">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            <svg class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="eye-slash-icon">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m9.02 9.02l3.411 3.411M9.88 9.88l3.413-3.41M9.88 9.88L6.59 6.59"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                        {{ field|as_crispy_field }}
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
@@ -94,21 +109,6 @@
                     <a href="{% url 'account_signup' %}" class="ml-2 font-extrabold text-indigo-600 hover:text-indigo-800 transition-colors duration-200 underline hover:no-underline tracking-wide">
                         Create an account
                     </a>
-                </div>
-                
-                <div class="mt-6 p-4 rounded-xl backdrop-blur-md bg-teal-50 border border-teal-300/80 shadow-md">
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0 mt-0.5">
-                            <svg class="w-5 h-5 text-teal-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-gray-700">
-                                <span class="font-extrabold">Secure Authentication:</span> After entering your credentials, you'll receive a one-time verification code via email.
-                            </p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -221,5 +221,36 @@ select.form-control {
     background-position: right 1rem center !important;
     padding-right: 3rem !important;
 }
-</style> 
+
+/* Password field specific styling */
+#div_id_password .form-control {
+    padding-right: 3rem !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordField = document.getElementById('id_password');
+    const eyeIcon = document.getElementById('eye-icon');
+    const eyeSlashIcon = document.getElementById('eye-slash-icon');
+
+    if (togglePassword && passwordField) {
+        togglePassword.addEventListener('click', function() {
+            // Toggle password visibility
+            if (passwordField.type === 'password') {
+                // Show password (eye not crossed)
+                passwordField.type = 'text';
+                eyeIcon.classList.add('hidden');
+                eyeSlashIcon.classList.remove('hidden');
+            } else {
+                // Hide password (eye crossed)
+                passwordField.type = 'password';
+                eyeIcon.classList.remove('hidden');
+                eyeSlashIcon.classList.add('hidden');
+            }
+        });
+    }
+});
+</script>
 {% endblock content %}

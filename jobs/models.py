@@ -496,7 +496,8 @@ class WorkerService(models.Model):
     def __str__(self):
         return f"{self.worker.name} - {self.service.name}"
 
-# Worker SubTask Pricing
+# In your models.py - Update WorkerSubTaskPricing model
+
 class WorkerSubTaskPricing(models.Model):
     EXPERIENCE_LEVELS = [
         ('beginner', 'Beginner'),
@@ -511,6 +512,8 @@ class WorkerSubTaskPricing(models.Model):
     experience_level = models.CharField(max_length=20, choices=EXPERIENCE_LEVELS, blank=True)
     night_shift_extra = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     min_hours = models.PositiveIntegerField(default=1, help_text="Minimum hours for hourly pricing")
+    max_hours = models.PositiveIntegerField(default=8, help_text="Maximum hours per day")
+    unit_label = models.CharField(max_length=50, blank=True, help_text="Label for unit (e.g., 'sq ft', 'rooms', 'items')")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -519,7 +522,7 @@ class WorkerSubTaskPricing(models.Model):
         ordering = ['subtask__name']
     
     def __str__(self):
-        return f"{self.worker_service.worker.name} - {self.subtask.name}: ₹{self.price}"
+        return f"{self.worker_service.worker.name} - {self.subtask.name}: Rs{self.price}"
     
     def get_pricing_type_display(self):
         types_dict = {
@@ -535,11 +538,44 @@ class WorkerSubTaskPricing(models.Model):
     def get_experience_level_display(self):
         return dict(self.EXPERIENCE_LEVELS).get(self.experience_level, self.experience_level)
     
-    def get_total_price(self, quantity=1, is_night_shift=False):
+    def get_unit_label(self):
+        """Get appropriate unit label based on pricing type"""
+        if self.unit_label:
+            return self.unit_label
+            
+        unit_labels = {
+            'sqft': 'sq ft',
+            'unit': 'units',
+            'hourly': 'hours',
+            'shift': 'shifts',
+            'inspection': 'inspections',
+            'fixed': 'service',
+        }
+        return unit_labels.get(self.pricing_type, 'units')
+    
+    def get_price_display(self):
+        """Get formatted price display with unit"""
+        base_price = f"Rs{self.price}"
+        
+        if self.pricing_type == 'hourly':
+            return f"{base_price}/hour (min {self.min_hours} hrs)"
+        elif self.pricing_type == 'sqft':
+            return f"{base_price}/sq ft"
+        elif self.pricing_type == 'unit':
+            return f"{base_price}/{self.get_unit_label()}"
+        elif self.pricing_type == 'shift':
+            return f"{base_price}/shift"
+        elif self.pricing_type == 'inspection':
+            return f"{base_price}/inspection"
+        else:  # fixed
+            return f"{base_price} (fixed)"
+    
+    def calculate_total_price(self, quantity=1, is_night_shift=False, custom_inputs=None):
         """
-        ✅ FIXED: Calculate total price with proper Decimal handling
-        All calculations use Decimal to avoid float/Decimal conflicts
+        Enhanced price calculation with support for all pricing types
         """
+        custom_inputs = custom_inputs or {}
+        
         # Ensure base price is Decimal
         total = Decimal(str(self.price)) if self.price else Decimal('0.00')
         
@@ -555,20 +591,110 @@ class WorkerSubTaskPricing(models.Model):
             qty = Decimal('1.00')
         
         # Calculate based on pricing type
-        if self.pricing_type in ['sqft', 'unit']:
-            # Multiply by quantity for per-unit pricing
+        if self.pricing_type == 'sqft':
+            # For square footage, use quantity as area
+            total = total * qty
+            
+        elif self.pricing_type == 'unit':
+            # For per-unit pricing
             total = total * qty
             
         elif self.pricing_type == 'hourly':
             # For hourly, use maximum of min_hours or quantity
             min_hrs = Decimal(str(self.min_hours))
             hours = max(min_hrs, qty)
+            # Apply maximum hour limit
+            max_hrs = Decimal(str(self.max_hours))
+            hours = min(hours, max_hrs)
             total = total * hours
+            
+        elif self.pricing_type == 'shift':
+            # Shift-based pricing (8-hour shifts typically)
+            shift_hours = Decimal('8.0')  # Standard shift duration
+            total_shifts = qty
+            total = total * total_shifts
+            
+        elif self.pricing_type == 'inspection':
+            # Per inspection - quantity is number of inspections
+            total = total * qty
+            
+        # For 'fixed' pricing, return base total without quantity multiplier
         
-        # For 'fixed', 'shift', 'inspection' types, return base total
+        # Handle custom inputs for complex calculations
+        if custom_inputs:
+            total = self._apply_custom_calculations(total, custom_inputs)
         
         # Round to 2 decimal places and return
         return total.quantize(Decimal('0.01'))
+    
+    def _apply_custom_calculations(self, base_total, custom_inputs):
+        """Apply custom calculation logic based on service type"""
+        # Example: For painting, you might have room size, number of coats, etc.
+        # This can be extended based on specific service requirements
+        return base_total
+    
+    def get_pricing_input_config(self):
+        """Get configuration for pricing input fields based on pricing type"""
+        configs = {
+            'fixed': {
+                'show_quantity': False,
+                'input_type': 'none',
+                'label': 'Fixed Price',
+                'min_value': 1,
+                'max_value': 1,
+                'step': 1
+            },
+            'hourly': {
+                'show_quantity': True,
+                'input_type': 'number',
+                'label': 'Hours Required',
+                'min_value': self.min_hours,
+                'max_value': self.max_hours,
+                'step': 0.5,
+                'help_text': f'Minimum {self.min_hours} hours'
+            },
+            'sqft': {
+                'show_quantity': True,
+                'input_type': 'number',
+                'label': 'Area (sq ft)',
+                'min_value': 1,
+                'max_value': 10000,
+                'step': 1,
+                'help_text': 'Enter the area in square feet'
+            },
+            'unit': {
+                'show_quantity': True,
+                'input_type': 'number',
+                'label': f'Number of {self.get_unit_label()}',
+                'min_value': 1,
+                'max_value': 1000,
+                'step': 1,
+                'help_text': f'Enter number of {self.get_unit_label()}'
+            },
+            'shift': {
+                'show_quantity': True,
+                'input_type': 'number',
+                'label': 'Number of Shifts',
+                'min_value': 1,
+                'max_value': 10,
+                'step': 1,
+                'help_text': 'Each shift is typically 8 hours'
+            },
+            'inspection': {
+                'show_quantity': True,
+                'input_type': 'number',
+                'label': 'Number of Inspections',
+                'min_value': 1,
+                'max_value': 10,
+                'step': 1,
+                'help_text': 'Enter number of inspections needed'
+            }
+        }
+        return configs.get(self.pricing_type, configs['fixed'])
+    
+    def get_total_price(self, quantity=1, is_night_shift=False, custom_inputs=None):
+        """Alias for calculate_total_price for backward compatibility"""
+        return self.calculate_total_price(quantity, is_night_shift, custom_inputs)
 
 # Customer Model
 class Customer(models.Model):
@@ -828,130 +954,145 @@ class Appointment(models.Model):
         # Determine if night shift applies
         night_shift = self.is_night_shift or (self.shift_type == 'night')
         
-        # Use the get_total_price method from WorkerSubTaskPricing
-        return self.service_subtask.get_total_price(
+        # ✅ FIXED: Use the correct method name calculate_total_price
+        return self.service_subtask.calculate_total_price(
             quantity=self.quantity,
             is_night_shift=night_shift
         )
-    
-    def save(self, *args, **kwargs):
-        """
-        Override save to auto-calculate total_price if not manually set
-        """
-        # Auto-calculate total_price if service_subtask exists and total_price not set
-        if self.service_subtask and not self.total_price:
-            self.total_price = self.calculate_total_price()
-        
-        # Set is_night_shift based on shift_type if not manually set
-        if self.shift_type == 'night' and not self.is_night_shift:
-            self.is_night_shift = True
-        
-        super().save(*args, **kwargs)
 
-    # ✅ ADD THESE METHODS to handle time slot parsing
-    def get_start_time_from_slot(self):
-        """Extract start time from time slot format '14:00-16:00'"""
-        if self.time_slot and '-' in self.time_slot:
-            return self.time_slot.split('-')[0].strip()
-        return None
+        def save(self, *args, **kwargs):
+            """
+            Override save to auto-calculate total_price if not manually set
+            """
+            # Auto-calculate total_price if service_subtask exists and total_price not set
+            if self.service_subtask and not self.total_price:
+                self.total_price = self.calculate_total_price()
+            
+            # Set is_night_shift based on shift_type if not manually set
+            if self.shift_type == 'night' and not self.is_night_shift:
+                self.is_night_shift = True
+            
+            super().save(*args, **kwargs)
 
-    def get_end_time_from_slot(self):
-        """Extract end time from time slot format '14:00-16:00'"""
-        if self.time_slot and '-' in self.time_slot:
-            return self.time_slot.split('-')[1].strip()
-        return None
-
-    def get_status_display_color(self):
-        """Return Bootstrap color class for status"""
-        status_colors = {
-            'pending_payment': 'warning',
-            'pending': 'warning',
-            'accepted': 'info',
-            'rejected': 'danger',
-            'completed': 'success',
-            'cancelled': 'secondary',
-        }
-        return status_colors.get(self.status, 'secondary')
-
-    def can_be_completed(self):
-        """Check if appointment can be marked as completed"""
-        return (
-            self.status == 'accepted' and 
-            self.appointment_date and 
-            self.appointment_date < timezone.now()
-        )
-
-    def can_be_cancelled(self):
-        """Check if appointment can be cancelled"""
-        return self.status in ['pending', 'accepted']
-
-    def get_service_name(self):
-        """Get the service name safely"""
-        if self.service_subtask and self.service_subtask.subtask:
-            return self.service_subtask.subtask.name
-        return "General Service"
-
-    def get_price_display(self):
-        """Get formatted price display"""
-        if self.total_price:
-            return f"₹{self.total_price:,.2f}"
-        elif self.service_subtask:
-            return f"₹{self.service_subtask.price:,.2f}"
-        return "Contact for pricing"
-
-    @property
-    def is_past(self):
-        """Check if appointment date is in the past"""
-        if not self.appointment_date:
-            return False
-        return self.appointment_date < timezone.now()
-
-    @property
-    def is_today(self):
-        """Check if appointment is today"""
-        if not self.appointment_date:
-            return False
-        return self.appointment_date.date() == timezone.now().date()
-
-    @property
-    def is_upcoming(self):
-        """Check if appointment is in the future"""
-        if not self.appointment_date:
-            return False
-        return self.appointment_date > timezone.now()
-    
-    def requires_payment(self):
-        """Check if appointment requires payment"""
-        return self.status == 'pending_payment'
-    
-    def get_payment_info(self):
-        """Get payment information for this appointment"""
-        try:
-            from payments.models import Payment
-            return Payment.objects.get(appointment=self)
-        except Payment.DoesNotExist:
+        # ✅ ADD THESE METHODS to handle time slot parsing
+        def get_start_time_from_slot(self):
+            """Extract start time from time slot format '14:00-16:00'"""
+            if self.time_slot and '-' in self.time_slot:
+                return self.time_slot.split('-')[0].strip()
             return None
 
+        def get_end_time_from_slot(self):
+            """Extract end time from time slot format '14:00-16:00'"""
+            if self.time_slot and '-' in self.time_slot:
+                return self.time_slot.split('-')[1].strip()
+            return None
+
+        def get_status_display_color(self):
+            """Return Bootstrap color class for status"""
+            status_colors = {
+                'pending_payment': 'warning',
+                'pending': 'warning',
+                'accepted': 'info',
+                'rejected': 'danger',
+                'completed': 'success',
+                'cancelled': 'secondary',
+            }
+            return status_colors.get(self.status, 'secondary')
+
+        def can_be_completed(self):
+            """Check if appointment can be marked as completed"""
+            return (
+                self.status == 'accepted' and 
+                self.appointment_date and 
+                self.appointment_date < timezone.now()
+            )
+
+        def can_be_cancelled(self):
+            """Check if appointment can be cancelled"""
+            return self.status in ['pending', 'accepted']
+
+        def get_service_name(self):
+            """Get the service name safely"""
+            if self.service_subtask and self.service_subtask.subtask:
+                return self.service_subtask.subtask.name
+            return "General Service"
+
+        def get_price_display(self):
+            """Get formatted price display"""
+            if self.total_price:
+                return f"Rs{self.total_price:,.2f}"
+            elif self.service_subtask:
+                return f"Rs{self.service_subtask.price:,.2f}"
+            return "Contact for pricing"
+
+        @property
+        def is_past(self):
+            """Check if appointment date is in the past"""
+            if not self.appointment_date:
+                return False
+            return self.appointment_date < timezone.now()
+
+        @property
+        def is_today(self):
+            """Check if appointment is today"""
+            if not self.appointment_date:
+                return False
+            return self.appointment_date.date() == timezone.now().date()
+
+        @property
+        def is_upcoming(self):
+            """Check if appointment is in the future"""
+            if not self.appointment_date:
+                return False
+            return self.appointment_date > timezone.now()
+        
+        def requires_payment(self):
+            """Check if appointment requires payment"""
+            return self.status == 'pending_payment'
+        
+        def get_payment_info(self):
+            """Get payment information for this appointment"""
+            try:
+                from payments.models import Payment
+                return Payment.objects.get(appointment=self)
+            except Payment.DoesNotExist:
+                return None
+            
+        # def get_service_name(self):
+        #     """Get the service name safely"""
+        #     if self.service_subtask and self.service_subtask.subtask:
+        #         return self.service_subtask.subtask.name
+        #     elif self.service_subtask and hasattr(self.service_subtask, 'worker_service'):
+        #         return self.service_subtask.worker_service.service.name
+        #     return "General Service"
+        
+        def has_rated(self, customer=None):
+            """Check if this appointment has been rated by the customer"""
+            if customer is None:
+                # If no customer provided, check if we can get it from the relationship
+                if hasattr(self, 'customer'):
+                    customer = self.customer
+                else:
+                    return False
+            
+            return WorkerRating.objects.filter(
+                appointment=self,
+                customer=customer
+            ).exists()
+
+# Worker Rating Model
 class WorkerRating(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='ratings')
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='given_ratings')
-    rating = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
-    )
+    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='ratings')  # Remove null=True, blank=True
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='given_ratings')  # Remove null=True, blank=True
+    rating = models.PositiveSmallIntegerField()  # Rating between 1 and 5
     comment = models.TextField(blank=True, null=True)
-    appointment = models.ForeignKey(
-        Appointment, 
-        on_delete=models.CASCADE, 
-        null=True, 
-        blank=True,  # Make it optional
-        related_name='ratings'
-    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('customer', 'worker')  # One rating per customer per worker
-        ordering = ['-created_at']
+        # ✅ FIXED: One rating per customer per appointment
+        unique_together = ('appointment', 'customer')
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -959,10 +1100,8 @@ class WorkerRating(models.Model):
         self.worker.update_average_rating()
 
     def __str__(self):
-        return f"Rating {self.rating} by {self.customer.name} for {self.worker.name}"
+        return f"Rating {self.rating} by {self.customer.name} for {self.worker.name} (Appointment: {self.appointment.id})"
 
-
-# Notification Model
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('appointment_request', 'Appointment Request'),
@@ -1092,7 +1231,7 @@ class WorkerEarning(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.worker.name} - ₹{self.net_amount} - {self.payment_status}"
+        return f"{self.worker.name} - Rs{self.net_amount} - {self.payment_status}"
 
     def save(self, *args, **kwargs):
         if not self.net_amount:

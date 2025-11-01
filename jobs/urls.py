@@ -110,6 +110,7 @@ urlpatterns = [
     
     # Redirect and service URLs
     path('workers/', views.workers_redirect, name='workers-direct'),
+    path('worker/profile/', views.worker_profile, name='worker_profile'),
     path('worker/<int:worker_id>/services/filter/', views.worker_service_details, name='filter_worker_services'),
     path('worker/add-subtask/<int:worker_service_id>/', views.add_custom_subtask, name='add_custom_subtask'),
     path('worker/services/', views.get_worker_services_for_subtask, name='get_worker_services'),
@@ -135,5 +136,8 @@ urlpatterns = [
 
     # path('appointment/<int:appointment_id>/report-delay/', views.report_delay, name='report_delay'),
     # path('worker/appointments-for-delay/', views.get_worker_appointments_for_delay, name='worker_appointments_for_delay'),
+    # Dynamic pricing URLs
+    path('calculate-dynamic-price/', views.calculate_dynamic_price, name='calculate_dynamic_price'),
+    path('get-pricing-config/<int:service_id>/', views.get_pricing_config, name='get_pricing_config'),
     
 ]

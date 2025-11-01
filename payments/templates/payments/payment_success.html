@@ -185,9 +185,9 @@
                 <span class="detail-label">Amount Paid:</span>
                 <span class="detail-value">
                     {% if payment %}
-                        ₹{{ payment.prepayment_amount }}
+                        Rs{{ payment.prepayment_amount }}
                     {% else %}
-                        ₹50.00
+                        Rs50.00
                     {% endif %}
                 </span>
             </div>
@@ -225,7 +225,7 @@
         <div style="margin-top: 2rem; padding: 1rem; background: #f0f9ff; border-radius: 8px;">
             <p style="margin: 0; color: #0369a1; font-size: 0.9rem;">
                 <strong>Next Steps:</strong> The worker will contact you before the appointment. 
-                The remaining amount (₹{{ payment.remaining_amount|default:"50.00" }}) will be paid after service completion.
+                The remaining amount (Rs{{ payment.remaining_amount|default:"50.00" }}) will be paid after service completion.
             </p>
         </div>
     </div>

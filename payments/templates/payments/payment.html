@@ -287,11 +287,11 @@
                             <h5 class="mb-3">Payment Breakdown</h5>
                             <div class="breakdown-item d-flex justify-content-between mb-2">
                                 <span>Service Amount:</span>
-                                <span>₹{{ payment.amount }}</span>
+                                <span>Rs{{ payment.amount }}</span>
                             </div>
                             <div class="breakdown-item d-flex justify-content-between mb-2">
                                 <span>Prepayment (Required):</span>
-                                <span>₹{{ payment.prepayment_amount }}</span>
+                                <span>Rs{{ payment.prepayment_amount }}</span>
                             </div>
                             <div class="breakdown-item d-flex justify-content-between mb-2">
                                 <span>Platform Fee:</span>
@@ -299,7 +299,7 @@
                             </div>
                             <div class="breakdown-item d-flex justify-content-between pt-2 border-top">
                                 <strong>Remaining Amount:</strong>
-                                <strong>₹{{ payment.remaining_amount }}</strong>
+                                <strong>Rs{{ payment.remaining_amount }}</strong>
                             </div>
                         </div>
                     </div>
@@ -313,13 +313,13 @@
                         
                         <div class="payment-amount">
                             <div class="amount-label">Amount to Pay Now</div>
-                            <div class="amount-value">₹{{ payment.prepayment_amount }}</div>
+                            <div class="amount-value">Rs{{ payment.prepayment_amount }}</div>
                             <small class="text-muted">Prepayment to secure your booking</small>
                         </div>
                         
                         <button id="payment-button" class="khalti-btn">
                             <i class="fas fa-lock me-2"></i>
-                            Pay ₹{{ payment.prepayment_amount }} with Khalti
+                            Pay Rs{{ payment.prepayment_amount }} with Khalti
                         </button>
                         
                         <div class="security-notice">
@@ -430,7 +430,7 @@ function initiateKhaltiPayment() {
     .finally(() => {
         // Re-enable payment button
         paymentButton.disabled = false;
-        paymentButton.innerHTML = '<i class="fas fa-lock me-2"></i> Pay ₹{{ payment.prepayment_amount }} with Khalti';
+        paymentButton.innerHTML = '<i class="fas fa-lock me-2"></i> Pay Rs{{ payment.prepayment_amount }} with Khalti';
     });
 }
 

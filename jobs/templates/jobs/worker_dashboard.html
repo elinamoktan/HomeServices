@@ -499,10 +499,25 @@
     }
 
     .btn-secondary {
-      background: linear-gradient(135deg, #64748b, #475569);
-      color: white;
-    }
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
 
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+}
     /* Tab Buttons */
     .tab-button {
       padding: 0.625rem 1.25rem;
@@ -1017,6 +1032,110 @@
     font-weight: 600;
 }
 
+/* Profile Section Styles */
+.profile-section {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    font-size: 2rem;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.profile-info h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+}
+
+.profile-info p {
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.verification-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.verification-badge.approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.verification-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.verification-badge.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.profile-stat {
+    text-align: center;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.profile-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    display: block;
+}
+
+.profile-stat-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
 
   </style>
 </head>
@@ -1067,6 +1186,10 @@
       <a href="{% url 'worker_earnings' %}" class="nav-item {% if '/worker/earnings/' in request.path %}active{% endif %}">
         <i class="fas fa-wallet"></i>
         <span>Earnings</span>
+      </a>
+      <a href="{% url 'worker_profile' %}" class="nav-item {% if '/worker/profile/' in request.path %}active{% endif %}">
+        <i class="fas fa-user"></i>
+        <span>My Profile</span>
       </a>
       <a href="{% url 'worker_settings' %}" class="nav-item {% if '/worker/settings/' in request.path %}active{% endif %}">
         <i class="fas fa-cog"></i>
@@ -1120,6 +1243,37 @@
       </div>
     </div>
 
+    <!-- Profile Section -->
+    <div class="profile-section fade-in-up">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          {% if worker.profile_pic %}
+            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}">
+          {% else %}
+            {{ worker.name|first }}
+          {% endif %}
+        </div>
+        <div class="profile-info flex-1">
+          <h2>{{ worker.name }}</h2>
+          <p class="text-gray-600">Professional Worker</p>
+          <p class="text-sm text-gray-500">
+            <i class="fas fa-phone mr-1"></i>{{ worker.phone_number|default:"Not provided" }}
+          </p>
+          <div class="mt-2">
+            <span class="verification-badge {{ worker.verification_status }}">
+              <i class="fas {% if worker.verification_status == 'approved' %}fa-check-circle{% elif worker.verification_status == 'pending' %}fa-clock{% else %}fa-times-circle{% endif %} mr-1"></i>
+              {{ worker.verification_status|title }}
+            </span>
+          </div>
+        </div>
+        <a href="{% url 'worker_profile' %}" class="btn btn-primary">
+          <i class="fas fa-edit mr-2"></i>
+          Edit Profile
+        </a>
+      </div>
+    
+    </div>
+
     <!-- Verification Status Alert -->
     {% if worker.verification_status == 'rejected' %}
     <div class="verification-alert rejected p-4 sm:p-6 fade-in-up">
@@ -1155,7 +1309,7 @@
             </button>
             {% endif %}
             
-            <a href="{% url 'worker_settings' %}" class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+            <a href="{% url 'worker_profile' %}" class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
               <i class="fas fa-edit mr-2"></i>Edit Profile
             </a>
           </div>
@@ -1336,7 +1490,7 @@
                       </span>
                       <span class="price-badge">
                         <i class="fas fa-rupee-sign mr-1"></i>
-                        ₹{{ appointment.service_subtask.price }}
+                        Rs{{ appointment.service_subtask.price }}
                       </span>
                       {% else %}
                       <span class="service-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
@@ -1361,7 +1515,7 @@
                         </div>
                         <div class="service-info-item">
                           <span class="service-info-label">Base Price</span>
-                          <span class="service-info-value">₹{{ appointment.service_subtask.price }}</span>
+                          <span class="service-info-value">Rs{{ appointment.service_subtask.price }}</span>
                         </div>
                         <div class="service-info-item">
                           <span class="service-info-label">Pricing Type</span>
@@ -1376,7 +1530,7 @@
                         {% if appointment.service_subtask.night_shift_extra %}
                         <div class="service-info-item">
                           <span class="service-info-label">Night Shift Extra</span>
-                          <span class="service-info-value">+₹{{ appointment.service_subtask.night_shift_extra }}</span>
+                          <span class="service-info-value">+Rs{{ appointment.service_subtask.night_shift_extra }}</span>
                         </div>
                         {% endif %}
                         {% if appointment.service_subtask.min_hours %}
@@ -1505,8 +1659,423 @@
           {% endif %}
         </div>
 
-        <!-- Other tabs (pending, customer-completed, accepted, completed) follow similar responsive patterns -->
-        <!-- For brevity, I've shown the pattern with the 'all' tab. The other tabs would follow the same responsive structure -->
+        <!-- Pending Appointments Tab -->
+        <div id="pending-tab" class="tab-content">
+          {% if pending_appointments %}
+          <div class="space-y-3 sm:space-y-4">
+            {% for appointment in pending_appointments %}
+            <div class="appointment-card {{ appointment.status }} {% if appointment.customer_completed and not appointment.worker_completed %}border-2 border-green-500{% endif %}">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+                <div class="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1">
+                  <div class="customer-avatar">
+                    {% if appointment.customer.profile_pic %}
+                      <img src="{{ appointment.customer.profile_pic.url }}" alt="{{ appointment.customer.name }}" class="w-full h-full rounded-full object-cover">
+                    {% else %}
+                      {{ appointment.customer.name|first }}
+                    {% endif %}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-gray-900 text-base sm:text-lg truncate">{{ appointment.customer.name }}</h3>
+                    
+                    <!-- Service and Price Information -->
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 mb-3">
+                      {% if appointment.service_subtask %}
+                      <span class="service-badge">
+                        <i class="fas fa-tools mr-1"></i>
+                        {{ appointment.service_subtask.subtask.name }}
+                      </span>
+                      <span class="price-badge">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        Rs{{ appointment.service_subtask.price }}
+                      </span>
+                      {% else %}
+                      <span class="service-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        General Service
+                      </span>
+                      <span class="price-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        Contact for pricing
+                      </span>
+                      {% endif %}
+                    </div>
+
+                    <!-- Enhanced Service Details Section -->
+                    {% if appointment.service_subtask %}
+                    <div class="service-details">
+                      <h4 class="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Service Details:</h4>
+                      <div class="service-info-grid">
+                        <div class="service-info-item">
+                          <span class="service-info-label">Subtask</span>
+                          <span class="service-info-value">{{ appointment.service_subtask.subtask.name }}</span>
+                        </div>
+                        <div class="service-info-item">
+                          <span class="service-info-label">Base Price</span>
+                          <span class="service-info-value">Rs{{ appointment.service_subtask.price }}</span>
+                        </div>
+                        <div class="service-info-item">
+                          <span class="service-info-label">Pricing Type</span>
+                          <span class="pricing-type-badge">{{ appointment.service_subtask.get_pricing_type_display }}</span>
+                        </div>
+                        {% if appointment.service_subtask.experience_level %}
+                        <div class="service-info-item">
+                          <span class="service-info-label">Experience Level</span>
+                          <span class="service-info-value">{{ appointment.service_subtask.get_experience_level_display }}</span>
+                        </div>
+                        {% endif %}
+                      </div>
+                      {% if appointment.service_subtask.subtask.description %}
+                      <div class="mt-2">
+                        <span class="service-info-label">Description</span>
+                        <p class="service-info-value mt-1 text-xs sm:text-sm">{{ appointment.service_subtask.subtask.description }}</p>
+                      </div>
+                      {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                      <span class="flex items-center gap-2">
+                        <i class="fas fa-phone-alt text-blue-500"></i>
+                        {{ appointment.customer.phone_number }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-calendar text-purple-500"></i>
+                        {{ appointment.appointment_date|date:"M j, Y" }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-clock text-green-500"></i>
+                        {{ appointment.appointment_date|time:"g:i A" }}
+                      </span>
+                      {% if appointment.location %}
+                      <span class="flex items-center gap-2">
+                        <i class="fas fa-map-marker-alt text-red-500"></i>
+                        <span class="max-w-xs truncate">{{ appointment.location }}</span>
+                      </span>
+                      {% endif %}
+                    </div>
+
+                    {% if appointment.special_instructions %}
+                    <div class="mt-2 p-2 bg-gray-50 rounded-lg">
+                      <p class="text-xs sm:text-sm text-gray-600">
+                        <i class="fas fa-sticky-note text-gray-400 mr-1"></i>
+                        <strong>Instructions:</strong> {{ appointment.special_instructions }}
+                      </p>
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-2 sm:space-x-3 mt-3 sm:mt-0">
+                  <span class="status-badge status-{{ appointment.status }}">
+                    <i class="fas fa-circle text-xs"></i>
+                    <span class="hidden sm:inline">{{ appointment.status|title }}</span>
+                    <span class="sm:hidden">{{ appointment.status|title|slice:":1" }}</span>
+                  </span>
+                  
+                  <div class="flex space-x-1 sm:space-x-2">
+                    <form action="{% url 'accept_appointment' appointment.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-success text-xs sm:text-sm">
+                        <i class="fas fa-check"></i> <span class="hidden sm:inline">Accept</span>
+                      </button>
+                    </form>
+                    <form action="{% url 'reject_appointment' appointment.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger text-xs sm:text-sm">
+                        <i class="fas fa-times"></i> <span class="hidden sm:inline">Reject</span>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-clock"></i>
+            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">No Pending Appointments</h3>
+            <p class="text-gray-600 text-base sm:text-lg">You don't have any pending appointments at the moment.</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Customer Completed Tab -->
+        <div id="customer-completed-tab" class="tab-content">
+          {% if customer_completed_appointments %}
+          <div class="space-y-3 sm:space-y-4">
+            {% for appointment in customer_completed_appointments %}
+            <div class="appointment-card {{ appointment.status }} {% if appointment.customer_completed and not appointment.worker_completed %}border-2 border-green-500{% endif %}">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+                <div class="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1">
+                  <div class="customer-avatar">
+                    {% if appointment.customer.profile_pic %}
+                      <img src="{{ appointment.customer.profile_pic.url }}" alt="{{ appointment.customer.name }}" class="w-full h-full rounded-full object-cover">
+                    {% else %}
+                      {{ appointment.customer.name|first }}
+                    {% endif %}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-gray-900 text-base sm:text-lg truncate">{{ appointment.customer.name }}</h3>
+                    
+                    <!-- Customer Completion Badge -->
+                    <div class="inline-flex items-center px-2 sm:px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs sm:text-sm font-medium mb-2">
+                      <i class="fas fa-user-check mr-1"></i>
+                      <span class="hidden sm:inline">Customer Marked as Completed - Waiting for Your Confirmation</span>
+                      <span class="sm:hidden">Customer Completed - Confirm</span>
+                    </div>
+                    
+                    <!-- Service and Price Information -->
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 mb-3">
+                      {% if appointment.service_subtask %}
+                      <span class="service-badge">
+                        <i class="fas fa-tools mr-1"></i>
+                        {{ appointment.service_subtask.subtask.name }}
+                      </span>
+                      <span class="price-badge">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        Rs{{ appointment.service_subtask.price }}
+                      </span>
+                      {% else %}
+                      <span class="service-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        General Service
+                      </span>
+                      <span class="price-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        Contact for pricing
+                      </span>
+                      {% endif %}
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                      <span class="flex items-center gap-2">
+                        <i class="fas fa-phone-alt text-blue-500"></i>
+                        {{ appointment.customer.phone_number }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-calendar text-purple-500"></i>
+                        {{ appointment.appointment_date|date:"M j, Y" }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-clock text-green-500"></i>
+                        {{ appointment.appointment_date|time:"g:i A" }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-2 sm:space-x-3 mt-3 sm:mt-0">
+                  <span class="status-badge status-{{ appointment.status }}">
+                    <i class="fas fa-circle text-xs"></i>
+                    <span class="hidden sm:inline">{{ appointment.status|title }}</span>
+                    <span class="sm:hidden">{{ appointment.status|title|slice:":1" }}</span>
+                  </span>
+                  
+                  <div class="flex space-x-1 sm:space-x-2">
+                    <form action="{% url 'appointment-worker-complete' appointment.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-primary text-xs sm:text-sm">
+                        <i class="fas fa-check-double"></i> <span class="hidden sm:inline">Confirm</span>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-user-check"></i>
+            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">No Customer-Completed Appointments</h3>
+            <p class="text-gray-600 text-base sm:text-lg">No appointments have been marked as completed by customers yet.</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Accepted Tab -->
+        <div id="accepted-tab" class="tab-content">
+          {% if accepted_appointments %}
+          <div class="space-y-3 sm:space-y-4">
+            {% for appointment in accepted_appointments %}
+            <div class="appointment-card {{ appointment.status }} {% if appointment.customer_completed and not appointment.worker_completed %}border-2 border-green-500{% endif %}">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+                <div class="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1">
+                  <div class="customer-avatar">
+                    {% if appointment.customer.profile_pic %}
+                      <img src="{{ appointment.customer.profile_pic.url }}" alt="{{ appointment.customer.name }}" class="w-full h-full rounded-full object-cover">
+                    {% else %}
+                      {{ appointment.customer.name|first }}
+                    {% endif %}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-gray-900 text-base sm:text-lg truncate">{{ appointment.customer.name }}</h3>
+                    
+                    <!-- Customer Completion Badge -->
+                    {% if appointment.customer_completed and not appointment.worker_completed %}
+                    <div class="inline-flex items-center px-2 sm:px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs sm:text-sm font-medium mb-2">
+                      <i class="fas fa-user-check mr-1"></i>
+                      <span class="hidden sm:inline">Customer Marked as Completed - Waiting for Your Confirmation</span>
+                      <span class="sm:hidden">Customer Completed - Confirm</span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Service and Price Information -->
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 mb-3">
+                      {% if appointment.service_subtask %}
+                      <span class="service-badge">
+                        <i class="fas fa-tools mr-1"></i>
+                        {{ appointment.service_subtask.subtask.name }}
+                      </span>
+                      <span class="price-badge">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        Rs{{ appointment.service_subtask.price }}
+                      </span>
+                      {% else %}
+                      <span class="service-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        General Service
+                      </span>
+                      <span class="price-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        Contact for pricing
+                      </span>
+                      {% endif %}
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                      <span class="flex items-center gap-2">
+                        <i class="fas fa-phone-alt text-blue-500"></i>
+                        {{ appointment.customer.phone_number }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-calendar text-purple-500"></i>
+                        {{ appointment.appointment_date|date:"M j, Y" }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-clock text-green-500"></i>
+                        {{ appointment.appointment_date|time:"g:i A" }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-2 sm:space-x-3 mt-3 sm:mt-0">
+                  <span class="status-badge status-{{ appointment.status }}">
+                    <i class="fas fa-circle text-xs"></i>
+                    <span class="hidden sm:inline">{{ appointment.status|title }}</span>
+                    <span class="sm:hidden">{{ appointment.status|title|slice:":1" }}</span>
+                  </span>
+                  
+                  <div class="flex space-x-1 sm:space-x-2">
+                    {% if appointment.customer_completed and not appointment.worker_completed %}
+                    <form action="{% url 'appointment-worker-complete' appointment.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-primary text-xs sm:text-sm">
+                        <i class="fas fa-check-double"></i> <span class="hidden sm:inline">Confirm</span>
+                      </button>
+                    </form>
+                    {% endif %}
+                    
+                    {% if appointment.appointment_date <= now %}
+                    <button onclick="showDelayReportModal('{{ appointment.id }}')" 
+                            class="btn bg-orange-500 hover:bg-orange-600 text-white text-xs sm:text-sm">
+                        <i class="fas fa-clock mr-1"></i> Report Delay
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">No Accepted Appointments</h3>
+            <p class="text-gray-600 text-base sm:text-lg">You don't have any accepted appointments at the moment.</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Completed Tab -->
+        <div id="completed-tab" class="tab-content">
+          {% if completed_appointments %}
+          <div class="space-y-3 sm:space-y-4">
+            {% for appointment in completed_appointments %}
+            <div class="appointment-card {{ appointment.status }}">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+                <div class="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1">
+                  <div class="customer-avatar">
+                    {% if appointment.customer.profile_pic %}
+                      <img src="{{ appointment.customer.profile_pic.url }}" alt="{{ appointment.customer.name }}" class="w-full h-full rounded-full object-cover">
+                    {% else %}
+                      {{ appointment.customer.name|first }}
+                    {% endif %}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-gray-900 text-base sm:text-lg truncate">{{ appointment.customer.name }}</h3>
+                    
+                    <!-- Service and Price Information -->
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 mb-3">
+                      {% if appointment.service_subtask %}
+                      <span class="service-badge">
+                        <i class="fas fa-tools mr-1"></i>
+                        {{ appointment.service_subtask.subtask.name }}
+                      </span>
+                      <span class="price-badge">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        Rs{{ appointment.service_subtask.price }}
+                      </span>
+                      {% else %}
+                      <span class="service-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        General Service
+                      </span>
+                      <span class="price-badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;">
+                        <i class="fas fa-rupee-sign mr-1"></i>
+                        Contact for pricing
+                      </span>
+                      {% endif %}
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                      <span class="flex items-center gap-2">
+                        <i class="fas fa-phone-alt text-blue-500"></i>
+                        {{ appointment.customer.phone_number }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-calendar text-purple-500"></i>
+                        {{ appointment.appointment_date|date:"M j, Y" }}
+                      </span>
+                      <span class="flex items-center gap-2">
+                        <i class="far fa-clock text-green-500"></i>
+                        {{ appointment.appointment_date|time:"g:i A" }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-2 sm:space-x-3 mt-3 sm:mt-0">
+                  <span class="status-badge status-{{ appointment.status }}">
+                    <i class="fas fa-circle text-xs"></i>
+                    <span class="hidden sm:inline">{{ appointment.status|title }}</span>
+                    <span class="sm:hidden">{{ appointment.status|title|slice:":1" }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-check-double"></i>
+            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">No Completed Appointments</h3>
+            <p class="text-gray-600 text-base sm:text-lg">You haven't completed any appointments yet.</p>
+          </div>
+          {% endif %}
+        </div>
       </div>
     </div>
 
@@ -1581,12 +2150,12 @@
             <p class="text-xs text-gray-500 mt-1">View performance</p>
           </a>
           
-          <a href="{% url 'worker_earnings' %}" class="quick-action-card">
+          <a href="{% url 'worker_profile' %}" class="quick-action-card">
             <div class="quick-action-icon">
-              <i class="fas fa-wallet"></i>
+              <i class="fas fa-user-edit"></i>
             </div>
-            <p class="font-semibold text-gray-900 text-sm sm:text-base">Earnings</p>
-            <p class="text-xs text-gray-500 mt-1">Check your income</p>
+            <p class="font-semibold text-gray-900 text-sm sm:text-base">My Profile</p>
+            <p class="text-xs text-gray-500 mt-1">Update profile info</p>
           </a>
         </div>
       </div>

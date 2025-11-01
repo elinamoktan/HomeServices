@@ -270,7 +270,7 @@ def send_appointment_request_email(worker, appointment):
         # Get price information safely
         price_info = "Contact for pricing"
         if appointment.service_subtask and appointment.service_subtask.price:
-            price_info = f"₹{appointment.service_subtask.price}"
+            price_info = f"Rs{appointment.service_subtask.price}"
         
         # Use template rendering instead of hardcoded HTML
         context = {
@@ -310,7 +310,7 @@ def send_appointment_status_email(appointment, status):
         # Get price information safely
         price_info = "Contact for pricing"
         if appointment.service_subtask and appointment.service_subtask.price:
-            price_info = f"₹{appointment.service_subtask.price}"
+            price_info = f"Rs{appointment.service_subtask.price}"
         
         # Service name safely
         service_name = "Service"
@@ -1313,7 +1313,7 @@ def worker_services_api(request, worker_id):
                 features.append("Materials included in price")
             
             # Determine pricing display
-            pricing_display = f"₹{pricing.price}"
+            pricing_display = f"Rs{pricing.price}"
             if pricing.pricing_type == 'hourly':
                 pricing_display += f"/hour (min {pricing.min_hours} hrs)"
             elif pricing.pricing_type == 'sqft':
@@ -1366,7 +1366,7 @@ def worker_services_api(request, worker_id):
                 'title': f'Consultation with {worker.name}',
                 'description': worker.bio or 'Professional consultation and service assessment',
                 'detailed_description': '',
-                'price': '₹500/hour',
+                'price': 'Rs500/hour',
                 'base_price': 500,
                 'pricing_type': 'hourly',
                 'pricing_type_display': 'Hourly Rate',
@@ -2123,7 +2123,7 @@ def complete_appointment(request, appointment_id):
                 customer=appointment.customer,
                 notification_type='work_completed_final_payment',
                 title='Work Completed - Final Payment Due',
-                message=f'Your work with {appointment.worker.name} has been completed. Please complete your final payment of ₹{payment.remaining_amount}.',
+                message=f'Your work with {appointment.worker.name} has been completed. Please complete your final payment of Rs{payment.remaining_amount}.',
                 appointment=appointment
             )
             
@@ -2134,7 +2134,7 @@ def complete_appointment(request, appointment_id):
             except Exception as email_error:
                 logger.error(f"Failed to send completion email for appointment {appointment.id}: {email_error}")
             
-            messages.success(request, f"Appointment marked as completed. Customer notified to make final payment of ₹{payment.remaining_amount}.")
+            messages.success(request, f"Appointment marked as completed. Customer notified to make final payment of Rs{payment.remaining_amount}.")
         else:
             messages.warning(request, "This appointment cannot be marked as completed.")
 
@@ -2271,8 +2271,8 @@ def customer_notifications(request):
 def rate_worker(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
     
-    # Check if user is authorized to rate this appointment
-    if request.user.customer != appointment.customer:
+    # ✅ FIXED: Check if user is authorized to rate this appointment
+    if not hasattr(request.user, 'customer') or appointment.customer != request.user.customer:
         messages.error(request, "You can only rate workers for your own appointments.")
         return redirect('customer_dashboard')
     
@@ -2281,9 +2281,8 @@ def rate_worker(request, appointment_id):
         messages.error(request, "You can only rate workers after the appointment is completed.")
         return redirect('customer_dashboard')
     
-    # Check if already rated
+    # ✅ FIXED: Check if already rated THIS specific appointment
     existing_rating = WorkerRating.objects.filter(
-        worker=appointment.worker,
         appointment=appointment,
         customer=request.user.customer
     ).first()
@@ -2321,25 +2320,21 @@ def rate_worker(request, appointment_id):
             )
             messages.success(request, "Thank you for rating the worker!")
         
-        # ✅ FIXED: Force update worker's average rating using Bayesian algorithm
-        worker = appointment.worker
-        worker.update_average_rating()  # This now uses Bayesian average
+        # Update worker's average rating
+        appointment.worker.update_average_rating()
         
-        # Debug info - you can remove this later
-        print(f"Rating submitted: {rating_value}")
-        print(f"Worker {worker.name} new Bayesian average: {worker.average_rating}")
-        print(f"Total ratings: {worker.rating_count}")
-        
+        # ✅ FIXED: Force refresh by redirecting to dashboard
         return redirect('customer_dashboard')
     
     # For GET request, show the rating form
     context = {
         'appointment': appointment,
-        'existing_rating': existing_rating
+        'worker': appointment.worker,
+        'existing_rating': existing_rating,
+        'already_rated': existing_rating is not None,
     }
     
     return render(request, 'jobs/rate_worker.html', context)
-
 
 @login_required
 def mark_customer_completed(request, pk):
@@ -2565,79 +2560,54 @@ def filter_status(queryset, status):
 
 @login_required
 def customer_dashboard(request):
-    """Customer dashboard view with stats, appointments, and ratings"""
+    """Customer dashboard view with stats and appointments - SIMPLER APPROACH"""
     customer = get_object_or_404(Customer, owner=request.user)
     
-    # Get appointments
+    # Get all appointments
     appointments_list = Appointment.objects.filter(customer=customer).order_by('-appointment_date')
     
-    # Add rating status to each appointment
-    for appointment in appointments_list:
-        appointment.has_rated = WorkerRating.objects.filter(
-            appointment=appointment,
-            customer=customer
-        ).exists()
-    
     # Count appointments by status
-    pending_appointments = appointments_list.filter(status='pending')
-    accepted_appointments = appointments_list.filter(status='accepted')
+    pending_count = appointments_list.filter(status='pending').count()
+    accepted_count = appointments_list.filter(status='accepted').count()
     completed_appointments = appointments_list.filter(status='completed')
+    completed_count = completed_appointments.count()
+    
+    # Get recent completed appointments
+    recent_completed = completed_appointments[:4]
+    
+    # Count rated appointments
+    rated_appointments_count = WorkerRating.objects.filter(
+        customer=customer
+    ).count()
+    
+    # Pagination
+    paginator = Paginator(appointments_list, 10)
+    page = request.GET.get('page')
+    appointments = paginator.get_page(page)
+    
+    # Get notification count
+    try:
+        unread_notification_count = Notification.objects.filter(
+            customer=customer,
+            is_read=False
+        ).count()
+    except:
+        unread_notification_count = 0
     
     # Get favorite workers count
     favorite_workers_count = FavoriteWorker.objects.filter(customer=customer).count()
     
-    # Get recent appointments for display
-    recent_appointments = appointments_list[:3]
-    
-    # Get completed appointments for activity section
-    completed_for_activity = completed_appointments[:4]
-    
-    # Get worker appointment requests
-    worker_requests = Appointment.objects.filter(
-        customer=customer,
-        status='pending'
-    ).select_related('worker', 'service_subtask', 'service_subtask__subtask').order_by('-created_at')
-    
-    # ✅ NEW: Get unread notification count for the template
-    unread_notification_count = Notification.objects.filter(
-        customer=customer,
-        is_read=False
-    ).count()
-    
-    # Ratings and Reviews Data
-    customer_ratings = WorkerRating.objects.filter(customer=customer).select_related(
-        'worker', 'appointment', 'appointment__service_subtask__subtask'
-    ).order_by('-created_at')
-    
-    total_reviews = customer_ratings.count()
-    
-    # Calculate average rating
-    if total_reviews > 0:
-        ratings_list = [rating.rating for rating in customer_ratings]
-        average_rating = sum(ratings_list) / len(ratings_list)
-        average_rating_int = int(average_rating)
-    else:
-        average_rating = 0.0
-        average_rating_int = 0
-    
     context = {
         'customer': customer,
-        'appointments': recent_appointments,
-        'pending_appointments': pending_appointments,
-        'completed_appointments': completed_appointments,
-        'all_appointments': appointments_list,
-        'favorite_workers_count': favorite_workers_count,
-        'completed_for_activity': completed_for_activity,
-        'worker_requests': worker_requests,
+        'appointments': appointments,
+        'completed_appointments': recent_completed,
+        'rated_appointments_count': rated_appointments_count,
+        'pending_count': pending_count,
+        'accepted_count': accepted_count,
+        'completed_count': completed_count,
         'total_appointments': appointments_list.count(),
-        'pending_count': pending_appointments.count(),
-        'completed_count': completed_appointments.count(),
+        'favorite_workers_count': favorite_workers_count,
         'current_page': 'dashboard',
-        # NEW: Ratings context
-        'total_reviews': total_reviews,
-        'average_rating': round(average_rating, 1),
-        'average_rating_int': average_rating_int,
-        # ✅ NEW: Notification context
         'unread_notification_count': unread_notification_count,
     }
     
@@ -2665,7 +2635,7 @@ def appointment_request_details(request, appointment_id):
         'appointment_time': appointment.appointment_date.strftime('%I:%M %p'),
         'special_instructions': appointment.special_instructions,
         'duration': '2 hours',  # You might want to calculate this based on service
-        'price': f"₹{appointment.service_subtask.price}" if appointment.service_subtask and appointment.service_subtask.price else 'To be discussed',
+        'price': f"Rs{appointment.service_subtask.price}" if appointment.service_subtask and appointment.service_subtask.price else 'To be discussed',
         'worker_message': 'I would be happy to assist you with this service. Please let me know if the proposed time works for you.'
     }
     
@@ -2895,11 +2865,9 @@ def customer_support(request):
 from datetime import timedelta
 import json
 
-# Add to your views.py
-
 @login_required
 def worker_notifications(request):
-    """API endpoint to fetch worker notifications"""
+    """API endpoint to fetch worker notifications - FIXED VERSION"""
     try:
         worker = request.user.worker
     except AttributeError:
@@ -2908,7 +2876,7 @@ def worker_notifications(request):
     # Get notifications from the last 7 days
     seven_days_ago = timezone.now() - timedelta(days=7)
     
-    # Get database notifications
+    # Get ONLY database notifications
     db_notifications = Notification.objects.filter(
         worker=worker,
         created_at__gte=seven_days_ago
@@ -2930,46 +2898,7 @@ def worker_notifications(request):
             'customer_name': notification.appointment.customer.name if notification.appointment else None
         })
     
-    # Also include real-time notifications for pending appointments and customer completions
-    pending_appointments = Appointment.objects.filter(
-        worker=worker, 
-        status='pending',
-        created_at__gte=seven_days_ago
-    ).select_related('customer').order_by('-created_at')
-    
-    for appointment in pending_appointments:
-        notifications.append({
-            'id': f'appointment-pending-{appointment.id}',
-            'type': 'appointment_request',
-            'title': 'New Appointment Request',
-            'message': f'New appointment request from {appointment.customer.name}',
-            'customer_name': appointment.customer.name,
-            'appointment_id': appointment.id,
-            'is_read': False,
-            'created_at': appointment.created_at.isoformat(),
-            'time_ago': get_time_ago(appointment.created_at)
-        })
-    
-    # ✅ NEW: Include customer completion notifications
-    customer_completed_appointments = Appointment.objects.filter(
-        worker=worker,
-        customer_completed=True,
-        worker_completed=False,
-        updated_at__gte=seven_days_ago
-    ).select_related('customer').order_by('-updated_at')
-    
-    for appointment in customer_completed_appointments:
-        notifications.append({
-            'id': f'customer-completed-{appointment.id}',
-            'type': 'customer_completed',
-            'title': 'Customer Marked Work as Completed',
-            'message': f'{appointment.customer.name} marked the appointment as completed. Please confirm completion.',
-            'customer_name': appointment.customer.name,
-            'appointment_id': appointment.id,
-            'is_read': False,
-            'created_at': appointment.updated_at.isoformat(),
-            'time_ago': get_time_ago(appointment.updated_at)
-        })
+    # ✅ REMOVED: The duplicate notification creation logic that was causing double notifications
     
     # Count unread notifications
     unread_count = len([n for n in notifications if not n['is_read']])
@@ -2981,8 +2910,6 @@ def worker_notifications(request):
         'notifications': notifications,
         'unread_count': unread_count
     })
-
-
 @require_POST
 @login_required
 def mark_notification_read(request):
@@ -3057,11 +2984,9 @@ def get_time_ago(dt):
     else:
         return 'Just now'
     
-
-
 @login_required
 def appointment_request(request, worker_id):
-    """View to handle appointment request form - supports both form and JSON"""
+    """View to handle appointment request form - FIXED VERSION without duplicate notifications"""
     worker = get_object_or_404(Worker, id=worker_id)
     
     # Check if user has a customer profile
@@ -3084,7 +3009,7 @@ def appointment_request(request, worker_id):
                 
             service_id = data.get("service_id")
             preferred_date = data.get("preferred_date")
-            preferred_time = data.get("preferred_time")  # This is "14:00-16:00"
+            preferred_time = data.get("preferred_time")
             address = data.get("address", "")
             special_instructions = data.get("special_instructions", "")
             customer_name = data.get("customer_name", "")
@@ -3092,34 +3017,29 @@ def appointment_request(request, worker_id):
             latitude = data.get("latitude")
             longitude = data.get("longitude")
 
-            print(f"📥 Received data - Date: {preferred_date}, Time: {preferred_time}")
-
             # Validate required fields
             if not all([preferred_date, preferred_time, address]):
                 error_msg = "Please fill in all required fields."
                 if is_ajax:
-                    return JsonResponse({'error': error_msg}, status=400)
+                    return JsonResponse({'success': False, 'error': error_msg}, status=400)
                 messages.error(request, error_msg)
                 return redirect('worker-detail', pk=worker_id)
 
             try:
-                # ✅ FIXED: Extract start time from time range
+                # Extract start time from time range
                 if '-' in preferred_time:
-                    start_time_str = preferred_time.split('-')[0].strip()  # Gets "14:00"
-                    print(f"🕒 Extracted start time: {start_time_str}")
+                    start_time_str = preferred_time.split('-')[0].strip()
                 else:
                     start_time_str = preferred_time
-                    print(f"🕒 Using single time: {start_time_str}")
 
                 # Combine date with start time for appointment_date
                 datetime_str = f"{preferred_date} {start_time_str}"
-                print(f"🕒 Final datetime string: {datetime_str}")
                 
-                # Try different datetime formats for the start time
+                # Parse datetime
                 datetime_formats = [
-                    "%Y-%m-%d %H:%M",    # 2024-01-15 14:00
-                    "%Y-%m-%d %H:%M:%S", # 2024-01-15 14:00:00
-                    "%Y-%m-%d %I:%M %p", # 2024-01-15 02:00 PM
+                    "%Y-%m-%d %H:%M",
+                    "%Y-%m-%d %H:%M:%S", 
+                    "%Y-%m-%d %I:%M %p",
                 ]
                 
                 appointment_datetime = None
@@ -3127,25 +3047,25 @@ def appointment_request(request, worker_id):
                     try:
                         naive_datetime = datetime.strptime(datetime_str, fmt)
                         appointment_datetime = make_aware(naive_datetime)
-                        print(f"✅ Successfully parsed with format: {fmt}")
                         break
                     except ValueError:
                         continue
                 
                 if not appointment_datetime:
-                    error_msg = f"Invalid appointment date or time format. Received time range: {preferred_time}"
-                    print(f"❌ {error_msg}")
+                    error_msg = f"Invalid appointment date or time format. Please try again."
                     if is_ajax:
-                        return JsonResponse({'error': error_msg}, status=400)
+                        return JsonResponse({'success': False, 'error': error_msg}, status=400)
                     messages.error(request, error_msg)
                     return redirect('worker-detail', pk=worker_id)
                 
-                # Check if appointment is in the future
-                if appointment_datetime <= now():
-                    error_msg = "You can only book appointments for future dates/times."
-                    print(f"❌ {error_msg}")
+                # Future date validation
+                current_time = timezone.now()
+                time_difference = appointment_datetime - current_time
+
+                if time_difference.total_seconds() < 3600:
+                    error_msg = "You can only book appointments at least 1 hour in advance. Please select a later time."
                     if is_ajax:
-                        return JsonResponse({'error': error_msg}, status=400)
+                        return JsonResponse({'success': False, 'error': error_msg}, status=400)
                     messages.error(request, error_msg)
                     return redirect('worker-detail', pk=worker_id)
 
@@ -3157,10 +3077,9 @@ def appointment_request(request, worker_id):
                 )
                 
                 if conflicting_appointments.exists():
-                    error_msg = "Worker already has an appointment at this time."
-                    print(f"❌ {error_msg}")
+                    error_msg = "Worker already has an appointment at this time. Please choose a different time slot."
                     if is_ajax:
-                        return JsonResponse({'error': error_msg}, status=400)
+                        return JsonResponse({'success': False, 'error': error_msg}, status=400)
                     messages.error(request, error_msg)
                     return redirect('worker-detail', pk=worker_id)
 
@@ -3169,26 +3088,26 @@ def appointment_request(request, worker_id):
                 if service_id and service_id not in ['default', 'consultation', 'null', '']:
                     try:
                         service_subtask = WorkerSubTaskPricing.objects.get(id=service_id)
-                        print(f"✅ Found service subtask: {service_subtask}")
-                    except (WorkerSubTaskPricing.DoesNotExist, ValueError) as e:
-                        print(f"⚠️ Service subtask not found with ID: {service_id}, error: {e}")
+                    except (WorkerSubTaskPricing.DoesNotExist, ValueError):
                         pass
 
-                # ✅ FIXED: Create appointment with BOTH time_slot and appointment_date
+                # Create appointment
                 appointment = Appointment.objects.create(
                     customer=customer,
                     worker=worker,
-                    appointment_date=appointment_datetime,  # This is the start time
-                    time_slot=preferred_time,  # ✅ Store the original time range
+                    appointment_date=appointment_datetime,
+                    time_slot=preferred_time,
                     status="pending",
                     service_subtask=service_subtask,
                     location=address,
                     special_instructions=special_instructions,
-                    customer_latitude=latitude,
-                    customer_longitude=longitude
+                    customer_latitude=float(latitude) if latitude else None,
+                    customer_longitude=float(longitude) if longitude else None
                 )
 
-                print(f"✅ Appointment created: {appointment.id}")
+                # ✅ FIXED: ONLY create notification in ONE place
+                # The notification will be created by the send_appointment_request_email function
+                # OR you can create it here, but NOT both
 
                 # Update customer info if provided
                 if customer_name and customer_name != customer.name:
@@ -3197,14 +3116,12 @@ def appointment_request(request, worker_id):
                     try:
                         customer.phone_number = customer_phone
                     except ValidationError:
-                        print(f"⚠️ Invalid phone number provided: {customer_phone}")
                         pass
                 customer.save()
 
-                # Send email notification to worker
+                # Send email notification to worker (this should handle notification creation)
                 try:
                     send_appointment_request_email(worker, appointment)
-                    print(f"✅ Email sent for appointment {appointment.id}")
                 except Exception as email_error:
                     print(f"⚠️ Email sending failed: {email_error}")
 
@@ -3220,31 +3137,27 @@ def appointment_request(request, worker_id):
                 return redirect('customer_appointments')
 
             except ValueError as e:
-                error_msg = f"Invalid appointment date or time format: {str(e)}"
-                print(f"❌ {error_msg}")
+                error_msg = f"Invalid date or time format. Please try again."
                 if is_ajax:
-                    return JsonResponse({'error': error_msg}, status=400)
+                    return JsonResponse({'success': False, 'error': error_msg}, status=400)
                 messages.error(request, error_msg)
                 return redirect('worker-detail', pk=worker_id)
                 
         except json.JSONDecodeError as e:
-            error_msg = f"Invalid JSON data: {str(e)}"
-            print(f"❌ {error_msg}")
+            error_msg = f"Invalid form data. Please try again."
             if is_ajax:
-                return JsonResponse({'error': error_msg}, status=400)
+                return JsonResponse({'success': False, 'error': error_msg}, status=400)
             messages.error(request, "Invalid form data.")
             return redirect('worker-detail', pk=worker_id)
         except Exception as e:
-            error_msg = f"Unexpected error: {str(e)}"
-            print(f"❌ {error_msg}")
+            error_msg = f"An error occurred. Please try again."
             if is_ajax:
-                return JsonResponse({'error': error_msg}, status=500)
+                return JsonResponse({'success': False, 'error': error_msg}, status=500)
             messages.error(request, "An error occurred while processing your request.")
             return redirect('worker-detail', pk=worker_id)
     
     # GET request - redirect to worker detail
     return redirect('worker-detail', pk=worker_id)
-
 
 def worker_service_details(request, worker_id):
     worker = get_object_or_404(Worker, id=worker_id)
@@ -3307,7 +3220,7 @@ def worker_service_details(request, worker_id):
                     min_hours = 1
                 
                 # Build pricing display
-                pricing_display = f"₹{base_price:.2f}"
+                pricing_display = f"Rs{base_price:.2f}"
                 if pricing.pricing_type == 'hourly':
                     pricing_display += f"/hour"
                     if min_hours > 1:
@@ -3336,7 +3249,7 @@ def worker_service_details(request, worker_id):
                     features.append("Materials not included")
                     
                 if night_shift_extra > 0:
-                    features.append(f"Night shift available (+₹{night_shift_extra:.2f})")
+                    features.append(f"Night shift available (+Rs{night_shift_extra:.2f})")
                     
                 features.append("Customer support included")
                 
@@ -3375,11 +3288,11 @@ def worker_service_details(request, worker_id):
                 if service.get('base_price') is None:
                     # Extract numeric price from price_display if possible
                     price_display = service.get('price_display', '')
-                    if '₹' in price_display:
+                    if 'Rs' in price_display:
                         try:
-                            # Extract numeric value from price string like "₹500/hour"
+                            # Extract numeric value from price string like "Rs500/hour"
                             import re
-                            price_match = re.search(r'₹(\d+(?:\.\d+)?)', price_display)
+                            price_match = re.search(r'Rs(\d+(?:\.\d+)?)', price_display)
                             if price_match:
                                 service['base_price'] = float(price_match.group(1))
                             else:
@@ -3471,6 +3384,49 @@ def worker_service_details(request, worker_id):
     return render(request, 'jobs/worker_service_details.html', context)
 
 
+@login_required
+def worker_profile(request):
+    try:
+        worker = request.user.worker
+    except Worker.DoesNotExist:
+        messages.error(request, "Worker profile not found.")
+        return redirect('worker_dashboard')
+    
+    # Get statistics for the profile
+    total_appointments = worker.worker_appointments.count()
+    completed_appointments = worker.worker_appointments.filter(status='completed').count()
+    
+    if request.method == 'POST':
+        # Handle profile updates
+        worker.name = request.POST.get('name', worker.name)
+        worker.phone_number = request.POST.get('phone_number', worker.phone_number)
+        
+        # ✅ ADD THIS: Handle latitude and longitude
+        latitude = request.POST.get('latitude', '').strip()
+        longitude = request.POST.get('longitude', '').strip()
+        
+        if latitude and longitude:
+            try:
+                worker.latitude = float(latitude)
+                worker.longitude = float(longitude)
+            except (ValueError, TypeError):
+                messages.warning(request, 'Invalid latitude or longitude format.')
+        
+        # Handle profile picture upload
+        if 'profile_pic' in request.FILES:
+            worker.profile_pic = request.FILES['profile_pic']
+        
+        worker.save()
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('worker_profile')
+    
+    context = {
+        'worker': worker,
+        'completed_appointments_count': completed_appointments,
+    }
+    
+    return render(request, 'jobs/worker_profile.html', context)
+
 def filter_services_ajax(worker, search_query, price_filter, category_filter):
     """AJAX endpoint for filtering services"""
     try:
@@ -3539,7 +3495,7 @@ def filter_services_ajax(worker, search_query, price_filter, category_filter):
                         'id': str(pricing.id),
                         'name': str(getattr(subtask, 'name', 'Service')),
                         'description': str(getattr(subtask, 'description', 'Professional service')),
-                        'price_display': f"₹{base_price:.2f}" if base_price > 0 else "Contact for pricing",
+                        'price_display': f"Rs{base_price:.2f}" if base_price > 0 else "Contact for pricing",
                         'base_price': base_price,
                         'image': str(worker_service.service.image.url) if worker_service.service.image else None,
                     }
@@ -3721,38 +3677,6 @@ def check_favorite_status(request, worker_id):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 from .forms import WorkerProfileForm as WorkerForm
-
-@login_required
-def debug_verification(request):
-    """Temporary debug view to check verification status"""
-    try:
-        worker = request.user.worker
-    except AttributeError:
-        return JsonResponse({'error': 'No worker profile'})
-    
-    # Get context data that should be passed to template
-    can_resubmit = worker.can_resubmit_verification()
-    wait_time = worker.get_resubmission_wait_time()
-    wait_time_display = worker.get_resubmission_wait_time_display()
-    
-    debug_data = {
-        'worker_id': worker.id,
-        'worker_name': worker.name,
-        'verified': worker.verified,
-        'verification_status': worker.verification_status,
-        'rejection_reason': worker.rejection_reason,
-        'last_rejection_date': str(worker.last_rejection_date),
-        'can_resubmit': can_resubmit,
-        'wait_time': wait_time,
-        'wait_time_display': wait_time_display,
-        
-        # Template conditions
-        'template_show_section': worker.verification_status == 'rejected',
-        'template_show_button': worker.verification_status == 'rejected' and can_resubmit,
-        'template_show_disabled_button': worker.verification_status == 'rejected' and not can_resubmit,
-    }
-    
-    return JsonResponse(debug_data)
 
 @login_required
 def create_worker_profile(request):
@@ -4007,32 +3931,71 @@ def verify_worker_from_dashboard(request, worker_id):
             messages.error(request, "Invalid action specified.")
     
     return redirect('admin_dashboard:dashboard')
-
+# Add to your views.py
 
 @login_required
-def debug_worker_create(request):
-    """Temporary debug view to test form submission"""
-    if request.method == 'POST':
-        print("🔍 DEBUG: Raw POST data:")
-        for key, value in request.POST.items():
-            print(f"  {key}: {value}")
-        
-        print("🔍 DEBUG: Files:")
-        for key, file in request.FILES.items():
-            print(f"  {key}: {file.name}")
-        
-        form = WorkerForm(request.POST, request.FILES)
-        if form.is_valid():
-            print("✅ DEBUG: Form is valid!")
-            # Continue with your existing logic
-            return redirect('worker_dashboard')
-        else:
-            print("❌ DEBUG: Form invalid:", form.errors)
-            return render(request, 'jobs/worker_form.html', {'form': form})
+def calculate_dynamic_price(request):
+    """Calculate dynamic price based on service type and inputs"""
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            data = json.loads(request.body)
+            service_id = data.get('service_id')
+            quantity = data.get('quantity', 1)
+            is_night_shift = data.get('is_night_shift', False)
+            custom_inputs = data.get('custom_inputs', {})
+            
+            service_pricing = get_object_or_404(WorkerSubTaskPricing, id=service_id)
+            
+            # Calculate total price
+            total_price = service_pricing.calculate_total_price(
+                quantity=quantity,
+                is_night_shift=is_night_shift,
+                custom_inputs=custom_inputs
+            )
+            
+            # Get pricing configuration for frontend
+            pricing_config = service_pricing.get_pricing_input_config()
+            
+            return JsonResponse({
+                'success': True,
+                'total_price': float(total_price),
+                'base_price': float(service_pricing.price),
+                'night_shift_extra': float(service_pricing.night_shift_extra) if service_pricing.night_shift_extra else 0,
+                'unit_label': service_pricing.get_unit_label(),
+                'pricing_config': pricing_config,
+                'price_breakdown': {
+                    'base_rate': float(service_pricing.price),
+                    'quantity': quantity,
+                    'night_shift_extra': float(service_pricing.night_shift_extra) if is_night_shift and service_pricing.night_shift_extra else 0,
+                    'pricing_type': service_pricing.pricing_type,
+                    'calculated_total': float(total_price)
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Error calculating dynamic price: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=400)
     
-    return redirect('worker-create')
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
-
+@login_required
+def get_pricing_config(request, service_id):
+    """Get pricing configuration for a service"""
+    try:
+        service_pricing = get_object_or_404(WorkerSubTaskPricing, id=service_id)
+        pricing_config = service_pricing.get_pricing_input_config()
+        
+        return JsonResponse({
+            'success': True,
+            'pricing_config': pricing_config,
+            'unit_label': service_pricing.get_unit_label(),
+            'price_display': service_pricing.get_price_display(),
+            'min_quantity': pricing_config.get('min_value', 1),
+            'max_quantity': pricing_config.get('max_value', 100)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
 @login_required
 def worker_calendar(request):
     """Worker calendar view with dynamic data"""
@@ -4383,8 +4346,8 @@ def worker_analytics(request):
         },
         {
             'title': 'Revenue Growth',
-            'subtitle': f'₹{total_earnings:.2f} earned',
-            'description': f'You have earned ₹{total_earnings:.2f} from {completed_appointments} completed appointments in the last {days} days.',
+            'subtitle': f'Rs{total_earnings:.2f} earned',
+            'description': f'You have earned Rs{total_earnings:.2f} from {completed_appointments} completed appointments in the last {days} days.',
             'icon': 'fas fa-rupee-sign',
             'icon_color': 'text-blue-600',
             'icon_bg': 'bg-blue-100',

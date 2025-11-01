@@ -77,7 +77,7 @@
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                             Total Revenue
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ total_revenue }}</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Rs{{ total_revenue }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
@@ -268,7 +268,7 @@
                                 {{ appointment.status|title }}
                             </span>
                         </td>
-                        <td>₹{{ appointment.total_price|default:"0" }}</td>
+                        <td>Rs{{ appointment.total_price|default:"0" }}</td>
                     </tr>
                     {% empty %}
                     <tr>

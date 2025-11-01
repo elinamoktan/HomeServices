@@ -76,7 +76,7 @@
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                             Total Revenue
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ total_revenue }}</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Rs{{ total_revenue }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
@@ -235,7 +235,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <strong class="text-success">₹{{ appointment.total_price|default:"0" }}</strong>
+                            <strong class="text-success">Rs{{ appointment.total_price|default:"0" }}</strong>
                             {% if appointment.quantity > 1 %}
                             <br>
                             <small class="text-muted">Qty: {{ appointment.quantity }}</small>

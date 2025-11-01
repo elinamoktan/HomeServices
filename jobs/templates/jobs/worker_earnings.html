@@ -448,7 +448,7 @@
         <div class="flex items-center space-x-4">
           <div class="text-right bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-3 rounded-xl border border-green-200">
             <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Available Balance</p>
-            <p class="font-bold text-gray-900">₹{{ total_earnings|default:"0" }}</p>
+            <p class="font-bold text-gray-900">Rs{{ total_earnings|default:"0" }}</p>
           </div>
         </div>
       </div>
@@ -460,7 +460,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Total Earnings</p>
-            <p class="text-4xl font-bold text-gray-900">₹{{ total_earnings|default:"0" }}</p>
+            <p class="text-4xl font-bold text-gray-900">Rs{{ total_earnings|default:"0" }}</p>
             <p class="text-xs text-gray-500 mt-2">All time income</p>
           </div>
           <div class="stat-icon" style="--gradient-start: #22c55e; --gradient-end: #16a34a; --shadow-color: rgba(34, 197, 94, 0.3);">
@@ -473,7 +473,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">This Month</p>
-            <p class="text-4xl font-bold text-indigo-600">₹{{ current_month_earnings|default:"0" }}</p>
+            <p class="text-4xl font-bold text-indigo-600">Rs{{ current_month_earnings|default:"0" }}</p>
             <p class="text-xs text-gray-500 mt-2">Current month income</p>
           </div>
           <div class="stat-icon" style="--gradient-start: #6366f1; --gradient-end: #4f46e5; --shadow-color: rgba(99, 102, 241, 0.3);">
@@ -486,7 +486,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Pending</p>
-            <p class="text-4xl font-bold text-amber-600">₹{{ pending_earnings|default:"0" }}</p>
+            <p class="text-4xl font-bold text-amber-600">Rs{{ pending_earnings|default:"0" }}</p>
             <p class="text-xs text-gray-500 mt-2">Awaiting payment</p>
           </div>
           <div class="stat-icon" style="--gradient-start: #f59e0b; --gradient-end: #d97706; --shadow-color: rgba(245, 158, 11, 0.3);">
@@ -543,9 +543,9 @@
               <div class="text-right">
                 <p class="font-bold text-gray-900">
                   {% if transaction.service_subtask and transaction.service_subtask.price %}
-                    ₹{{ transaction.service_subtask.price }}
+                    Rs{{ transaction.service_subtask.price }}
                   {% else %}
-                    ₹0
+                    Rs0
                   {% endif %}
                 </p>
                 <span class="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">
@@ -575,10 +575,10 @@
             <span class="font-semibold text-gray-900 text-sm truncate">{{ service.service_name }}</span>
             <span class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">{{ service.appointment_count }} jobs</span>
           </div>
-          <p class="text-2xl font-bold text-gray-900">₹{{ service.total_earnings }}</p>
+          <p class="text-2xl font-bold text-gray-900">Rs{{ service.total_earnings }}</p>
           <p class="text-xs text-gray-500 mt-1">
             {% if service.appointment_count > 0 %}
-              Avg: ₹{{ service.average_earning }}
+              Avg: Rs{{ service.average_earning }}
             {% else %}
               No earnings yet
             {% endif %}
@@ -626,7 +626,7 @@
           tooltip: {
             callbacks: {
               label: function(context) {
-                return `Earnings: ₹${context.parsed.y}`;
+                return `Earnings: Rs${context.parsed.y}`;
               }
             }
           }
@@ -639,7 +639,7 @@
             },
             ticks: {
               callback: function(value) {
-                return '₹' + value;
+                return 'Rs' + value;
               }
             }
           },

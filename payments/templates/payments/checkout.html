@@ -282,8 +282,8 @@
                         <div class="breakdown-remaining mt-3">
                             <h6 class="mb-2">💡 How it works</h6>
                             <p class="mb-0 text-muted" style="font-size: 0.9rem;">
-                                Pay ₹{{ payment.prepayment_amount }} now to secure your booking. 
-                                The remaining ₹{{ payment.remaining_amount }} will be paid directly to the worker after service completion.
+                                Pay Rs{{ payment.prepayment_amount }} now to secure your booking. 
+                                The remaining Rs{{ payment.remaining_amount }} will be paid directly to the worker after service completion.
                             </p>
                         </div>
                     </div>
@@ -298,11 +298,11 @@
                             <div class="payment-breakdown">
                                 <div class="breakdown-item">
                                     <span>Service Amount:</span>
-                                    <span>₹{{ payment.amount }}</span>
+                                    <span>Rs{{ payment.amount }}</span>
                                 </div>
                                 <div class="breakdown-item">
                                     <span>Prepayment (Required):</span>
-                                    <span>₹{{ payment.prepayment_amount }}</span>
+                                    <span>Rs{{ payment.prepayment_amount }}</span>
                                 </div>
                                 <div class="breakdown-item">
                                     <span>Platform Fee:</span>
@@ -310,11 +310,11 @@
                                 </div>
                                 <div class="breakdown-item breakdown-total">
                                     <span>Amount to Pay Now:</span>
-                                    <span class="text-success">₹{{ payment.prepayment_amount }}</span>
+                                    <span class="text-success">Rs{{ payment.prepayment_amount }}</span>
                                 </div>
                                 <div class="breakdown-item pt-2 border-top">
                                     <span><strong>Remaining Amount:</strong></span>
-                                    <span><strong>₹{{ payment.remaining_amount }}</strong></span>
+                                    <span><strong>Rs{{ payment.remaining_amount }}</strong></span>
                                 </div>
                             </div>
                             
