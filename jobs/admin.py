@@ -16,7 +16,6 @@ class WorkerAdmin(admin.ModelAdmin):
         'verified', 
         'average_rating',
         'display_location',
-        'display_previous_location',
         'location_updated_at',
         'location_source'
     ]
@@ -30,7 +29,6 @@ class WorkerAdmin(admin.ModelAdmin):
         'location_accuracy', 
         'average_rating', 
         'rating_count', 
-        'previous_location_updated_at'
     ]
     
     fieldsets = (
@@ -41,11 +39,7 @@ class WorkerAdmin(admin.ModelAdmin):
             'fields': ('latitude', 'longitude', 'location_accuracy', 'location_source', 'location_updated_at'),
             'description': 'Location is automatically updated when worker logs in or moves'
         }),
-        ('Previous Location Information', {
-            'fields': ('previous_latitude', 'previous_longitude', 'previous_location_address', 'previous_location_updated_at'),
-            'description': 'Automatically stores the previous location when location is updated',
-            'classes': ('collapse',)
-        }),
+    
         ('Verification & Documents', {
             'fields': ('verified', 'citizenship_image', 'certificate_file')
         }),
@@ -74,25 +68,6 @@ class WorkerAdmin(admin.ModelAdmin):
     display_location.short_description = 'Current Location'
     display_location.admin_order_field = 'latitude'
 
-    def display_previous_location(self, obj):
-        """Display formatted previous location with link to Google Maps"""
-        if obj.previous_latitude and obj.previous_longitude:
-            try:
-                lat_str = f"{float(obj.previous_latitude):.6f}"
-                lon_str = f"{float(obj.previous_longitude):.6f}"
-                map_url = f"https://www.google.com/maps?q={obj.previous_latitude},{obj.previous_longitude}"
-                
-                return format_html(
-                    '<a href="{}" target="_blank" style="color: #ff9900; text-decoration: none;">📌 {}, {}</a>',
-                    map_url,
-                    lat_str,
-                    lon_str
-                )
-            except (ValueError, TypeError):
-                return format_html('<span style="color: #999;">Invalid coordinates</span>')
-        return format_html('<span style="color: #999;">No previous location</span>')
-    display_previous_location.short_description = 'Previous Location'
-    display_previous_location.admin_order_field = 'previous_latitude'
 
     def get_queryset(self, request):
         """Optimize queryset to prefetch related data"""
@@ -105,7 +80,6 @@ class CustomerAdmin(admin.ModelAdmin):
         'name', 
         'phone_number',
         'display_location',
-        'display_previous_location',
         'location_updated_at',
         'location_source'
     ]
@@ -116,7 +90,7 @@ class CustomerAdmin(admin.ModelAdmin):
         'location_updated_at', 
         'location_source', 
         'location_accuracy', 
-        'previous_location_updated_at'
+    
     ]
     
     fieldsets = (
@@ -126,11 +100,6 @@ class CustomerAdmin(admin.ModelAdmin):
         ('Current Location Information', {
             'fields': ('latitude', 'longitude', 'location_accuracy', 'location_source', 'location_updated_at'),
             'description': 'Location is automatically updated when customer logs in or moves'
-        }),
-        ('Previous Location Information', {
-            'fields': ('previous_latitude', 'previous_longitude', 'previous_location_address', 'previous_location_updated_at'),
-            'description': 'Automatically stores the previous location when location is updated',
-            'classes': ('collapse',)
         }),
     )
     
@@ -153,26 +122,6 @@ class CustomerAdmin(admin.ModelAdmin):
         return format_html('<span style="color: #999;">No location</span>')
     display_location.short_description = 'Current Location'
     display_location.admin_order_field = 'latitude'
-
-    def display_previous_location(self, obj):
-        """Display formatted previous location with link to Google Maps"""
-        if obj.previous_latitude and obj.previous_longitude:
-            try:
-                lat_str = f"{float(obj.previous_latitude):.6f}"
-                lon_str = f"{float(obj.previous_longitude):.6f}"
-                map_url = f"https://www.google.com/maps?q={obj.previous_latitude},{obj.previous_longitude}"
-                
-                return format_html(
-                    '<a href="{}" target="_blank" style="color: #ff9900; text-decoration: none;">📌 {}, {}</a>',
-                    map_url,
-                    lat_str,
-                    lon_str
-                )
-            except (ValueError, TypeError):
-                return format_html('<span style="color: #999;">Invalid coordinates</span>')
-        return format_html('<span style="color: #999;">No previous location</span>')
-    display_previous_location.short_description = 'Previous Location'
-    display_previous_location.admin_order_field = 'previous_latitude'
 
     def get_queryset(self, request):
         """Optimize queryset to prefetch related data"""

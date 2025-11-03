@@ -61,7 +61,7 @@
                     </div>
                 {% endif %}
 
-                <form method="POST" id="login-form" class="space-y-6">
+                <form method="POST" id="login-form" class="space-y-6" novalidate>
                     {% csrf_token %}
                     
                     <div class="space-y-5">
@@ -69,35 +69,96 @@
                             <div class="relative group">
                                 <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-500 group-focus-within:opacity-30"></div>
                                 <div class="relative">
+                                    <label for="id_{{ field.name }}" class="control-label block mb-2">
+                                        {{ field.label }}
+                                        {% if field.field.required %}
+                                            <span class="text-red-500">*</span>
+                                        {% endif %}
+                                    </label>
+                                    
                                     {% if field.name == 'password' %}
                                     <div class="relative">
-                                        {{ field|as_crispy_field }}
-                                        <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none" id="togglePassword">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="eye-icon">
+                                        <input type="password" 
+                                                name="{{ field.name }}" 
+                                                id="id_{{ field.name }}"
+                                                class="form-control w-full rounded-lg"
+                                                placeholder="Enter your password"
+                                                required>
+                                        <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none transition-colors" id="togglePassword">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="crossed-eye-icon">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7 1.776 0 3.473.46 4.975 1.285M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.5 20.5l-17-17"></path>
+                                            </svg>
+                                            <svg class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="open-eye-icon">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                             </svg>
-                                            <svg class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="eye-slash-icon">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m9.02 9.02l3.411 3.411M9.88 9.88l3.413-3.41M9.88 9.88L6.59 6.59"></path>
-                                            </svg>
                                         </button>
                                     </div>
+                                    <div class="error-message hidden text-red-600 text-sm mt-2 flex items-center" id="error_{{ field.name }}">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <span class="error-text"></span>
+                                    </div>
+                                    {% elif field.name == 'login' or field.name == 'email' or field.name == 'username' %}
+                                    <input type="email" 
+                                            name="{{ field.name }}" 
+                                            id="id_{{ field.name }}"
+                                            class="form-control w-full rounded-lg"
+                                            placeholder="Enter your email"
+                                            required>
+                                    <div class="error-message hidden text-red-600 text-sm mt-2 flex items-center" id="error_{{ field.name }}">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <span class="error-text"></span>
+                                    </div>
                                     {% else %}
-                                        {{ field|as_crispy_field }}
+                                    {{ field }}
+                                    <div class="error-message hidden text-red-600 text-sm mt-2 flex items-center" id="error_{{ field.name }}">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <span class="error-text"></span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if field.errors %}
+                                        <div class="text-red-600 text-sm mt-2 flex items-center animate-fade-in">
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <span>{{ field.errors.0 }}</span>
+                                        </div>
                                     {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
                     
+                    {% if form.non_field_errors %}
+                        <div class="p-4 rounded-xl text-sm flex items-center bg-red-50 border border-red-200 text-red-700 animate-fade-in-up">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>{{ form.non_field_errors.0 }}</span>
+                        </div>
+                    {% endif %}
+                    
                     <div class="relative group mt-8">
                         <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-xl blur opacity-90 group-hover:opacity-100 transition duration-500 animate-pulse-fast"></div>
                         <button type="submit" id="login-button"
                             class="relative w-full py-4 px-6 bg-indigo-600 text-white font-extrabold rounded-xl shadow-xl hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-white transition-all duration-300 ease-out transform group-hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none tracking-wider">
                             <span class="flex items-center justify-center">
-                                <span id="button-text">Access Your Account</span>
-                                <svg class="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <span id="button-text">Login</span>
+                                <svg class="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" id="arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                </svg>
+                                <svg class="animate-spin h-5 w-5 ml-3 hidden" id="loading-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
                             </span>
                         </button>
@@ -147,11 +208,18 @@
     50% { transform: translateY(-15px); }
 }
 
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
 .animate-fade-in { animation: fade-in 0.6s ease-out; }
 .animate-fade-in-up { animation: fade-in-up 0.6s ease-out; }
 .animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
 .animate-pulse-fast { animation: pulse-fast 2s ease-in-out infinite; }
 .animate-shimmer { animation: shimmer 2s infinite; }
+.animate-shake { animation: shake 0.5s ease-in-out; }
 
 .animation-delay-2000 { animation-delay: 2s; }
 .animation-delay-4000 { animation-delay: 4s; }
@@ -186,6 +254,16 @@
     border-color: rgb(99 102 241) !important;
     box-shadow: 0 0 0 4px rgb(99 102 241 / 0.1) !important;
     color: rgb(55 65 81) !important;
+}
+
+.form-control.error {
+    border-color: rgb(239 68 68) !important;
+    background: rgb(254 242 242) !important;
+}
+
+.form-control.error:focus {
+    border-color: rgb(239 68 68) !important;
+    box-shadow: 0 0 0 4px rgb(239 68 68 / 0.1) !important;
 }
 
 .form-control::placeholder {
@@ -230,27 +308,164 @@ select.form-control {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('login-form');
+    const loginButton = document.getElementById('login-button');
+    const buttonText = document.getElementById('button-text');
+    const arrowIcon = document.getElementById('arrow-icon');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    
+    // Password toggle elements
     const togglePassword = document.getElementById('togglePassword');
     const passwordField = document.getElementById('id_password');
-    const eyeIcon = document.getElementById('eye-icon');
-    const eyeSlashIcon = document.getElementById('eye-slash-icon');
+    const crossedEyeIcon = document.getElementById('crossed-eye-icon');
+    const openEyeIcon = document.getElementById('open-eye-icon');
+    
+    // Email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    // **NEW Password Toggle Logic**
     if (togglePassword && passwordField) {
         togglePassword.addEventListener('click', function() {
-            // Toggle password visibility
             if (passwordField.type === 'password') {
-                // Show password (eye not crossed)
+                // Show password (Open Eye - 👁️)
                 passwordField.type = 'text';
-                eyeIcon.classList.add('hidden');
-                eyeSlashIcon.classList.remove('hidden');
+                crossedEyeIcon.classList.add('hidden');
+                openEyeIcon.classList.remove('hidden');
             } else {
-                // Hide password (eye crossed)
+                // Hide password (Crossed Eye - 🚫)
                 passwordField.type = 'password';
-                eyeIcon.classList.remove('hidden');
-                eyeSlashIcon.classList.add('hidden');
+                crossedEyeIcon.classList.remove('hidden');
+                openEyeIcon.classList.add('hidden');
             }
         });
     }
+    
+    // Function to show error
+    function showError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        const errorDiv = document.getElementById('error_' + fieldId.replace('id_', ''));
+        
+        if (field && errorDiv) {
+            field.classList.add('error', 'animate-shake');
+            errorDiv.classList.remove('hidden');
+            errorDiv.querySelector('.error-text').textContent = message;
+            setTimeout(() => field.classList.remove('animate-shake'), 500);
+        }
+    }
+
+    // Function to clear error
+    function clearError(fieldId) {
+        const field = document.getElementById(fieldId);
+        const errorDiv = document.getElementById('error_' + fieldId.replace('id_', ''));
+        if (field && errorDiv) {
+            field.classList.remove('error');
+            errorDiv.classList.add('hidden');
+        }
+    }
+
+    // Real-time email validation (with live @ detection)
+    const emailFields = ['id_login', 'id_email', 'id_username'];
+    emailFields.forEach(fieldId => {
+        const emailField = document.getElementById(fieldId);
+        if (emailField) {
+            // When user leaves the field
+            emailField.addEventListener('blur', function() {
+                const value = this.value.trim();
+                if (value === '') {
+                    showError(fieldId, 'This field is required');
+                } else if (!emailRegex.test(value)) {
+                    showError(fieldId, 'Email is not valid, please enter a valid one');
+                } else {
+                    clearError(fieldId);
+                }
+            });
+
+            // Live check after "@" is typed
+            emailField.addEventListener('input', function() {
+                const value = this.value.trim();
+                if (value.includes('@')) {
+                    const parts = value.split('@');
+                    if (parts.length !== 2 || parts[1].length < 3 || !parts[1].includes('.')) {
+                        showError(fieldId, 'Email is not valid, please enter a valid one');
+                    } else {
+                        clearError(fieldId);
+                    }
+                } else if (value === '') {
+                    showError(fieldId, 'This field is required');
+                } else {
+                    clearError(fieldId);
+                }
+            });
+        }
+    });
+
+    // Password validation with new message
+    if (passwordField) {
+        passwordField.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value === '') {
+                showError('id_password', 'Password is required');
+            } else if (value.length < 6) {
+                showError('id_password', 'Password does not matched');
+            } else {
+                clearError('id_password');
+            }
+        });
+
+        passwordField.addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                clearError('id_password');
+            }
+        });
+    }
+
+    // Final form validation on submit
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+
+        // Email validation on submit
+        emailFields.forEach(fieldId => {
+            const emailField = document.getElementById(fieldId);
+            if (emailField) {
+                const value = emailField.value.trim();
+                if (value === '') {
+                    showError(fieldId, 'Email is required');
+                    isValid = false;
+                } else if (!emailRegex.test(value)) {
+                    showError(fieldId, 'Email is not valid, please enter a valid one');
+                    isValid = false;
+                }
+            }
+        });
+
+        // Password validation on submit
+        if (passwordField) {
+            const value = passwordField.value.trim();
+            if (value === '') {
+                showError('id_password', 'Password is required');
+                isValid = false;
+            } else if (value.length < 6) {
+                showError('id_password', 'Password does not matched');
+                isValid = false;
+            }
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            const firstError = document.querySelector('.form-control.error');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstError.focus();
+            }
+        } else {
+            // Show loading state when form is valid
+            loginButton.disabled = true;
+            buttonText.textContent = 'Logging in...';
+            arrowIcon.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+        }
+    });
 });
 </script>
+
 {% endblock content %}

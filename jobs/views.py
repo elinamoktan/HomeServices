@@ -539,6 +539,8 @@ def _haversine_km(lat1, lon1, lat2, lon2):
         
     except (ValueError, TypeError):
         return float('inf')
+
+
 def get_recommended_workers(request, limit=8):
     """
     Get recommended workers using Bayesian algorithm - FIXED VERSION
@@ -2008,7 +2010,131 @@ def worker_appointments(request, worker_id=None):
         'worker': worker
     })
 
+# For customer : appointment reject
 
+@require_http_methods(["POST"])
+@login_required
+def reject_appointment(request, appointment_id):
+    """Handle appointment rejection/cancellation - COMPLETE FIX"""
+    
+    # ✅ FIX 1: Check AJAX FIRST before any redirects
+    is_ajax = (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 
+        request.content_type == 'application/json' or
+        request.headers.get('Accept') == 'application/json'
+    )
+    
+    logger.info(f"🔍 reject_appointment called - ID: {appointment_id}, AJAX: {is_ajax}")
+    
+    try:
+        appointment = get_object_or_404(Appointment, id=appointment_id)
+        
+        # Check authorization
+        is_customer = hasattr(request.user, 'customer') and appointment.customer.owner == request.user
+        is_worker = hasattr(request.user, 'worker') and appointment.worker.owner == request.user
+        
+        if not (is_customer or is_worker):
+            if is_ajax:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Not authorized'
+                }, status=403)
+            messages.error(request, "Not authorized")
+            return redirect('customer_dashboard')
+        
+        # ✅ FIX 2: Check appointment status
+        if appointment.status != 'pending':
+            error_msg = f'Cannot cancel appointment with status: {appointment.status}'
+            if is_ajax:
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                }, status=400)
+            messages.error(request, error_msg)
+            return redirect('customer_dashboard' if is_customer else 'worker_dashboard')
+        
+        # ✅ FIX 3: Extract cancellation reason from JSON or POST
+        cancel_reason = ''
+        try:
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                cancel_reason = data.get('cancel_reason', '').strip()
+            else:
+                cancel_reason = request.POST.get('cancel_reason', '').strip()
+        except json.JSONDecodeError:
+            cancel_reason = request.POST.get('cancel_reason', '').strip()
+        
+        logger.info(f"🔍 Cancel reason: {cancel_reason}")
+        
+        # ✅ FIX 4: Update appointment
+        appointment.status = 'rejected'
+        
+        # Save cancellation info
+        if cancel_reason:
+            if appointment.special_instructions:
+                appointment.special_instructions += f"\n\n[Cancelled] Reason: {cancel_reason}"
+            else:
+                appointment.special_instructions = f"[Cancelled] Reason: {cancel_reason}"
+        
+        appointment.save()
+        logger.info(f"✅ Appointment {appointment_id} marked as rejected")
+        
+        # ✅ FIX 5: Create notifications
+        try:
+            if is_customer:
+                # Customer cancelled - notify worker
+                Notification.objects.create(
+                    worker=appointment.worker,
+                    notification_type='appointment_cancelled',
+                    title='Appointment Cancelled',
+                    message=f'{appointment.customer.name} cancelled the appointment.' + 
+                           (f' Reason: {cancel_reason}' if cancel_reason else ''),
+                    appointment=appointment
+                )
+                logger.info("✅ Worker notified")
+                
+            elif is_worker:
+                # Worker rejected - notify customer
+                Notification.objects.create(
+                    customer=appointment.customer,
+                    notification_type='appointment_rejected',
+                    title='Appointment Declined',
+                    message=f'{appointment.worker.name} declined your appointment.' +
+                           (f' Reason: {cancel_reason}' if cancel_reason else ''),
+                    appointment=appointment
+                )
+                logger.info("✅ Customer notified")
+                
+                # Send email
+                try:
+                    send_appointment_status_email(appointment, 'rejected')
+                except Exception as e:
+                    logger.error(f"❌ Email failed: {e}")
+                    
+        except Exception as e:
+            logger.error(f"❌ Notification failed: {e}")
+        
+        # ✅ FIX 6: Return proper response
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'message': 'Appointment cancelled successfully!' if is_customer else 'Appointment rejected.',
+                'appointment_id': appointment.id,
+                'new_status': 'rejected'
+            })
+        else:
+            messages.success(request, 'Appointment cancelled successfully!' if is_customer else 'Appointment rejected.')
+            return redirect('customer_dashboard' if is_customer else 'worker_dashboard')
+            
+    except Exception as e:
+        logger.error(f"❌ Error: {str(e)}", exc_info=True)
+        if is_ajax:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+        messages.error(request, f"Error: {str(e)}")
+        return redirect('customer_dashboard')
 @login_required
 def accept_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -2085,6 +2211,10 @@ def reject_appointment(request, appointment_id):
             messages.warning(request, "This appointment is not in a pending state.")
     
     return redirect('worker_dashboard')
+
+
+
+
 @login_required
 def delete_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -2269,73 +2399,97 @@ def customer_notifications(request):
 
 @login_required
 def rate_worker(request, appointment_id):
-    appointment = get_object_or_404(Appointment, id=appointment_id)
-    
-    # ✅ FIXED: Check if user is authorized to rate this appointment
-    if not hasattr(request.user, 'customer') or appointment.customer != request.user.customer:
-        messages.error(request, "You can only rate workers for your own appointments.")
+    try:
+        appointment = get_object_or_404(Appointment, id=appointment_id)
+        
+        # ✅ FIXED: Check if user is authorized to rate this appointment
+        if not hasattr(request.user, 'customer') or appointment.customer != request.user.customer:
+            messages.error(request, "You can only rate workers for your own appointments.")
+            return redirect('customer_dashboard')
+        
+        # Check if appointment is completed
+        if appointment.status != 'completed':
+            messages.error(request, "You can only rate workers after the appointment is completed.")
+            return redirect('customer_dashboard')
+        
+        # ✅ FIXED: Check if already rated THIS specific appointment
+        existing_rating = WorkerRating.objects.filter(
+            appointment=appointment,
+            customer=request.user.customer
+        ).first()
+        
+        if request.method == 'POST':
+            rating_value = request.POST.get('rating')
+            comment = request.POST.get('comment', '').strip()
+            
+            if not rating_value:
+                messages.error(request, "Please provide a rating.")
+                return render(request, 'jobs/rate_worker.html', {
+                    'appointment': appointment,
+                    'worker': appointment.worker,
+                    'existing_rating': existing_rating,
+                })
+            
+            try:
+                rating_value = int(rating_value)
+                if not 1 <= rating_value <= 5:
+                    raise ValueError("Rating must be between 1 and 5")
+            except ValueError:
+                messages.error(request, "Invalid rating value. Please select a rating between 1 and 5 stars.")
+                return render(request, 'jobs/rate_worker.html', {
+                    'appointment': appointment,
+                    'worker': appointment.worker,
+                    'existing_rating': existing_rating,
+                })
+            
+            try:
+                if existing_rating:
+                    # Update existing rating
+                    existing_rating.rating = rating_value
+                    existing_rating.comment = comment
+                    existing_rating.save()
+                    messages.success(request, "Your rating has been updated successfully!")
+                else:
+                    # Create new rating
+                    WorkerRating.objects.create(
+                        worker=appointment.worker,
+                        appointment=appointment,
+                        customer=request.user.customer,
+                        rating=rating_value,
+                        comment=comment
+                    )
+                    messages.success(request, "Thank you for rating the worker!")
+                
+                # Update worker's average rating
+                appointment.worker.update_average_rating()
+                
+                # ✅ FIXED: Force refresh by redirecting to dashboard
+                return redirect('customer_dashboard')
+                
+            except Exception as e:
+                logger.error(f"Error saving rating for appointment {appointment_id}: {str(e)}")
+                messages.error(request, "An error occurred while saving your rating. Please try again.")
+                return render(request, 'jobs/rate_worker.html', {
+                    'appointment': appointment,
+                    'worker': appointment.worker,
+                    'existing_rating': existing_rating,
+                })
+        
+        # For GET request, show the rating form
+        context = {
+            'appointment': appointment,
+            'worker': appointment.worker,
+            'existing_rating': existing_rating,
+            'already_rated': existing_rating is not None,
+        }
+        
+        return render(request, 'jobs/rate_worker.html', context)
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in rate_worker view for appointment {appointment_id}: {str(e)}")
+        messages.error(request, "An unexpected error occurred. Please try again.")
         return redirect('customer_dashboard')
     
-    # Check if appointment is completed
-    if appointment.status != 'completed':
-        messages.error(request, "You can only rate workers after the appointment is completed.")
-        return redirect('customer_dashboard')
-    
-    # ✅ FIXED: Check if already rated THIS specific appointment
-    existing_rating = WorkerRating.objects.filter(
-        appointment=appointment,
-        customer=request.user.customer
-    ).first()
-    
-    if request.method == 'POST':
-        rating_value = request.POST.get('rating')
-        comment = request.POST.get('comment', '').strip()
-        
-        if not rating_value:
-            messages.error(request, "Please provide a rating.")
-            return redirect('rate_worker', appointment_id=appointment_id)
-        
-        try:
-            rating_value = int(rating_value)
-            if not 1 <= rating_value <= 5:
-                raise ValueError("Rating must be between 1 and 5")
-        except ValueError:
-            messages.error(request, "Invalid rating value.")
-            return redirect('rate_worker', appointment_id=appointment_id)
-        
-        if existing_rating:
-            # Update existing rating
-            existing_rating.rating = rating_value
-            existing_rating.comment = comment
-            existing_rating.save()
-            messages.success(request, "Your rating has been updated.")
-        else:
-            # Create new rating
-            WorkerRating.objects.create(
-                worker=appointment.worker,
-                appointment=appointment,
-                customer=request.user.customer,
-                rating=rating_value,
-                comment=comment
-            )
-            messages.success(request, "Thank you for rating the worker!")
-        
-        # Update worker's average rating
-        appointment.worker.update_average_rating()
-        
-        # ✅ FIXED: Force refresh by redirecting to dashboard
-        return redirect('customer_dashboard')
-    
-    # For GET request, show the rating form
-    context = {
-        'appointment': appointment,
-        'worker': appointment.worker,
-        'existing_rating': existing_rating,
-        'already_rated': existing_rating is not None,
-    }
-    
-    return render(request, 'jobs/rate_worker.html', context)
-
 @login_required
 def mark_customer_completed(request, pk):
     """Enhanced version that creates notifications when customer marks as completed"""
@@ -2560,7 +2714,7 @@ def filter_status(queryset, status):
 
 @login_required
 def customer_dashboard(request):
-    """Customer dashboard view with stats and appointments - SIMPLER APPROACH"""
+    """Customer dashboard view with stats and appointments - FIXED VERSION"""
     customer = get_object_or_404(Customer, owner=request.user)
     
     # Get all appointments
@@ -2580,11 +2734,6 @@ def customer_dashboard(request):
         customer=customer
     ).count()
     
-    # Pagination
-    paginator = Paginator(appointments_list, 10)
-    page = request.GET.get('page')
-    appointments = paginator.get_page(page)
-    
     # Get notification count
     try:
         unread_notification_count = Notification.objects.filter(
@@ -2599,7 +2748,7 @@ def customer_dashboard(request):
     
     context = {
         'customer': customer,
-        'appointments': appointments,
+        'appointments': appointments_list,  # Pass all appointments
         'completed_appointments': recent_completed,
         'rated_appointments_count': rated_appointments_count,
         'pending_count': pending_count,
@@ -3158,6 +3307,90 @@ def appointment_request(request, worker_id):
     
     # GET request - redirect to worker detail
     return redirect('worker-detail', pk=worker_id)
+
+@require_POST
+@login_required
+def customer_mark_complete(request, appointment_id):
+    """Customer marks appointment as complete (requires worker confirmation)"""
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    
+    # Check authorization
+    if appointment.customer.owner != request.user:
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+    
+    # Validate status
+    if appointment.status != 'accepted':
+        return JsonResponse({'error': 'Appointment must be accepted first'}, status=400)
+    
+    # Mark as customer completed (waiting for worker confirmation)
+    appointment.customer_completed = True
+    appointment.save()
+    
+    # Create notification for worker
+    Notification.objects.create(
+        worker=appointment.worker,
+        notification_type='customer_completed',
+        title='Customer Marked Work as Completed',
+        message=f'{appointment.customer.name} has marked the appointment as completed. Please confirm completion.',
+        appointment=appointment
+    )
+    
+    # Send email notification to worker
+    try:
+        send_customer_completion_email(appointment)
+        logger.info(f"Customer completion email sent for appointment {appointment.id}")
+    except Exception as email_error:
+        logger.error(f"Failed to send customer completion email: {email_error}")
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Appointment marked as complete. Waiting for worker confirmation.',
+        'status': 'customer_completed'
+    })
+
+@require_POST
+@login_required
+def worker_confirm_completion(request, appointment_id):
+    """Worker confirms completion after customer has marked it complete"""
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    
+    # Check authorization
+    if appointment.worker.owner != request.user:
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+    
+    # Validate status - customer must have marked it complete first
+    if not appointment.customer_completed:
+        return JsonResponse({'error': 'Customer must mark complete first'}, status=400)
+    
+    if appointment.status == 'accepted':
+        appointment.status = 'completed'
+        appointment.worker_completed = True
+        appointment.completed_at = timezone.now()
+        appointment.save()
+        
+        # Create notification for customer
+        Notification.objects.create(
+            customer=appointment.customer,
+            notification_type='worker_completed',
+            title='Work Completed!',
+            message=f'{appointment.worker.name} has confirmed the appointment completion.',
+            appointment=appointment
+        )
+        
+        # Send completion email to customer
+        try:
+            send_appointment_completion_email(appointment)
+            logger.info(f"Appointment completion email sent for appointment {appointment.id}")
+        except Exception as email_error:
+            logger.error(f"Failed to send completion email: {email_error}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Appointment confirmed as completed.',
+            'status': 'completed'
+        })
+    
+    return JsonResponse({'error': 'Invalid appointment status'}, status=400)
 
 def worker_service_details(request, worker_id):
     worker = get_object_or_404(Worker, id=worker_id)

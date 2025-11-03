@@ -8,7 +8,7 @@
   <title>Settings - BlueCollar</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
     * {
@@ -18,11 +18,11 @@
     }
 
     :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --primary-light: #818cf8;
-      --secondary: #ec4899;
-      --success: #22c55e;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --secondary: #8b5cf6;
+      --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
       --dark: #0f172a;
@@ -32,7 +32,7 @@
     }
 
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
       min-height: 100vh;
       color: #1e293b;
@@ -210,7 +210,7 @@
       transform: translate(30%, -30%);
     }
 
-    /* Keep your original settings styles below */
+    /* Settings Card Styles */
     .settings-card {
       background: white;
       border-radius: 20px;
@@ -480,14 +480,56 @@
       }
     }
 
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Mobile overlay for sidebar */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      backdrop-filter: blur(4px);
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+    }
+
     @media (max-width: 1024px) {
       .sidebar {
         transform: translateX(-100%);
       }
       
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      
       .main-content {
         margin-left: 0;
         padding: 1rem;
+        padding-top: 4rem;
+      }
+
+      .mobile-menu-btn {
+        display: block;
       }
     }
 
@@ -503,8 +545,16 @@
   </style>
 </head>
 <body>
+  <!-- Mobile Menu Button -->
+  <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <i class="fas fa-bars text-lg"></i>
+  </button>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <!-- Sidebar Navigation -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="logo-container">
       <div class="flex items-center gap-3">
         <div class="logo-box">
@@ -534,13 +584,9 @@
         <i class="fas fa-star"></i>
         <span>Reviews</span>
       </a>
-      <a href="{% url 'worker_analytics' %}" class="nav-item">
-        <i class="fas fa-chart-line"></i>
-        <span>Analytics</span>
-      </a>
-      <a href="{% url 'worker_earnings' %}" class="nav-item">
-        <i class="fas fa-wallet"></i>
-        <span>Earnings</span>
+      <a href="{% url 'worker_profile' %}" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>My Profile</span>
       </a>
       <a href="{% url 'worker_settings' %}" class="nav-item active">
         <i class="fas fa-cog"></i>
@@ -573,7 +619,7 @@
   </div>
 
   <!-- Main Content -->
-  <div class="main-content">
+  <div class="main-content" id="mainContent">
     <!-- Header -->
     <div class="header-card fade-in-up">
       <div class="flex justify-between items-center">
@@ -835,6 +881,38 @@
   </div>
 
   <script>
+    // Mobile menu functionality
+    function toggleMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+
+    // Close mobile menu when clicking overlay
+    document.getElementById('sidebarOverlay').addEventListener('click', toggleMobileMenu);
+
+    // Initialize mobile menu button
+    document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+
+    // Close mobile menu when clicking on a nav item (on mobile)
+    if (window.innerWidth <= 768) {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', toggleMobileMenu);
+        });
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            // Ensure sidebar is visible on larger screens
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+    });
+
     const state = {
       security: {
         twoFactorEnabled: false,

@@ -152,12 +152,6 @@ class Worker(models.Model):
     # Availability
     shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, default=SHIFT_ALL)
     is_available = models.BooleanField(default=True)
-
-    # Location tracking - previous location
-    previous_latitude = models.FloatField(null=True, blank=True)
-    previous_longitude = models.FloatField(null=True, blank=True)
-    previous_location_address = models.TextField(blank=True, null=True)
-    previous_location_updated_at = models.DateTimeField(null=True, blank=True)
     
     # Enhanced location fields (current location)
     latitude = models.FloatField(null=True, blank=True)
@@ -196,57 +190,8 @@ class Worker(models.Model):
             elif not self.verified and self.verification_status == 'approved':
                 self.verification_status = 'pending'
         
-        # ✅ FIXED: Remove redundant field assignment
-        # self.total_ratings = self.rating_count  # REMOVE THIS LINE
-        
         super().save(*args, **kwargs)
 
-    def update_location(self, latitude, longitude, accuracy=None, source='browser', address=None):
-        """Update worker location with coordinates"""
-        try:
-            # Store previous location before updating
-            if self.latitude and self.longitude:
-                self.previous_latitude = self.latitude
-                self.previous_longitude = self.longitude
-                self.previous_location_address = self.location_address
-                self.previous_location_updated_at = self.location_updated_at
-            
-            # Update current location
-            self.latitude = float(latitude)
-            self.longitude = float(longitude)
-            self.location_accuracy = accuracy
-            self.location_source = source
-            self.location_updated_at = timezone.now()
-            
-            # If address is provided, use it directly
-            if address:
-                self.location_address = address
-            else:
-                # Simple location string if no address
-                self.location_address = f"Location: {latitude:.4f}, {longitude:.4f}"
-            
-            self.save()
-            logger.info(f"Updated worker {self.name} location to ({latitude}, {longitude})")
-            return True
-            
-        except (ValueError, TypeError) as e:
-            logger.error(f"Error updating location for worker {self.name}: {e}")
-            return False
-
-    def get_previous_location(self):
-        """Get previous location data"""
-        if self.previous_latitude and self.previous_longitude:
-            return {
-                'latitude': self.previous_latitude,
-                'longitude': self.previous_longitude,
-                'address': self.previous_location_address,
-                'updated_at': self.previous_location_updated_at
-            }
-        return None
-
-    def has_previous_location(self):
-        """Check if previous location exists"""
-        return self.previous_latitude is not None and self.previous_longitude is not None
 
     def get_current_location(self):
         """Get current location with fallback"""
@@ -285,7 +230,7 @@ class Worker(models.Model):
         minutes_left = max(0, int(time_left.total_seconds() // 60))
         return minutes_left
     
-    def get_resubmission_wait_time_display(self):
+    def get_resubmission_wait_time_display(self):  #for displaying wait time to user
         """Get formatted wait time for display"""
         minutes = self.get_resubmission_wait_time()
         if minutes == 0:
@@ -386,9 +331,6 @@ class Worker(models.Model):
             else:
                 self.average_rating = 0
 
-            # ✅ FIXED: Remove redundant field assignment
-            # self.total_ratings = self.rating_count  # REMOVE THIS LINE
-            
             self.save(update_fields=['average_rating', 'rating_count'])
             
         except Exception as e:
@@ -481,7 +423,7 @@ class Worker(models.Model):
             verification_status='approved',
             is_available=True
         ).select_related('owner').prefetch_related('ratings')
-# Worker Services (Many-to-Many through model)
+
 class WorkerService(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='worker_services')
     service = models.ForeignKey(Service, on_delete=models.CASCADE)
@@ -496,7 +438,6 @@ class WorkerService(models.Model):
     def __str__(self):
         return f"{self.worker.name} - {self.service.name}"
 
-# In your models.py - Update WorkerSubTaskPricing model
 
 class WorkerSubTaskPricing(models.Model):
     EXPERIENCE_LEVELS = [
@@ -696,6 +637,7 @@ class WorkerSubTaskPricing(models.Model):
         """Alias for calculate_total_price for backward compatibility"""
         return self.calculate_total_price(quantity, is_night_shift, custom_inputs)
 
+
 # Customer Model
 class Customer(models.Model):
     owner = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -723,60 +665,9 @@ class Customer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    previous_latitude = models.FloatField(null=True, blank=True)
-    previous_longitude = models.FloatField(null=True, blank=True)
-    previous_location_address = models.TextField(blank=True, null=True)
-    previous_location_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['name']
-
-    def update_location(self, latitude, longitude, accuracy=None, source='browser', address=None):
-        """Update customer location with coordinates - stores previous location"""
-        try:
-            # Store current location as previous before updating
-            if self.latitude and self.longitude:
-                self.previous_latitude = self.latitude
-                self.previous_longitude = self.longitude
-                self.previous_location_address = self.location_address
-                self.previous_location_updated_at = self.location_updated_at
-            
-            # Update current location
-            self.latitude = float(latitude)
-            self.longitude = float(longitude)
-            self.location_accuracy = accuracy
-            self.location_source = source
-            self.location_updated_at = timezone.now()
-            
-            # If address is provided, use it directly
-            if address:
-                self.location_address = address
-            else:
-                # Simple location string if no address
-                self.location_address = f"Location: {latitude:.4f}, {longitude:.4f}"
-            
-            self.save()
-            logger.info(f"Updated customer {self.name} location to ({latitude}, {longitude}) - Previous location stored")
-            return True
-            
-        except (ValueError, TypeError) as e:
-            logger.error(f"Error updating location for customer {self.name}: {e}")
-            return False
-
-    def get_previous_location(self):
-        """Get previous location data"""
-        if self.previous_latitude and self.previous_longitude:
-            return {
-                'latitude': self.previous_latitude,
-                'longitude': self.previous_longitude,
-                'address': self.previous_location_address,
-                'updated_at': self.previous_location_updated_at
-            }
-        return None
-
-    def has_previous_location(self):
-        """Check if previous location exists"""
-        return self.previous_latitude is not None and self.previous_longitude is not None
 
     def get_current_location(self):
         """Get current location with fallback"""
@@ -823,6 +714,7 @@ class Customer(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
 
 class Appointment(models.Model):
     """
@@ -960,7 +852,8 @@ class Appointment(models.Model):
             is_night_shift=night_shift
         )
 
-        def save(self, *args, **kwargs):
+
+    def save(self, *args, **kwargs):
             """
             Override save to auto-calculate total_price if not manually set
             """
@@ -975,19 +868,19 @@ class Appointment(models.Model):
             super().save(*args, **kwargs)
 
         # ✅ ADD THESE METHODS to handle time slot parsing
-        def get_start_time_from_slot(self):
+    def get_start_time_from_slot(self):
             """Extract start time from time slot format '14:00-16:00'"""
             if self.time_slot and '-' in self.time_slot:
                 return self.time_slot.split('-')[0].strip()
             return None
 
-        def get_end_time_from_slot(self):
+    def get_end_time_from_slot(self):
             """Extract end time from time slot format '14:00-16:00'"""
             if self.time_slot and '-' in self.time_slot:
                 return self.time_slot.split('-')[1].strip()
             return None
 
-        def get_status_display_color(self):
+    def get_status_display_color(self):
             """Return Bootstrap color class for status"""
             status_colors = {
                 'pending_payment': 'warning',
@@ -999,7 +892,7 @@ class Appointment(models.Model):
             }
             return status_colors.get(self.status, 'secondary')
 
-        def can_be_completed(self):
+    def can_be_completed(self):
             """Check if appointment can be marked as completed"""
             return (
                 self.status == 'accepted' and 
@@ -1007,17 +900,17 @@ class Appointment(models.Model):
                 self.appointment_date < timezone.now()
             )
 
-        def can_be_cancelled(self):
+    def can_be_cancelled(self):
             """Check if appointment can be cancelled"""
             return self.status in ['pending', 'accepted']
 
-        def get_service_name(self):
+    def get_service_name(self):
             """Get the service name safely"""
             if self.service_subtask and self.service_subtask.subtask:
                 return self.service_subtask.subtask.name
             return "General Service"
 
-        def get_price_display(self):
+    def get_price_display(self):
             """Get formatted price display"""
             if self.total_price:
                 return f"Rs{self.total_price:,.2f}"
@@ -1025,48 +918,41 @@ class Appointment(models.Model):
                 return f"Rs{self.service_subtask.price:,.2f}"
             return "Contact for pricing"
 
-        @property
-        def is_past(self):
+    @property
+    def is_past(self):
             """Check if appointment date is in the past"""
             if not self.appointment_date:
                 return False
             return self.appointment_date < timezone.now()
 
-        @property
-        def is_today(self):
+    @property
+    def is_today(self):
             """Check if appointment is today"""
             if not self.appointment_date:
                 return False
             return self.appointment_date.date() == timezone.now().date()
 
-        @property
-        def is_upcoming(self):
+    @property
+    def is_upcoming(self):
             """Check if appointment is in the future"""
             if not self.appointment_date:
                 return False
             return self.appointment_date > timezone.now()
         
-        def requires_payment(self):
+    def requires_payment(self):
             """Check if appointment requires payment"""
             return self.status == 'pending_payment'
         
-        def get_payment_info(self):
+    def get_payment_info(self):
             """Get payment information for this appointment"""
             try:
                 from payments.models import Payment
                 return Payment.objects.get(appointment=self)
             except Payment.DoesNotExist:
                 return None
+
             
-        # def get_service_name(self):
-        #     """Get the service name safely"""
-        #     if self.service_subtask and self.service_subtask.subtask:
-        #         return self.service_subtask.subtask.name
-        #     elif self.service_subtask and hasattr(self.service_subtask, 'worker_service'):
-        #         return self.service_subtask.worker_service.service.name
-        #     return "General Service"
-        
-        def has_rated(self, customer=None):
+    def has_rated(self, customer=None):
             """Check if this appointment has been rated by the customer"""
             if customer is None:
                 # If no customer provided, check if we can get it from the relationship
@@ -1079,6 +965,8 @@ class Appointment(models.Model):
                 appointment=self,
                 customer=customer
             ).exists()
+
+
 
 # Worker Rating Model
 class WorkerRating(models.Model):

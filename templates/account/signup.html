@@ -57,8 +57,7 @@
                                 placeholder="Create a strong password">
                             <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600" id="togglePassword1">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
                                 </svg>
                             </button>
                         </div>
@@ -103,8 +102,7 @@
                                 placeholder="Confirm your password">
                             <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600" id="togglePassword2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
                                 </svg>
                             </button>
                         </div>
@@ -131,13 +129,20 @@
                     <div id="terms-error" class="mt-1 text-xs text-rose-600 hidden">You must agree to the terms and conditions</div>
                     
                     <div class="pt-4">
-                        <button type="submit" id="submitButton"
+                        <button type="submit" id="submitButton" disabled
                             class="w-full py-4 px-8 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300 transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                            <span class="flex items-center justify-center space-x-2">
+                            <span id="buttonText" class="flex items-center justify-center space-x-2">
                                 <span class="text-lg">Create Account</span>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                                 </svg>
+                            </span>
+                            <span id="loadingSpinner" class="hidden items-center justify-center space-x-2">
+                                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="text-lg">Creating Account...</span>
                             </span>
                         </button>
                     </div>
@@ -162,7 +167,7 @@
                         <div>
                             <h4 class="font-bold text-slate-800 mb-1">Secure Verification</h4>
                             <p class="text-sm text-slate-600">
-                                An OTP will be sent to your email to verify your account.
+                                An **OTP** will be sent to your email to verify your account.
                             </p>
                         </div>
                     </div>
@@ -180,6 +185,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const password2Input = document.getElementById('id_password2');
     const termsCheckbox = document.getElementById('terms');
     const submitButton = document.getElementById('submitButton');
+    const buttonText = document.getElementById('buttonText');
+    const loadingSpinner = document.getElementById('loadingSpinner');
     
     const emailError = document.getElementById('email-error');
     const password1Error = document.getElementById('password1-error');
@@ -198,7 +205,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const numberCheck = document.getElementById('number-check');
     const specialCheck = document.getElementById('special-check');
 
-    // Toggle password visibility
+    // --- Password Visibility Toggle ---
+    
+    // SVG Paths for Icons (Updated to represent open-eye and crossed-eye)
+    // Open-eye path
+    const ICON_VISIBLE_PATH = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
+    // Crossed-eye path (for hidden password)
+    const ICON_CROSSED_PATH = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>';
+
     document.getElementById('togglePassword1').addEventListener('click', function() {
         togglePasswordVisibility(password1Input, this);
     });
@@ -214,18 +228,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update icon
         const icon = button.querySelector('svg');
-        // Clear current path
-        icon.innerHTML = ''; 
-        
-        // The password is now visible (type is 'text'), so show the crossed-out eye
-        if (type === 'text') {
-            // Icon for: Eye with a slash (Password Visible)
-            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>';
-        } else {
-            // Icon for: Regular eye (Password Hidden)
-            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
-        }
+        // If the new type is 'text', it means the password is now visible, so show the open eye icon
+        icon.innerHTML = type === 'text' ? ICON_VISIBLE_PATH : ICON_CROSSED_PATH;
     }
+
+    // --- Validation and Strength Logic ---
 
     // Email validation
     function validateEmail(email) {
@@ -251,10 +258,13 @@ document.addEventListener('DOMContentLoaded', function() {
         updateRequirementCheck(numberCheck, requirements.number);
         updateRequirementCheck(specialCheck, requirements.special);
 
-        // Calculate strength score
+        // Calculate strength score (20 points per requirement met)
         Object.values(requirements).forEach(met => {
             if (met) strength += 20;
         });
+        
+        // Bonus points for longer password if all basic requirements are met
+        if (strength === 100 && password.length > 12) strength = 100;
 
         return {
             strength: strength,
@@ -277,138 +287,122 @@ document.addEventListener('DOMContentLoaded', function() {
     function updatePasswordStrengthDisplay(strength) {
         passwordStrengthBar.style.width = `${strength}%`;
         
-        if (strength <= 20) {
-            passwordStrengthBar.className = 'h-full bg-rose-500 rounded-full transition-all duration-300';
-            passwordStrengthText.textContent = 'Very Weak';
-            passwordStrengthText.className = 'text-xs font-medium text-rose-500';
-        } else if (strength <= 40) {
-            passwordStrengthBar.className = 'h-full bg-amber-500 rounded-full transition-all duration-300';
-            passwordStrengthText.textContent = 'Weak';
-            passwordStrengthText.className = 'text-xs font-medium text-amber-500';
-        } else if (strength <= 60) {
-            passwordStrengthBar.className = 'h-full bg-yellow-500 rounded-full transition-all duration-300';
-            passwordStrengthText.textContent = 'Fair';
-            passwordStrengthText.className = 'text-xs font-medium text-yellow-500';
-        } else if (strength <= 80) {
-            passwordStrengthBar.className = 'h-full bg-blue-500 rounded-full transition-all duration-300';
-            passwordStrengthText.textContent = 'Good';
-            passwordStrengthText.className = 'text-xs font-medium text-blue-500';
-        } else {
-            passwordStrengthBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-300';
-            passwordStrengthText.textContent = 'Strong';
-            passwordStrengthText.className = 'text-xs font-medium text-emerald-500';
+        let strengthText = 'Very Weak';
+        let barClass = 'bg-rose-500';
+        let textClass = 'text-rose-500';
+
+        if (strength > 80) {
+            strengthText = 'Strong';
+            barClass = 'bg-emerald-500';
+            textClass = 'text-emerald-500';
+        } else if (strength > 60) {
+            strengthText = 'Good';
+            barClass = 'bg-blue-500';
+            textClass = 'text-blue-500';
+        } else if (strength > 40) {
+            strengthText = 'Fair';
+            barClass = 'bg-yellow-500';
+            textClass = 'text-yellow-500';
+        } else if (strength > 20) {
+            strengthText = 'Weak';
+            barClass = 'bg-amber-500';
+            textClass = 'text-amber-500';
+        } else if (strength === 0) {
+            strengthText = 'Weak'; // Treat empty as "Weak" with a default color
+            barClass = 'bg-slate-400';
+            textClass = 'text-slate-500';
         }
+        
+        passwordStrengthBar.className = `h-full ${barClass} rounded-full transition-all duration-300`;
+        passwordStrengthText.textContent = strengthText;
+        passwordStrengthText.className = `text-xs font-medium ${textClass}`;
     }
 
-    // Real-time validation
-    emailInput.addEventListener('input', function() {
-        validateEmailField();
-        updateSubmitButton();
-    });
-
-    emailInput.addEventListener('blur', function() {
-        validateEmailField();
-    });
-
-    password1Input.addEventListener('input', function() {
-        validatePassword1Field();
-        validatePasswordMatch();
-        updateSubmitButton();
-    });
-
-    password2Input.addEventListener('input', function() {
-        validatePasswordMatch();
-        updateSubmitButton();
-    });
-
-    termsCheckbox.addEventListener('change', function() {
-        validateTermsField();
-        updateSubmitButton();
-    });
+    // --- Validation Functions for Fields ---
 
     function validateEmailField() {
         const email = emailInput.value.trim();
+        const inputClasses = emailInput.classList;
+
+        inputClasses.remove('border-rose-500', 'border-emerald-500', 'border-slate-200');
         
         if (!email) {
             showError(emailError, 'Email address is required');
-            emailInput.classList.add('border-rose-500');
-            emailInput.classList.remove('border-emerald-500');
+            inputClasses.add('border-rose-500');
             return false;
         }
         
         if (!validateEmail(email)) {
             showError(emailError, 'Please enter a valid email address');
-            emailInput.classList.add('border-rose-500');
-            emailInput.classList.remove('border-emerald-500');
+            inputClasses.add('border-rose-500');
             return false;
         }
         
         hideError(emailError);
-        emailInput.classList.remove('border-rose-500');
-        emailInput.classList.add('border-slate-200'); // Revert to default
-        emailInput.classList.remove('border-emerald-500');
-        // Add a temporary green border on valid entry if you want
-        emailInput.classList.add('border-emerald-500'); 
+        inputClasses.add('border-emerald-500');
         return true;
     }
 
     function validatePassword1Field() {
         const password = password1Input.value;
-        
+        const inputClasses = password1Input.classList;
+        const strengthResult = calculatePasswordStrength(password);
+
+        inputClasses.remove('border-rose-500', 'border-emerald-500', 'border-slate-200');
+
         if (!password) {
             showError(password1Error, 'Password is required');
-            password1Input.classList.add('border-rose-500');
-            password1Input.classList.remove('border-emerald-500');
+            updatePasswordStrengthDisplay(0); // Reset display if empty
+            inputClasses.add('border-rose-500');
             return false;
         }
         
         if (password.length < 8) {
             showError(password1Error, 'Password must be at least 8 characters long');
-            password1Input.classList.add('border-rose-500');
-            password1Input.classList.remove('border-emerald-500');
+            inputClasses.add('border-rose-500');
             return false;
         }
         
-        const strength = calculatePasswordStrength(password);
-        updatePasswordStrengthDisplay(strength.strength);
+        // Re-run strength display to show current progress
+        updatePasswordStrengthDisplay(strengthResult.strength);
         
-        if (strength.strength < 40) {
-            showError(password1Error, 'Please use a stronger password');
-            password1Input.classList.add('border-rose-500');
-            password1Input.classList.remove('border-emerald-500');
+        // Define minimum required strength (e.g., 60 for Fair/Good)
+        if (strengthResult.strength < 60) {
+            showError(password1Error, 'Please use a stronger password (must meet at least 3 requirements)');
+            inputClasses.add('border-rose-500');
             return false;
         }
         
         hideError(password1Error);
-        password1Input.classList.remove('border-rose-500');
-        password1Input.classList.add('border-emerald-500');
+        inputClasses.add('border-emerald-500');
         return true;
     }
 
     function validatePasswordMatch() {
         const password1 = password1Input.value;
         const password2 = password2Input.value;
+        const inputClasses = password2Input.classList;
         
+        inputClasses.remove('border-rose-500', 'border-emerald-500', 'border-slate-200');
+
         if (!password2) {
             hideError(password2Error);
             hideElement(passwordMatch);
-            password2Input.classList.remove('border-rose-500', 'border-emerald-500');
+            inputClasses.add('border-slate-200');
             return false;
         }
-        
+
         if (password1 !== password2) {
             showError(password2Error, 'Passwords do not match');
             hideElement(passwordMatch);
-            password2Input.classList.add('border-rose-500');
-            password2Input.classList.remove('border-emerald-500');
+            inputClasses.add('border-rose-500');
             return false;
         }
         
         if (password1 && password2 && password1 === password2) {
             hideError(password2Error);
             showElement(passwordMatch);
-            password2Input.classList.remove('border-rose-500');
-            password2Input.classList.add('border-emerald-500');
+            inputClasses.add('border-emerald-500');
             return true;
         }
         
@@ -424,6 +418,8 @@ document.addEventListener('DOMContentLoaded', function() {
         hideError(termsError);
         return true;
     }
+
+    // --- Utility Functions ---
 
     function showError(errorElement, message) {
         errorElement.textContent = message;
@@ -442,47 +438,64 @@ document.addEventListener('DOMContentLoaded', function() {
         element.classList.add('hidden');
     }
 
+    // --- Main Control Logic ---
+
     function updateSubmitButton() {
-        // Only validate if inputs have content, otherwise we'll get errors on load
         const isEmailEntered = emailInput.value.trim().length > 0;
         const isPassword1Entered = password1Input.value.length > 0;
         const isPassword2Entered = password2Input.value.length > 0;
 
-        let isEmailValid = true;
-        let isPassword1Valid = true;
-        let isPasswordMatchValid = false;
-        let isTermsValid = validateTermsField();
+        // Perform validation only if fields have content
+        let isEmailValid = isEmailEntered ? validateEmailField() : false;
+        let isPassword1Valid = isPassword1Entered ? validatePassword1Field() : false;
+        let isPasswordMatchValid = (isPassword1Entered && isPassword2Entered) ? validatePasswordMatch() : false;
+        let isTermsValid = validateTermsField(); // Always validate, as it's a checkbox
 
-        if (isEmailEntered) {
-            isEmailValid = validateEmailField();
-        }
-        
-        if (isPassword1Entered) {
-            isPassword1Valid = validatePassword1Field();
-        }
-        
-        if (isPassword1Entered && isPassword2Entered) {
-             isPasswordMatchValid = validatePasswordMatch();
-        }
-
-        // We only enable the button if all required fields have content and are valid
-        const isValid = isEmailValid && isPassword1Valid && isPasswordMatchValid && isTermsValid && isEmailEntered && isPassword1Entered && isPassword2Entered;
+        // The button is enabled only if ALL fields are entered AND valid
+        const isValid = isEmailValid && isPassword1Valid && isPasswordMatchValid && isTermsValid;
         
         submitButton.disabled = !isValid;
     }
 
+    // Show loading state
+    function showLoadingState() {
+        buttonText.classList.add('hidden');
+        loadingSpinner.classList.remove('hidden');
+        submitButton.disabled = true;
+    }
+
+    // --- Event Listeners for Real-Time Validation ---
+    
+    // Use 'input' for real-time feedback and 'blur' for final check when leaving the field
+    emailInput.addEventListener('input', updateSubmitButton);
+    emailInput.addEventListener('blur', updateSubmitButton);
+
+    password1Input.addEventListener('input', function() {
+        validatePassword1Field();
+        validatePasswordMatch();
+        updateSubmitButton();
+    });
+
+    password2Input.addEventListener('input', function() {
+        validatePasswordMatch();
+        updateSubmitButton();
+    });
+
+    termsCheckbox.addEventListener('change', updateSubmitButton);
+
     // Form submission validation
     form.addEventListener('submit', function(e) {
-        e.preventDefault();
         
-        // Final, full validation check on submit
+        // Force a full re-validation just before submission
         const isEmailValid = validateEmailField();
         const isPassword1Valid = validatePassword1Field();
         const isPasswordMatchValid = validatePasswordMatch();
         const isTermsValid = validateTermsField();
         
         if (!isEmailValid || !isPassword1Valid || !isPasswordMatchValid || !isTermsValid) {
-            // Scroll to first error
+            e.preventDefault();
+            
+            // Scroll to first error for better UX
             const firstError = document.querySelector('.text-rose-600:not(.hidden)');
             if (firstError) {
                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -490,11 +503,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // If all validations pass, submit the form
-        form.submit();
+        // Show loading state and allow form to submit
+        showLoadingState();
     });
 
-    // Initialize validation on page load
+    // Initialize validation on page load to set initial button state
+    // and correctly set the default input border styles.
     updateSubmitButton();
 });
 </script>

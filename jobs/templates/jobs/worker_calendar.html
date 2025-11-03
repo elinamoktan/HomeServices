@@ -8,7 +8,7 @@
   <title>Calendar - BlueCollar</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
   
   <style>
@@ -19,49 +19,41 @@
     }
 
     :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --primary-light: #818cf8;
-      --secondary: #ec4899;
-      --success: #22c55e;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --secondary: #8b5cf6;
+      --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
       --dark: #0f172a;
       --light: #f8fafc;
-      --sidebar-gradient-start: #1e1b4b;
-      --sidebar-gradient-end: #312e81;
+      --sidebar-gradient-start: #1e1b4b; 
+      --sidebar-gradient-end: #312e81;  
     }
 
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
       min-height: 100vh;
       color: #1e293b;
       overflow-x: hidden;
     }
 
-    /* Animated Background */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
-      animation: backgroundShift 15s ease-in-out infinite;
-      z-index: -1;
+    .glass {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
-    @keyframes backgroundShift {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.1); }
+    .glass-dark {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Sidebar Styles */
+    /* Sidebar */
+        
     .sidebar {
       background: linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
       backdrop-filter: blur(20px);
@@ -164,22 +156,22 @@
     }
 
     .nav-item.active {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(236, 72, 153, 0.3));
-      color: white;
-      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(236, 72, 153, 0.3));
+    color: white;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
-    .nav-item.active::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: linear-gradient(180deg, #6366f1, #ec4899);
-      border-radius: 0 4px 4px 0;
-    }
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #6366f1, #ec4899);
+    border-radius: 0 4px 4px 0;
+}
 
     .main-content {
       margin-left: 280px;
@@ -187,42 +179,92 @@
       min-height: 100vh;
     }
 
-    .header-card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      border-radius: 24px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      position: relative;
-      overflow: hidden;
+    .sidebar.mobile-hidden {
+      transform: translateX(-100%);
     }
 
-    .header-card::before {
+    .nav-item {
+      padding: 1rem 1.5rem;
+      margin: 0.5rem 1rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .nav-item::before {
       content: '';
       position: absolute;
+      left: 0;
       top: 0;
-      right: 0;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
-      border-radius: 50%;
-      transform: translate(30%, -30%);
+      width: 0;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.15);
+      transition: width 0.3s ease;
+      z-index: -1;
+    }
+
+    .nav-item:hover::before,
+    .nav-item.active::before {
+      width: 100%;
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-item:hover {
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .nav-item i {
+      width: 24px;
+      margin-right: 1rem;
+      font-size: 1.1rem;
+    }
+
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: 280px;
+      padding: 2rem;
+      min-height: 100vh;
+      transition: all 0.3s ease;
     }
 
     .stat-card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      border-radius: 20px;
-      padding: 1.75rem;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.5);
     }
-
     .stat-card::before {
       content: '';
       position: absolute;
@@ -230,50 +272,44 @@
       left: 0;
       right: 0;
       height: 4px;
-      background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+    }
+
+    .stat-card:hover::before {
+      transform: scaleX(1);
     }
 
     .stat-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      transform: translateY(-5px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
     }
 
     .stat-icon {
-      width: 64px;
-      height: 64px;
-      border-radius: 18px;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-      box-shadow: 0 8px 24px var(--shadow-color);
       font-size: 1.5rem;
-      position: relative;
-      overflow: hidden;
+      background: linear-gradient(135deg, var(--color-start), var(--color-end));
+      box-shadow: 0 6px 16px var(--color-shadow);
+      transition: all 0.3s ease;
     }
 
-    .stat-icon::before {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-      animation: shimmer 2s infinite;
-    }
-
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
+    .stat-card:hover .stat-icon {
+      transform: scale(1.1) rotate(5deg);
     }
 
     /* Calendar Styles */
     .calendar-container {
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(20px);
-      border-radius: 24px;
-      padding: 2rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.5);
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.5rem;
     }
 
     .fc {
@@ -281,75 +317,52 @@
     }
 
     .fc-toolbar-title {
-      font-size: 1.75rem !important;
-      font-weight: 800 !important;
-      background: linear-gradient(135deg, #6366f1, #ec4899);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-size: 1.5rem !important;
+      font-weight: 700 !important;
+      color: #1f2937 !important;
     }
 
     .fc-button {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-      border: none !important;
-      border-radius: 12px !important;
-      font-weight: 600 !important;
-      padding: 0.75rem 1.25rem !important;
+      background: white !important;
+      border: 1px solid #e5e7eb !important;
+      color: #374151 !important;
+      border-radius: 8px !important;
+      font-weight: 500 !important;
+      padding: 0.5rem 1rem !important;
       transition: all 0.3s ease !important;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
     }
 
     .fc-button:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5) !important;
+      background: #f9fafb !important;
+      border-color: #d1d5db !important;
     }
 
     .fc-button-active {
-      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+      background: var(--primary) !important;
+      border-color: var(--primary) !important;
+      color: white !important;
     }
 
     .fc-day-today {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(236, 72, 153, 0.15)) !important;
-      border: 2px solid rgba(99, 102, 241, 0.3) !important;
-    }
-
-    .fc-daygrid-day-number {
-      font-weight: 600;
-      color: #475569;
-    }
-
-    .fc-col-header-cell {
-      background: linear-gradient(135deg, #f8fafc, #e2e8f0) !important;
-      font-weight: 700 !important;
-      color: #475569 !important;
-      border: none !important;
-      padding: 1rem 0 !important;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1)) !important;
     }
 
     .fc-event {
-      border-radius: 10px !important;
+      border-radius: 6px !important;
       border: none !important;
-      padding: 0.5rem 0.75rem !important;
-      font-weight: 600 !important;
-      font-size: 0.875rem !important;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-      transition: all 0.3s ease !important;
-      cursor: pointer !important;
-    }
-
-    .fc-event:hover {
-      transform: scale(1.05) !important;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+      padding: 0.25rem 0.5rem !important;
+      font-weight: 500 !important;
+      font-size: 0.75rem !important;
     }
 
     .event-pending { 
       background: linear-gradient(135deg, #f59e0b, #d97706) !important; 
     }
     .event-accepted { 
-      background: linear-gradient(135deg, #22c55e, #16a34a) !important; 
+      background: linear-gradient(135deg, #10b981, #059669) !important; 
     }
     .event-completed { 
-      background: linear-gradient(135deg, #6366f1, #4f46e5) !important; 
+      background: linear-gradient(135deg, #3b82f6, #2563eb) !important; 
     }
     .event-rejected { 
       background: linear-gradient(135deg, #ef4444, #dc2626) !important; 
@@ -357,102 +370,66 @@
 
     /* Appointment Card */
     .appointment-card {
+      background: white;
+      border-radius: 12px;
       padding: 1rem;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
-      border-radius: 14px;
-      border: 1px solid rgba(99, 102, 241, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .appointment-card::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: linear-gradient(180deg, #6366f1, #ec4899);
+      border-left: 4px solid;
+      margin-bottom: 0.75rem;
     }
 
     .appointment-card:hover {
       transform: translateX(4px);
-      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
-      border-color: rgba(99, 102, 241, 0.3);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
     }
 
+    .appointment-card.pending { border-left-color: #f59e0b; }
+    .appointment-card.accepted { border-left-color: #10b981; }
+    .appointment-card.completed { border-left-color: #3b82f6; }
+    .appointment-card.rejected { border-left-color: #ef4444; }
+
     .status-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
       padding: 0.375rem 0.75rem;
-      border-radius: 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
-    .status-accepted { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; }
-    .status-pending { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
-    .status-completed { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e3a8a; }
-    .status-rejected { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; }
-
-    .quick-action-btn {
-      width: 100%;
-      padding: 1rem;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
-      border-radius: 14px;
-      border: 2px solid transparent;
-      text-align: left;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
+    .status-pending {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #92400e;
     }
 
-    .quick-action-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
-      transition: left 0.5s ease;
+    .status-accepted {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      color: #065f46;
     }
 
-    .quick-action-btn:hover::before {
-      left: 100%;
+    .status-completed {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: #1e40af;
     }
 
-    .quick-action-btn:hover {
-      border-color: var(--border-color);
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px var(--shadow-color);
-    }
-
-    .action-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--icon-bg);
-      font-size: 1.25rem;
-      color: var(--icon-color);
+    .status-rejected {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      color: #991b1b;
     }
 
     .customer-avatar {
       width: 40px;
       height: 40px;
-      border-radius: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #6366f1, #ec4899);
-      color: white;
       font-weight: 700;
+      color: white;
       font-size: 1rem;
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
     }
 
     .btn-secondary {
@@ -494,68 +471,120 @@
     .empty-state {
       text-align: center;
       padding: 2rem;
-      color: #94a3b8;
+      color: #64748b;
     }
 
     .empty-state i {
       font-size: 3rem;
       margin-bottom: 1rem;
-      opacity: 0.5;
+      background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    /* Modal Styles */
-    .modal-overlay {
+    /* Mobile overlay for sidebar */
+    .sidebar-overlay {
+      display: none;
       position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    }
-
-    .modal-content {
-      background: white;
-      border-radius: 1rem;
-      padding: 1.5rem;
-      max-width: 500px;
+      top: 0;
+      left: 0;
       width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      backdrop-filter: blur(4px);
     }
 
-    /* Responsive */
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .sidebar {
+        width: 260px;
+      }
+      .main-content {
+        margin-left: 260px;
+      }
+    }
+
     @media (max-width: 1024px) {
       .sidebar {
+        width: 240px;
+      }
+      .main-content {
+        margin-left: 240px;
+        padding: 1.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: block;
+      }
+      
+      .sidebar {
+        width: 280px;
         transform: translateX(-100%);
+      }
+      
+      .sidebar.mobile-open {
+        transform: translateX(0);
       }
       
       .main-content {
         margin-left: 0;
         padding: 1rem;
+        padding-top: 4rem;
+      }
+      
+      .calendar-container {
+        padding: 1rem;
       }
     }
 
-    @media (max-width: 768px) {
-      .header-card {
-        padding: 1.5rem;
+    @media (max-width: 640px) {
+      .main-content {
+        padding: 0.75rem;
+        padding-top: 4rem;
       }
-
-      .stat-card {
-        padding: 1.25rem;
+      
+      .calendar-container {
+        padding: 0.875rem;
       }
-
+      
       .fc-toolbar-title {
         font-size: 1.25rem !important;
       }
     }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
+  <!-- Mobile Menu Button -->
+  <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <i class="fas fa-bars text-lg"></i>
+  </button>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <!-- Sidebar Navigation -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="logo-container">
       <div class="flex items-center gap-3">
         <div class="logo-box">
@@ -585,13 +614,9 @@
         <i class="fas fa-star"></i>
         <span>Reviews</span>
       </a>
-      <a href="{% url 'worker_analytics' %}" class="nav-item">
-        <i class="fas fa-chart-line"></i>
-        <span>Analytics</span>
-      </a>
-      <a href="{% url 'worker_earnings' %}" class="nav-item">
-        <i class="fas fa-wallet"></i>
-        <span>Earnings</span>
+      <a href="{% url 'worker_profile' %}" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>My Profile</span>
       </a>
       <a href="{% url 'worker_settings' %}" class="nav-item">
         <i class="fas fa-cog"></i>
@@ -603,7 +628,7 @@
       <div class="flex items-center gap-3 mb-3">
         <div class="customer-avatar">
           {% if worker.profile_pic %}
-            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" style="width: 100%; height: 100%; border-radius: 12px; object-fit: cover;">
+            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
           {% else %}
             <span>{{ worker.name|first }}</span>
           {% endif %}
@@ -624,75 +649,74 @@
   </div>
 
   <!-- Main Content -->
-  <div class="main-content">
+  <div class="main-content" id="mainContent">
     <!-- Header -->
-    <div class="header-card fade-in-up">
-      <div class="flex justify-between items-center flex-wrap gap-4" style="position: relative; z-index: 1;">
-        <div>
-          <h1 class="text-4xl font-bold text-gray-900 mb-2">
-            Calendar Overview 
-            <span style="font-size: 2rem;">📅</span>
-          </h1>
-          <p class="text-gray-600 text-lg font-medium">Manage your appointments and schedule efficiently</p>
-        </div>
-        <div class="flex items-center gap-4">
-          <div style="text-align: right; background: linear-gradient(135deg, #dbeafe, #e0e7ff); padding: 1rem 1.5rem; border-radius: 16px; border: 2px solid rgba(99, 102, 241, 0.2);">
-            <p style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem;">Today</p>
-            <p style="font-weight: 800; color: #1e293b; font-size: 1.125rem;">{{ today|date:"F j, Y" }}</p>
+    <div class="bg-white rounded-xl shadow-lg border border-gray-100 mb-6 fade-in-up">
+      <div class="p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div class="flex-1">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Calendar Overview 📅</h1>
+            <p class="text-gray-600 text-base sm:text-lg">Manage your appointments and schedule efficiently</p>
+          </div>
+          <div class="flex items-center space-x-3 w-full sm:w-auto">
+            <div class="text-right bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-3 rounded-xl">
+              <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Today</p>
+              <p class="font-bold text-gray-900 text-sm sm:text-base">{{ today|date:"F j, Y" }}</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="stat-card fade-in-up" style="--gradient-start: #6366f1; --gradient-end: #4f46e5; --shadow-color: rgba(99, 102, 241, 0.3); animation-delay: 0.1s;">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div class="stat-card fade-in-up" style="animation-delay: 0.1s">
         <div class="flex items-center justify-between">
           <div>
-            <p style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Today's Appointments</p>
-            <p style="font-size: 2.5rem; font-weight: 800; color: #1e293b; line-height: 1;">{{ today_appointments.count }}</p>
-            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">Scheduled for today</p>
+            <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Today's Appointments</p>
+            <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ today_appointments.count }}</p>
+            <p class="text-xs text-gray-500 mt-2">Scheduled for today</p>
           </div>
-          <div class="stat-icon" style="--gradient-start: #6366f1; --gradient-end: #4f46e5; --shadow-color: rgba(99, 102, 241, 0.3);">
+          <div class="stat-icon" style="--color-start: #3b82f6; --color-end: #2563eb; --color-shadow: rgba(59, 130, 246, 0.3);">
             <i class="fas fa-calendar-day text-white"></i>
           </div>
         </div>
       </div>
 
-      <div class="stat-card fade-in-up" style="--gradient-start: #f59e0b; --gradient-end: #d97706; --shadow-color: rgba(245, 158, 11, 0.3); animation-delay: 0.2s;">
+      <div class="stat-card fade-in-up" style="animation-delay: 0.2s">
         <div class="flex items-center justify-between">
           <div>
-            <p style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">This Week</p>
-            <p style="font-size: 2.5rem; font-weight: 800; color: #d97706; line-height: 1;">{{ week_appointments.count }}</p>
-            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">Total appointments</p>
+            <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">This Week</p>
+            <p class="text-2xl sm:text-3xl font-bold text-amber-600">{{ week_appointments.count }}</p>
+            <p class="text-xs text-gray-500 mt-2">Total appointments</p>
           </div>
-          <div class="stat-icon" style="--gradient-start: #f59e0b; --gradient-end: #d97706; --shadow-color: rgba(245, 158, 11, 0.3);">
+          <div class="stat-icon" style="--color-start: #f59e0b; --color-end: #d97706; --color-shadow: rgba(245, 158, 11, 0.3);">
             <i class="fas fa-calendar-week text-white"></i>
           </div>
         </div>
       </div>
 
-      <div class="stat-card fade-in-up" style="--gradient-start: #22c55e; --gradient-end: #16a34a; --shadow-color: rgba(34, 197, 94, 0.3); animation-delay: 0.3s;">
+      <div class="stat-card fade-in-up" style="animation-delay: 0.3s">
         <div class="flex items-center justify-between">
           <div>
-            <p style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Pending</p>
-            <p style="font-size: 2.5rem; font-weight: 800; color: #16a34a; line-height: 1;">{{ pending_count }}</p>
-            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">Awaiting confirmation</p>
+            <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Pending</p>
+            <p class="text-2xl sm:text-3xl font-bold text-green-600">{{ pending_count }}</p>
+            <p class="text-xs text-gray-500 mt-2">Awaiting confirmation</p>
           </div>
-          <div class="stat-icon" style="--gradient-start: #22c55e; --gradient-end: #16a34a; --shadow-color: rgba(34, 197, 94, 0.3);">
+          <div class="stat-icon" style="--color-start: #10b981; --color-end: #059669; --color-shadow: rgba(16, 185, 129, 0.3);">
             <i class="fas fa-clock text-white"></i>
           </div>
         </div>
       </div>
 
-      <div class="stat-card fade-in-up" style="--gradient-start: #8b5cf6; --gradient-end: #7c3aed; --shadow-color: rgba(139, 92, 246, 0.3); animation-delay: 0.4s;">
+      <div class="stat-card fade-in-up" style="animation-delay: 0.4s">
         <div class="flex items-center justify-between">
           <div>
-            <p style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Completion Rate</p>
-            <p style="font-size: 2.5rem; font-weight: 800; color: #7c3aed; line-height: 1;">{{ completion_rate }}%</p>
-            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">This month</p>
+            <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Completion Rate</p>
+            <p class="text-2xl sm:text-3xl font-bold text-purple-600">{{ completion_rate }}%</p>
+            <p class="text-xs text-gray-500 mt-2">This month</p>
           </div>
-          <div class="stat-icon" style="--gradient-start: #8b5cf6; --gradient-end: #7c3aed; --shadow-color: rgba(139, 92, 246, 0.3);">
+          <div class="stat-icon" style="--color-start: #8b5cf6; --color-end: #7c3aed; --color-shadow: rgba(139, 92, 246, 0.3);">
             <i class="fas fa-check-double text-white"></i>
           </div>
         </div>
@@ -700,7 +724,7 @@
     </div>
 
     <!-- Calendar Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
       <div class="lg:col-span-2">
         <div class="calendar-container fade-in-up" style="animation-delay: 0.5s;">
           <div id="calendar"></div>
@@ -708,40 +732,40 @@
       </div>
 
       <!-- Upcoming Appointments -->
-      <div class="space-y-6">
+      <div class="space-y-4 sm:space-y-6">
         <!-- Today's Schedule -->
         <div class="calendar-container fade-in-up" style="animation-delay: 0.6s;">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold text-gray-900">Today's Schedule</h3>
-            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #ec4899); display: flex; align-items: center; justify-content: center;">
-              <i class="fas fa-calendar-day text-white"></i>
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900">Today's Schedule</h3>
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+              <i class="fas fa-calendar-day text-white text-sm"></i>
             </div>
           </div>
-          <div class="space-y-3" style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
+          <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
             {% for appointment in today_appointments %}
-            <div class="appointment-card">
+            <div class="appointment-card {{ appointment.status }}">
               <div class="flex justify-between items-start mb-2">
-                <span class="font-semibold text-gray-900">{{ appointment.customer.name }}</span>
+                <span class="font-semibold text-gray-900 text-sm">{{ appointment.customer.name }}</span>
                 <span class="status-badge status-{{ appointment.status }}">
                   {{ appointment.status|title }}
                 </span>
               </div>
-              <p style="font-size: 0.875rem; color: #64748b; display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                <i class="far fa-clock" style="color: #6366f1;"></i>
+              <p class="text-xs text-gray-600 flex items-center gap-2 mt-1">
+                <i class="far fa-clock text-blue-500"></i>
                 {{ appointment.appointment_date|time:"g:i A" }}
               </p>
               {% if appointment.service_subtask %}
-              <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-briefcase" style="color: #ec4899;"></i>
+              <p class="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                <i class="fas fa-briefcase text-purple-500"></i>
                 {{ appointment.service_subtask.subtask.name }}
               </p>
               {% endif %}
             </div>
             {% empty %}
-            <div class="empty-state">
+            <div class="empty-state py-8">
               <i class="fas fa-calendar-times"></i>
-              <p style="font-weight: 600; margin-top: 0.5rem;">No appointments today</p>
-              <p style="font-size: 0.875rem; margin-top: 0.25rem;">Enjoy your free day!</p>
+              <p class="font-semibold text-gray-700 mt-2">No appointments today</p>
+              <p class="text-sm text-gray-500 mt-1">Enjoy your free day!</p>
             </div>
             {% endfor %}
           </div>
@@ -750,44 +774,44 @@
         <!-- Quick Actions -->
         <div class="calendar-container fade-in-up" style="animation-delay: 0.7s;">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold text-gray-900">Quick Actions</h3>
-            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #22c55e, #16a34a); display: flex; align-items: center; justify-content: center;">
-              <i class="fas fa-bolt text-white"></i>
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900">Quick Actions</h3>
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+              <i class="fas fa-bolt text-white text-sm"></i>
             </div>
           </div>
           <div class="space-y-3">
-            <button class="quick-action-btn" style="--border-color: #22c55e; --shadow-color: rgba(34, 197, 94, 0.2);" onclick="showAvailabilityModal()">
+            <button class="w-full p-3 bg-white border-2 border-green-200 rounded-xl text-left transition-all duration-300 hover:border-green-400 hover:shadow-lg" onclick="showAvailabilityModal()">
               <div class="flex items-center gap-3">
-                <div class="action-icon" style="--icon-bg: linear-gradient(135deg, #d1fae5, #a7f3d0); --icon-color: #16a34a;">
-                  <i class="fas fa-plus"></i>
+                <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+                  <i class="fas fa-plus text-green-600"></i>
                 </div>
                 <div>
-                  <p class="font-semibold text-gray-900">Set Availability</p>
-                  <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Update your working hours</p>
+                  <p class="font-semibold text-gray-900 text-sm">Set Availability</p>
+                  <p class="text-xs text-gray-500 mt-1">Update your working hours</p>
                 </div>
               </div>
             </button>
             
-            <button class="quick-action-btn" style="--border-color: #6366f1; --shadow-color: rgba(99, 102, 241, 0.2);" onclick="syncCalendar()">
+            <button class="w-full p-3 bg-white border-2 border-blue-200 rounded-xl text-left transition-all duration-300 hover:border-blue-400 hover:shadow-lg" onclick="syncCalendar()">
               <div class="flex items-center gap-3">
-                <div class="action-icon" style="--icon-bg: linear-gradient(135deg, #dbeafe, #bfdbfe); --icon-color: #4f46e5;">
-                  <i class="fas fa-sync-alt"></i>
+                <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <i class="fas fa-sync-alt text-blue-600"></i>
                 </div>
                 <div>
-                  <p class="font-semibold text-gray-900">Sync Calendar</p>
-                  <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Connect with external apps</p>
+                  <p class="font-semibold text-gray-900 text-sm">Sync Calendar</p>
+                  <p class="text-xs text-gray-500 mt-1">Connect with external apps</p>
                 </div>
               </div>
             </button>
 
-            <button class="quick-action-btn" style="--border-color: #ec4899; --shadow-color: rgba(236, 72, 153, 0.2);" onclick="showNotifications()">
+            <button class="w-full p-3 bg-white border-2 border-pink-200 rounded-xl text-left transition-all duration-300 hover:border-pink-400 hover:shadow-lg" onclick="showNotifications()">
               <div class="flex items-center gap-3">
-                <div class="action-icon" style="--icon-bg: linear-gradient(135deg, #fce7f3, #fbcfe8); --icon-color: #db2777;">
-                  <i class="fas fa-bell"></i>
+                <div class="w-12 h-12 rounded-lg bg-pink-100 flex items-center justify-center">
+                  <i class="fas fa-bell text-pink-600"></i>
                 </div>
                 <div>
-                  <p class="font-semibold text-gray-900">Notifications</p>
-                  <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Manage your alerts</p>
+                  <p class="font-semibold text-gray-900 text-sm">Notifications</p>
+                  <p class="text-xs text-gray-500 mt-1">Manage your alerts</p>
                 </div>
               </div>
             </button>
@@ -798,23 +822,57 @@
   </div>
 
   <!-- Appointment Detail Modal -->
-  <div id="appointmentModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-bold text-gray-900">Appointment Details</h3>
-        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <div id="modalContent">
-        <!-- Dynamic content will be loaded here -->
+  <div id="appointmentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-900">Appointment Details</h3>
+          <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div id="modalContent">
+          <!-- Dynamic content will be loaded here -->
+        </div>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
   <script>
+    // Mobile menu functionality
+    function toggleMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+
+    // Close mobile menu when clicking overlay
+    document.getElementById('sidebarOverlay').addEventListener('click', toggleMobileMenu);
+
+    // Initialize mobile menu button
+    document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+
+    // Close mobile menu when clicking on a nav item (on mobile)
+    if (window.innerWidth <= 768) {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', toggleMobileMenu);
+        });
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            // Ensure sidebar is visible on larger screens
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
       const calendarEl = document.getElementById('calendar');
       const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -932,7 +990,7 @@
           `;
           
           document.getElementById('modalContent').innerHTML = modalContent;
-          document.getElementById('appointmentModal').style.display = 'flex';
+          document.getElementById('appointmentModal').classList.remove('hidden');
         },
         eventDisplay: 'block',
         eventTimeFormat: {
@@ -968,7 +1026,7 @@
 
     // Modal functions
     function closeModal() {
-      document.getElementById('appointmentModal').style.display = 'none';
+      document.getElementById('appointmentModal').classList.add('hidden');
     }
 
     // Quick action functions
@@ -1001,7 +1059,7 @@
       `;
       
       document.getElementById('modalContent').innerHTML = modalContent;
-      document.getElementById('appointmentModal').style.display = 'flex';
+      document.getElementById('appointmentModal').classList.remove('hidden');
     }
 
     function syncCalendar() {
@@ -1041,7 +1099,7 @@
       `;
       
       document.getElementById('modalContent').innerHTML = modalContent;
-      document.getElementById('appointmentModal').style.display = 'flex';
+      document.getElementById('appointmentModal').classList.remove('hidden');
     }
 
     // Close modal when clicking outside
@@ -1072,48 +1130,6 @@
       el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
       observer.observe(el);
     });
-
-    // Mobile menu toggle
-    const createMobileMenu = () => {
-      if (window.innerWidth <= 1024) {
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('.main-content');
-        
-        if (!document.querySelector('.menu-toggle')) {
-          const menuBtn = document.createElement('button');
-          menuBtn.className = 'menu-toggle';
-          menuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-          menuBtn.style.cssText = `
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 1001;
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #6366f1, #ec4899);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-          `;
-          
-          menuBtn.addEventListener('click', () => {
-            const isOpen = sidebar.style.transform === 'translateX(0%)';
-            sidebar.style.transform = isOpen ? 'translateX(-100%)' : 'translateX(0%)';
-          });
-          
-          document.body.appendChild(menuBtn);
-        }
-      }
-    };
-
-    createMobileMenu();
-    window.addEventListener('resize', createMobileMenu);
   </script>
 </body>
 </html>

@@ -51,7 +51,7 @@ urlpatterns = [
     path('appointment/<int:appointment_id>/request-new/', views.request_new_worker, name='request_new_worker'),
     path('appointments/<int:appointment_id>/details/', views.appointment_request_details, name='appointment_request_details'),
 
-    # Rating and completion URLs
+    # Rating and completion URLs - ✅ FIXED: Removed duplicates
     path('rate-worker/<int:appointment_id>/', views.rate_worker, name='rate_worker'),
     path('appointment/<int:pk>/customer-complete/', views.mark_customer_completed, name='appointment-customer-complete'),
     path('appointment/<int:pk>/worker-complete/', views.mark_worker_completed, name='appointment-worker-complete'),
@@ -116,12 +116,11 @@ urlpatterns = [
     path('worker/services/', views.get_worker_services_for_subtask, name='get_worker_services'),
     path('api/get-worker-address/', views.get_worker_address, name='get_worker_address'),
     
-    # ✅ FIXED: Correct completion URLs
-    path('customer/appointments/mark-completed/<int:pk>/', views.mark_customer_completed, name='mark_customer_completed'),
-    path('worker/appointments/mark-completed/<int:pk>/', views.mark_worker_completed, name='mark_worker_completed'),
-    
+    path('appointments/<int:appointment_id>/customer-complete/', views.customer_mark_complete, name='customer_mark_complete'),
+    path('appointments/<int:appointment_id>/worker-complete/', views.worker_confirm_completion, name='worker_confirm_completion'),
     # Add this to your urlpatterns
     path('worker/<int:worker_id>/appointment-request/', views.appointment_request, name='appointment_request'),
+    
     # ✅ NEW: Cache management URLs
     path('api/clear-location-cache/', views.clear_location_cache, name='clear_location_cache'),
     path('api/get-cached-location/', views.get_cached_location, name='get_cached_location'),
@@ -136,8 +135,9 @@ urlpatterns = [
 
     # path('appointment/<int:appointment_id>/report-delay/', views.report_delay, name='report_delay'),
     # path('worker/appointments-for-delay/', views.get_worker_appointments_for_delay, name='worker_appointments_for_delay'),
+    
     # Dynamic pricing URLs
     path('calculate-dynamic-price/', views.calculate_dynamic_price, name='calculate_dynamic_price'),
     path('get-pricing-config/<int:service_id>/', views.get_pricing_config, name='get_pricing_config'),
-    
+    path('appointments/<int:appointment_id>/reject/', views.reject_appointment, name='reject_appointment_plural'),
 ]

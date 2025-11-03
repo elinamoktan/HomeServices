@@ -138,38 +138,13 @@
       padding: 1.5rem 2rem;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
       margin: 1rem;
       border-radius: 16px;
       position: sticky;
       top: 1rem;
       z-index: 100;
-    }
-    
-    .search-bar {
-      display: flex;
-      align-items: center;
-      background: var(--gray-light);
-      border-radius: 12px;
-      padding: 0.75rem 1.25rem;
-      width: 350px;
-      transition: all 0.3s ease;
-    }
-    
-    .search-bar:focus-within {
-      background: white;
-      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
-    }
-    
-    .search-bar input {
-      background: transparent;
-      border: none;
-      outline: none;
-      width: 100%;
-      margin-left: 0.5rem;
-      color: var(--dark);
-      font-weight: 500;
     }
     
     .user-profile {
@@ -401,6 +376,109 @@
     .status-accepted { background: #d1fae5; color: #065f46; }
     .status-completed { background: #dbeafe; color: #1e40af; }
     .status-rejected { background: #fecaca; color: #b91c1c; }
+    .status-customer_completed { background: #fef3c7; color: #d97706; }
+
+    /* Enhanced action buttons */
+    .action-button {
+      padding: 0.6rem 1.2rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      text-decoration: none;
+    }
+
+    .action-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-complete {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+    
+    .btn-complete:hover {
+      background: linear-gradient(135deg, #059669, #047857);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+    
+    .btn-completed {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+      cursor: not-allowed;
+    }
+
+    .btn-delete {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+    
+    .btn-delete:hover {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-rate {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+    }
+    
+    .btn-rate:hover {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-request {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+    }
+    
+    .btn-request:hover {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-cancel {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      color: white;
+    }
+    
+    .btn-cancel:hover {
+      background: linear-gradient(135deg, #ea580c, #c2410c);
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+    }
+
+    /* Loading state */
+    .btn-loading {
+      position: relative;
+      color: transparent !important;
+    }
+
+    .btn-loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin: -8px 0 0 -8px;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
     .quick-action-card {
       background: white;
@@ -462,112 +540,69 @@
       color: white;
     }
 
-    .request-card {
-      background: white;
-      border-radius: 16px;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-      border-left: 5px solid var(--warning);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s ease;
-      border: 1px solid rgba(0, 0, 0, 0.03);
-    }
-    
-    .request-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    }
-    
-    .request-actions {
+    .card-header {
       display: flex;
-      gap: 0.75rem;
-      margin-top: 1rem;
-      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--gray-light);
     }
     
-    .btn {
-      border: none;
-      padding: 0.5rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: inline-flex;
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--dark);
+      display: flex;
       align-items: center;
       gap: 0.5rem;
     }
     
-    .btn-accept {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
+    .card-title i {
+      color: var(--primary);
     }
     
-    .btn-accept:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-    }
-    
-    .btn-reject {
-      background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
-      color: white;
-    }
-    
-    .btn-reject:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-    }
-    
-    .btn-delete {
-      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-      color: white;
-    }
-    
-    .btn-delete:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
-    }
-    
-    .btn-view-details {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      color: white;
-    }
-    
-    .btn-view-details:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    }
-    
-    .request-badge {
-      background: #fef3c7;
-      color: #d97706;
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-size: 0.75rem;
+    .card-action {
+      color: var(--primary);
       font-weight: 600;
-    }
-
-    .rate-worker-btn {
-      background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      font-size: 0.9rem;
       text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
+      transition: all 0.2s ease;
     }
     
-    .rate-worker-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-      color: white;
+    .card-action:hover {
+      color: var(--primary-dark);
     }
 
-    /* NEW: Notification toast styles */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--gray);
+    }
+    
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+    
+    .empty-state h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--dark);
+    }
+    
+    .empty-state p {
+      margin-bottom: 1.5rem;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Notification toast styles */
     .notification-toast {
       position: fixed;
       top: 20px;
@@ -668,23 +703,7 @@
       background: #f3f4f6;
     }
 
-    /* NEW: Real-time status update styles */
-    .status-update-animation {
-      animation: statusPulse 2s ease-in-out;
-    }
-    
-    @keyframes statusPulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-    
-    .request-updated {
-      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-      border-left-color: var(--primary) !important;
-    }
-
-    /* NEW: Notifications Panel */
+    /* Notifications Panel */
     .notifications-panel {
       position: fixed;
       top: 100px;
@@ -708,7 +727,7 @@
       padding: 1.5rem;
       border-bottom: 1px solid #e5e7eb;
       display: flex;
-      justify-content: between;
+      justify-content: space-between;
       align-items: center;
     }
     
@@ -741,150 +760,132 @@
       margin-right: 0.5rem;
     }
 
-    /* NEW: Enhanced card headers */
-    .card-header {
+    /* Cancel Appointment Modal */
+    .cancel-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .cancel-modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .cancel-modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      transform: translateY(-20px);
+      transition: transform 0.3s ease;
+    }
+    
+    .cancel-modal.show .cancel-modal-content {
+      transform: translateY(0);
+    }
+    
+    .cancel-modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
       padding-bottom: 1rem;
-      border-bottom: 1px solid var(--gray-light);
+      border-bottom: 1px solid #e5e7eb;
     }
     
-    .card-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--dark);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .card-title i {
-      color: var(--primary);
-    }
-    
-    .card-action {
-      color: var(--primary);
+    .cancel-modal-title {
+      font-size: 1.25rem;
       font-weight: 600;
-      font-size: 0.9rem;
-      text-decoration: none;
+      color: var(--dark);
+    }
+    
+    .cancel-modal-close {
+      background: none;
+      border: none;
+      color: #6b7280;
+      cursor: pointer;
+      font-size: 1.25rem;
+      padding: 0.25rem;
+      border-radius: 4px;
       transition: all 0.2s ease;
     }
     
-    .card-action:hover {
-      color: var(--primary-dark);
-    }
-
-    /* NEW: Progress bars */
-    .progress-bar {
-      height: 8px;
-      background: var(--gray-light);
-      border-radius: 4px;
-      overflow: hidden;
-      margin-top: 0.5rem;
+    .cancel-modal-close:hover {
+      color: #374151;
+      background: #f3f4f6;
     }
     
-    .progress-fill {
-      height: 100%;
-      border-radius: 4px;
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
-      transition: width 0.5s ease;
+    .cancel-reason-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      resize: vertical;
+      font-family: inherit;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
     }
-
-    /* NEW: Service progress tracker */
-    .progress-tracker {
+    
+    .cancel-reason-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .cancel-modal-actions {
       display: flex;
-      justify-content: space-between;
-      margin: 1.5rem 0;
-      position: relative;
+      gap: 0.75rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
     }
     
-    .progress-tracker::before {
-      content: '';
-      position: absolute;
-      top: 15px;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--gray-light);
-      z-index: 1;
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
     }
     
-    .progress-step {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      z-index: 2;
+    .btn-secondary:hover {
+      background: #4b5563;
     }
     
-    .step-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--gray-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 0.5rem;
-      color: var(--gray);
-      font-size: 0.9rem;
-    }
-    
-    .step-active .step-icon {
+    .btn-primary {
       background: var(--primary);
       color: white;
-    }
-    
-    .step-completed .step-icon {
-      background: var(--success);
-      color: white;
-    }
-    
-    .step-label {
-      font-size: 0.8rem;
-      color: var(--gray);
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
       font-weight: 500;
+      transition: all 0.2s ease;
     }
     
-    .step-active .step-label {
-      color: var(--primary);
-      font-weight: 600;
+    .btn-primary:hover {
+      background: var(--primary-dark);
     }
     
-    .step-completed .step-label {
-      color: var(--success);
-    }
-
-    /* NEW: Service category grid */
-    .services-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1.5rem;
-    }
-
-    /* NEW: Empty state styling */
-    .empty-state {
-      text-align: center;
-      padding: 3rem 2rem;
-      color: var(--gray);
-    }
-    
-    .empty-state i {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-      opacity: 0.5;
-    }
-    
-    .empty-state h3 {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-      color: var(--dark);
-    }
-    
-    .empty-state p {
-      margin-bottom: 1.5rem;
+    .btn-primary:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
     }
 
     @media (max-width: 768px) {
@@ -919,10 +920,6 @@
         grid-template-columns: 1fr;
       }
       
-      .search-bar {
-        width: 150px;
-      }
-      
       .header {
         padding: 1rem;
         margin: 0.5rem;
@@ -936,18 +933,35 @@
         padding: 1.5rem;
       }
       
-      .request-actions {
+      .action-buttons {
         flex-direction: column;
+        align-items: flex-start;
       }
       
+      .action-button {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .services-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
       .notifications-panel {
         width: 90vw;
         right: 5vw;
         left: 5vw;
       }
       
-      .services-grid {
-        grid-template-columns: repeat(2, 1fr);
+      .cancel-modal-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+      }
+      
+      .cancel-modal-actions {
+        flex-direction: column;
       }
     }
   </style>
@@ -975,8 +989,12 @@
           <i class="fas fa-heart"></i>
           <span class="nav-text">Favorites</span>
         </a>
-        <a href="{% url 'customer_reviews' %}" class="nav-item {% if current_page == 'reviews' %}active{% endif %}">
+        <a href="{% url 'customer_appointments' %}" class="nav-item {% if current_page == 'appointments' %}active{% endif %}">
           <i class="fas fa-history"></i>
+          <span class="nav-text">Appointments</span>
+        </a>
+        <a href="{% url 'customer_reviews' %}" class="nav-item {% if current_page == 'reviews' %}active{% endif %}">
+          <i class="fas fa-star"></i>
           <span class="nav-text">Reviews</span>
         </a>
         <a href="{% url 'customer_profile' %}" class="nav-item {% if current_page == 'profile' %}active{% endif %}">
@@ -1000,11 +1018,6 @@
     
     <div class="main-content">
       <div class="header">
-        <div class="search-bar">
-          <i class="fas fa-search text-gray-400"></i>
-          <input type="text" placeholder="Search services...">
-        </div>
-        
         <div class="flex items-center gap-4">
           <div class="notification-badge" id="notificationBadge">
             <i class="fas fa-bell text-gray-500 text-xl"></i>
@@ -1033,35 +1046,7 @@
         <div class="welcome-banner">
           <div class="welcome-content">
             <h1 class="text-3xl font-bold mb-2">Welcome back, {{ customer.name }}!</h1>
-            <p class="text-white text-opacity-90 text-lg">Ready to book your next service?</p>
-            <div class="mt-4">
-              <div class="progress-tracker">
-                <div class="progress-step step-completed">
-                  <div class="step-icon">
-                    <i class="fas fa-user"></i>
-                  </div>
-                  <span class="step-label">Profile</span>
-                </div>
-                <div class="progress-step step-active">
-                  <div class="step-icon">
-                    <i class="fas fa-search"></i>
-                  </div>
-                  <span class="step-label">Find Service</span>
-                </div>
-                <div class="progress-step">
-                  <div class="step-icon">
-                    <i class="fas fa-calendar"></i>
-                  </div>
-                  <span class="step-label">Book</span>
-                </div>
-                <div class="progress-step">
-                  <div class="step-icon">
-                    <i class="fas fa-check"></i>
-                  </div>
-                  <span class="step-label">Complete</span>
-                </div>
-              </div>
-            </div>
+            <p class="text-white text-opacity-90 text-lg">Here's what's happening with your appointments</p>
           </div>
         </div>
         
@@ -1071,10 +1056,7 @@
               <i class="fas fa-calendar-check"></i>
             </div>
             <div class="stat-value">{{ total_appointments }}</div>
-            <div class="stat-label">Total Bookings</div>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: 75%"></div>
-            </div>
+            <div class="stat-label">Total Appointments</div>
           </div>
           
           <div class="stat-card">
@@ -1082,10 +1064,7 @@
               <i class="fas fa-clock"></i>
             </div>
             <div class="stat-value">{{ pending_count }}</div>
-            <div class="stat-label">Pending</div>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: 30%"></div>
-            </div>
+            <div class="stat-label">Pending Requests</div>
           </div>
           
           <div class="stat-card">
@@ -1094,9 +1073,6 @@
             </div>
             <div class="stat-value">{{ completed_count }}</div>
             <div class="stat-label">Completed</div>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: 60%"></div>
-            </div>
           </div>
           
           <div class="stat-card">
@@ -1105,242 +1081,139 @@
             </div>
             <div class="stat-value">{{ favorite_workers_count|default:0 }}</div>
             <div class="stat-label">Favorite Workers</div>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: 45%"></div>
-            </div>
           </div>
         </div>
 
-        <!-- Fallback Recent Activity Section -->
-<div class="dashboard-card">
-  <div class="card-header">
-    <h2 class="card-title">
-      <i class="fas fa-history"></i>
-      Recent Activity
-    </h2>
-  </div>
+        <!-- All Appointments with Actions -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-calendar-alt"></i>
+              My Appointments
+            </h2>
+            <a href="{% url 'worker-list' %}" class="card-action">Book New →</a>
+          </div>
 
-  <div class="space-y-4">
-    <!-- Favorite Workers Activity -->
-    {% if favorite_workers_count > 0 %}
-    <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-      <div class="flex-shrink-0">
-        <i class="fas fa-heart text-red-500 text-lg mt-1"></i>
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-medium text-gray-900">
-            Favorite Workers
-          </h4>
-          <span class="text-xs text-gray-500">Recently</span>
-        </div>
-        <p class="text-sm text-gray-600 mt-1">
-          You have {{ favorite_workers_count }} favorite worker{{ favorite_workers_count|pluralize }}
-        </p>
-        <a href="{% url 'favorite_workers_list' %}" class="text-xs text-red-600 hover:text-red-800 font-semibold mt-2 inline-block">
-          View Favorites
-        </a>
-      </div>
-      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-        Favorites
-      </span>
-    </div>
-    {% endif %}
-
-    <!-- Completed Appointments Activity -->
-    {% if completed_appointments %}
-    <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-      <div class="flex-shrink-0">
-        <i class="fas fa-check-circle text-green-500 text-lg mt-1"></i>
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-medium text-gray-900">
-            Completed Services
-          </h4>
-          <span class="text-xs text-gray-500">Recently</span>
-        </div>
-        <p class="text-sm text-gray-600 mt-1">
-          You've completed {{ completed_count }} service{{ completed_count|pluralize }}
-        </p>
-        {% for appointment in completed_appointments|slice:":2" %}
-          {% if not appointment.has_rated %}
-          <a href="{% url 'rate_worker' appointment.id %}" class="text-xs text-yellow-600 hover:text-yellow-800 font-semibold mt-1 inline-block mr-2">
-            Rate {{ appointment.worker.name }}
-          </a>
-          {% endif %}
-        {% endfor %}
-      </div>
-      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-        Completed
-      </span>
-    </div>
-    {% endif %}
-
-    <!-- Pending Requests Activity -->
-    {% if pending_count > 0 %}
-    <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-      <div class="flex-shrink-0">
-        <i class="fas fa-clock text-blue-500 text-lg mt-1"></i>
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-medium text-gray-900">
-            Pending Requests
-          </h4>
-          <span class="text-xs text-gray-500">Active</span>
-        </div>
-        <p class="text-sm text-gray-600 mt-1">
-          You have {{ pending_count }} pending appointment{{ pending_count|pluralize }}
-        </p>
-        <a href="{% url 'customer_appointments' %}" class="text-xs text-blue-600 hover:text-blue-800 font-semibold mt-2 inline-block">
-          View Requests
-        </a>
-      </div>
-      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-        Pending
-      </span>
-    </div>
-    {% endif %}
-
-    <!-- Ratings Given Activity -->
-    {% if rated_appointments_count > 0 %}
-    <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-      <div class="flex-shrink-0">
-        <i class="fas fa-star text-yellow-500 text-lg mt-1"></i>
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-medium text-gray-900">
-            Reviews Submitted
-          </h4>
-          <span class="text-xs text-gray-500">Total</span>
-        </div>
-        <p class="text-sm text-gray-600 mt-1">
-          You've submitted {{ rated_appointments_count }} review{{ rated_appointments_count|pluralize }}
-        </p>
-        <a href="{% url 'customer_reviews' %}" class="text-xs text-yellow-600 hover:text-yellow-800 font-semibold mt-2 inline-block">
-          View Reviews
-        </a>
-      </div>
-      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-        Reviews
-      </span>
-    </div>
-    {% endif %}
-
-    <!-- Empty State -->
-    {% if not favorite_workers_count and not completed_appointments and not pending_count and not rated_appointments_count %}
-    <div class="empty-state">
-      <i class="fas fa-inbox text-gray-300 text-4xl mb-3"></i>
-      <p class="text-gray-500 text-sm">No recent activities yet</p>
-      <p class="text-gray-400 text-xs mt-1">Start by exploring services and booking appointments</p>
-      <a href="{% url 'worker-list' %}" class="btn btn-view-details mt-4">
-        <i class="fas fa-search mr-2"></i>Find Services
-      </a>
-    </div>
-    {% endif %}
-  </div>
-</div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Upcoming Bookings Section -->
-          <div class="dashboard-card">
-            <div class="card-header">
-              <h2 class="card-title">
-                <i class="fas fa-calendar-alt"></i>
-                Upcoming Bookings
-              </h2>
-              <a href="{% url 'customer_appointments' %}" class="card-action">View All →</a>
-            </div>
-
-            {% if appointments %}
-              {% for appointment in appointments|slice:":3" %}
-                {% if appointment.status != 'completed' %}
-                <div class="appointment-preview">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center flex-1">
+          {% if appointments %}
+            <div class="space-y-4">
+              {% for appointment in appointments %}
+                <div class="appointment-preview" id="appointment-{{ appointment.id }}">
+                  <!-- Appointment Header -->
+                  <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
                       <div class="worker-avatar">
                         {% if appointment.worker.profile_pic %}
                           <img src="{{ appointment.worker.profile_pic.url }}" alt="{{ appointment.worker.name }}">
                         {% else %}
-                          <span class="text-white font-bold">{{ appointment.worker.name|first }}</span>
+                          <span class="text-white font-bold text-sm">{{ appointment.worker.name|first }}</span>
                         {% endif %}
                       </div>
                       <div>
                         <h4 class="font-semibold text-gray-800">{{ appointment.worker.name }}</h4>
-                        <p class="text-sm text-gray-600">
-                          <i class="fas fa-briefcase mr-1"></i>
-                          {{ appointment.get_service_name }}
-                        </p>
-                        <p class="text-sm text-gray-600">
-                          <i class="far fa-calendar mr-1"></i>
-                          {{ appointment.appointment_date|date:"M j, Y" }} at {{ appointment.appointment_date|time:"g:i A" }}
-                        </p>
+                        <p class="text-sm text-gray-600">{{ appointment.worker.phone_number }}</p>
+                        <p class="text-sm text-gray-600">{{ appointment.appointment_date|date:"F j, Y g:i A" }}</p>
                       </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                      <span class="status-badge status-{{ appointment.status }}">
-                        {{ appointment.get_status_display }}
-                      </span>
-                    </div>
+                    <span class="status-badge status-{{ appointment.status }}" id="status-badge-{{ appointment.id }}">
+                      {{ appointment.status }}
+                    </span>
+                  </div>
+
+                  <!-- Action Buttons Based on Status -->
+                  <div class="flex flex-wrap items-center gap-2 action-buttons" id="action-buttons-{{ appointment.id }}">
+                    {% if user == appointment.customer.owner %}
+                      
+                      <!-- Delete button for all appointments except completed (when not rated) -->
+                      {% if appointment.status != 'completed' or appointment.has_rated %}
+                        <form action="{% url 'delete_appointment' appointment.id %}" method="post" class="inline delete-form">
+                          {% csrf_token %}
+                          <button type="submit" class="action-button btn-delete" onclick="return confirm('Are you sure you want to delete this appointment?')">
+                            <i class="fas fa-trash-alt mr-1"></i>Delete
+                          </button>
+                        </form>
+                      {% endif %}
+
+                      <!-- Customer Mark Complete for accepted appointments -->
+                      {% if appointment.status == 'accepted' and not appointment.customer_completed %}
+                        <button type="button" class="action-button btn-complete complete-customer-btn" 
+                                data-appointment-id="{{ appointment.id }}"
+                                id="customer-complete-btn-{{ appointment.id }}">
+                          <i class="fas fa-check mr-1"></i>Mark Complete
+                        </button>
+                      {% endif %}
+
+                      <!-- NEW: Customer Cancel Appointment for pending appointments -->
+                  {% if appointment.status == 'pending' %}
+                    <form action="{% url 'reject_appointment' appointment.id %}" method="post" class="inline" id="cancel-form-{{ appointment.id }}">
+                      {% csrf_token %}
+                      <input type="hidden" name="cancel_reason" id="cancel-reason-{{ appointment.id }}">
+                      <button type="button" class="action-button btn-cancel cancel-appointment-btn" 
+                              data-appointment-id="{{ appointment.id }}"
+                              data-worker-name="{{ appointment.worker.name }}"
+                              data-reject-url="{% url 'reject_appointment' 0 %}"
+                              data-reject-url-base="{% url 'reject_appointment' 0 %}"  >
+                        <i class="fas fa-times mr-1"></i>Cancel Appointment
+                      </button>
+                    </form>
+                  {% endif %}
+
+
+
+                      <!-- Status indicators -->
+                      {% if appointment.customer_completed and not appointment.worker_completed %}
+                        <span class="action-button" style="background: #f59e0b; color: white;">
+                          <i class="fas fa-clock mr-1"></i>Waiting Worker Confirmation
+                        </span>
+                      {% endif %}
+
+                      {% if appointment.status == 'completed' %}
+                        <span class="action-button btn-completed">
+                          <i class="fas fa-check-circle mr-1"></i>Completed
+                        </span>
+                      {% endif %}
+
+                      <!-- Rating button for completed appointments (only after worker confirmation) -->
+                      {% if appointment.status == 'completed' and appointment.worker_completed %}
+                        {% if not appointment.has_rated %}
+                          <!-- NEW: Simple redirect to rating page -->
+                          <a href="{% url 'rate_worker' appointment.id %}" class="action-button btn-rate">
+                            <i class="fas fa-star mr-1"></i>Rate Worker
+                          </a>
+                        {% else %}
+                          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check-circle mr-1"></i>Rated
+                          </span>
+                        {% endif %}
+                      {% endif %}
+
+                      <!-- Request new worker for rejected appointments -->
+                      {% if appointment.status == 'rejected' %}
+                        <form action="{% url 'request_new_worker' appointment.id %}" method="post" class="inline">
+                          {% csrf_token %}
+                          <button type="submit" class="action-button btn-request">
+                            <i class="fas fa-user-plus mr-1"></i>Request New Worker
+                          </button>
+                        </form>
+                      {% endif %}
+
+                    {% endif %}
                   </div>
                 </div>
-                {% endif %}
               {% endfor %}
-            {% else %}
-              <div class="empty-state">
-                <i class="fas fa-calendar-times"></i>
-                <h3>No upcoming appointments</h3>
-                <p>Your upcoming appointments will appear here.</p>
-              </div>
-            {% endif %}
-          </div>
-
-          <div class="dashboard-card">
-            <div class="card-header">
-              <h2 class="card-title">
-                <i class="fas fa-fire"></i>
-                Popular Services
-              </h2>
-              <a href="{% url 'worker-list' %}" class="card-action">Explore All →</a>
             </div>
-            
-            <div class="services-grid">
-              <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=plumbing'">
-                <div class="service-icon" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
-                  <i class="fas fa-wrench"></i>
-                </div>
-                <h3 class="font-semibold text-gray-800">Plumbing</h3>
-                <p class="text-sm text-gray-500 mt-1">24/7 Available</p>
-              </div>
-              
-              <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=electrical'">
-                <div class="service-icon" style="background: linear-gradient(135deg, #f8961e 0%, #f3722c 100%);">
-                  <i class="fas fa-bolt"></i>
-                </div>
-                <h3 class="font-semibold text-gray-800">Electrical</h3>
-                <p class="text-sm text-gray-500 mt-1">Expert Service</p>
-              </div>
-              
-              <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=painting'">
-                <div class="service-icon" style="background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);">
-                  <i class="fas fa-paint-roller"></i>
-                </div>
-                <h3 class="font-semibold text-gray-800">Painting</h3>
-                <p class="text-sm text-gray-500 mt-1">Quality Work</p>
-              </div>
-              
-              <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=cleaning'">
-                <div class="service-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                  <i class="fas fa-broom"></i>
-                </div>
-                <h3 class="font-semibold text-gray-800">Cleaning</h3>
-                <p class="text-sm text-gray-500 mt-1">Deep Clean</p>
-              </div>
+          {% else %}
+            <div class="empty-state">
+              <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
+              <h3 class="text-xl font-medium text-gray-500 mb-2">No appointments yet</h3>
+              <p class="text-gray-400 mb-6">Get started by booking your first appointment</p>
+              <a href="{% url 'worker-list' %}" class="action-button btn-complete">
+                <i class="fas fa-plus mr-2"></i>Book Your First Appointment
+              </a>
             </div>
-          </div>
+          {% endif %}
         </div>
 
+        <!-- Quick Actions -->
         <div class="dashboard-card">
           <div class="card-header">
             <h2 class="card-title">
@@ -1351,50 +1224,127 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <a href="{% url 'worker-list' %}" class="quick-action-card">
               <div class="quick-action-icon" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
-                <i class="fas fa-plus"></i>
+                <i class="fas fa-plus-circle"></i>
               </div>
               <div>
-                <h3 class="font-bold text-gray-800 text-lg">Book a Service</h3>
-                <p class="text-sm text-gray-600 mt-1">Find and book professionals</p>
+                <h3 class="font-bold text-gray-800 text-lg">Book New Appointment</h3>
+                <p class="text-sm text-gray-600 mt-1">Find and book a worker</p>
               </div>
             </a>
+            <a href="{% url 'customer_reviews' %}" class="quick-action-card">
+              <div class="quick-action-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <i class="fas fa-star"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-800 text-lg">View My Reviews</h3>
+                <p class="text-sm text-gray-600 mt-1">Check your ratings</p>
+              </div>
+            </a>
+            <a href="{% url 'customer_profile' %}" class="quick-action-card">
+              <div class="quick-action-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <i class="fas fa-user-edit"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-800 text-lg">Update Profile</h3>
+                <p class="text-sm text-gray-600 mt-1">Edit your information</p>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Popular Services -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-fire"></i>
+              Popular Services
+            </h2>
+            <a href="{% url 'worker-list' %}" class="card-action">Explore All →</a>
+          </div>
+          
+          <div class="services-grid">
+            <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=plumbing'">
+              <div class="service-icon" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
+                <i class="fas fa-wrench"></i>
+              </div>
+              <h3 class="font-semibold text-gray-800">Plumbing</h3>
+              <p class="text-sm text-gray-500 mt-1">24/7 Available</p>
+            </div>
             
-            <a href="{% url 'customer_appointments' %}" class="quick-action-card">
-              <div class="quick-action-icon" style="background: linear-gradient(135deg, #f8961e 0%, #f3722c 100%);">
-                <i class="fas fa-history"></i>
+            <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=electrical'">
+              <div class="service-icon" style="background: linear-gradient(135deg, #f8961e 0%, #f3722c 100%);">
+                <i class="fas fa-bolt"></i>
               </div>
-              <div>
-                <h3 class="font-bold text-gray-800 text-lg">View History</h3>
-                <p class="text-sm text-gray-600 mt-1">Check past bookings</p>
-              </div>
-            </a>
+              <h3 class="font-semibold text-gray-800">Electrical</h3>
+              <p class="text-sm text-gray-500 mt-1">Expert Service</p>
+            </div>
             
-            <a href="{% url 'favorite_workers_list' %}" class="quick-action-card">
-              <div class="quick-action-icon" style="background: linear-gradient(135deg, #e63946 0%, #ffa8a8 100%);">
-                <i class="fas fa-heart"></i>
+            <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=painting'">
+              <div class="service-icon" style="background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);">
+                <i class="fas fa-paint-roller"></i>
               </div>
-              <div>
-                <h3 class="font-bold text-gray-800 text-lg">My Favorites</h3>
-                <p class="text-sm text-gray-600 mt-1">View saved workers</p>
+              <h3 class="font-semibold text-gray-800">Painting</h3>
+              <p class="text-sm text-gray-500 mt-1">Quality Work</p>
+            </div>
+            
+            <div class="service-category" onclick="location.href='{% url 'worker-list' %}?service=cleaning'">
+              <div class="service-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <i class="fas fa-broom"></i>
               </div>
-            </a>
+              <h3 class="font-semibold text-gray-800">Cleaning</h3>
+              <p class="text-sm text-gray-500 mt-1">Deep Clean</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Request Details Modal -->
-  <div id="requestDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-bold text-gray-800">Appointment Request Details</h3>
-        <button onclick="closeRequestDetails()" class="text-gray-500 hover:text-gray-700">
-          <i class="fas fa-times text-xl"></i>
+  <!-- Cancel Appointment Modal -->
+  <div id="cancelAppointmentModal" class="cancel-modal">
+    <div class="cancel-modal-content">
+      <div class="cancel-modal-header">
+        <h3 class="cancel-modal-title">Cancel Appointment</h3>
+        <button type="button" class="cancel-modal-close" onclick="closeCancelModal()">
+          <i class="fas fa-times"></i>
         </button>
       </div>
-      <div id="requestDetailsContent">
-        <!-- Content will be loaded via AJAX -->
+      
+      <div class="cancel-modal-body">
+        <p class="text-gray-600 mb-4">
+          You are about to cancel your appointment with <span id="cancelWorkerName" class="font-semibold"></span>. 
+          Please provide a reason for cancellation (optional):
+        </p>
+        
+        <form id="cancelAppointmentForm">
+          {% csrf_token %}
+          <input type="hidden" id="cancelAppointmentId" name="appointment_id">
+          
+          <div class="mb-4">
+            <label for="cancelReason" class="block text-sm font-medium text-gray-700 mb-2">
+              Reason for Cancellation
+            </label>
+            <textarea 
+              id="cancelReason" 
+              name="cancel_reason" 
+              class="cancel-reason-textarea" 
+              placeholder="Please provide a reason for cancellation (optional)..."
+              maxlength="500"
+            ></textarea>
+            <div class="text-xs text-gray-500 mt-1">
+              <span id="charCount">0</span>/500 characters
+            </div>
+          </div>
+          
+          <div class="cancel-modal-actions">
+            <button type="button" class="btn-secondary" onclick="closeCancelModal()">
+              Go Back
+            </button>
+            <button type="submit" class="btn-primary" id="confirmCancelBtn">
+              Confirm Cancellation
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -1417,65 +1367,328 @@
     </div>
   </div>
 
-  <!-- NEW: Notification Toast Container -->
+  <!-- Notification Toast Container -->
   <div id="notificationToastContainer"></div>
 
   <script>
-    // All JavaScript functionality remains the same as in the original code
-    // Global variables for real-time updates
-    let autoRefreshEnabled = true;
-    let refreshInterval;
-    let lastChecked = new Date();
-
-    // Initialize real-time updates
-    function initializeRealTimeUpdates() {
-      if (autoRefreshEnabled) {
-        startAutoRefresh();
-      }
+    // Customer mark complete functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const customerCompleteButtons = document.querySelectorAll('.complete-customer-btn');
+      const cancelButtons = document.querySelectorAll('.cancel-appointment-btn');
       
-      // Check for updates immediately on page load
-      checkForStatusUpdates();
-    }
+      customerCompleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const appointmentId = this.dataset.appointmentId;
+          markCustomerComplete(appointmentId);
+        });
+      });
 
-    // Start auto-refresh
-    function startAutoRefresh() {
-      refreshInterval = setInterval(() => {
-        checkForStatusUpdates();
-        updateNotificationCount();
-      }, 10000); // Check every 10 seconds
-    }
+      cancelButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const appointmentId = this.dataset.appointmentId;
+          const workerName = this.dataset.workerName;
+          openCancelModal(appointmentId, workerName);
+        });
+      });
 
-    // Stop auto-refresh
-    function stopAutoRefresh() {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-    }
+      // Setup notification badge click
+      document.getElementById('notificationBadge').addEventListener('click', showNotificationsPanel);
 
-    // Toggle auto-refresh
-    document.getElementById('autoRefreshToggle')?.addEventListener('click', function() {
-      autoRefreshEnabled = !autoRefreshEnabled;
-      const statusElement = document.getElementById('autoRefreshStatus');
+      // Character counter for cancel reason
+      const cancelReasonTextarea = document.getElementById('cancelReason');
+      const charCount = document.getElementById('charCount');
       
-      if (autoRefreshEnabled) {
-        statusElement.textContent = 'ON';
-        this.classList.remove('bg-gray-100', 'text-gray-700');
-        this.classList.add('bg-indigo-100', 'text-indigo-700');
-        startAutoRefresh();
-        showNotification('Auto-refresh enabled', 'info');
-      } else {
-        statusElement.textContent = 'OFF';
-        this.classList.remove('bg-indigo-100', 'text-indigo-700');
-        this.classList.add('bg-gray-100', 'text-gray-700');
-        stopAutoRefresh();
-        showNotification('Auto-refresh disabled', 'warning');
+      if (cancelReasonTextarea) {
+        cancelReasonTextarea.addEventListener('input', function() {
+          charCount.textContent = this.value.length;
+        });
+      }
+
+      // Cancel appointment form submission
+      const cancelForm = document.getElementById('cancelAppointmentForm');
+      if (cancelForm) {
+        cancelForm.addEventListener('submit', handleCancelAppointment);
       }
     });
 
-    // Check for appointment status updates
-    async function checkForStatusUpdates() {
+    function openCancelModal(appointmentId, workerName) {
+    const modal = document.getElementById('cancelAppointmentModal');
+    const workerNameElement = document.getElementById('cancelWorkerName');
+    const appointmentIdInput = document.getElementById('cancelAppointmentId');
+    
+    workerNameElement.textContent = workerName;
+    appointmentIdInput.value = appointmentId;
+    
+    // Store the reject URL in the modal for later use
+    const rejectUrlBase = document.querySelector('.cancel-appointment-btn').dataset.rejectUrlBase;
+    modal.dataset.rejectUrl = rejectUrlBase.replace('/0/', `/${appointmentId}/`);
+    
+    // Reset form
+    document.getElementById('cancelReason').value = '';
+    document.getElementById('charCount').textContent = '0';
+    
+    modal.classList.add('show');
+}
+
+
+
+    function closeCancelModal() {
+      const modal = document.getElementById('cancelAppointmentModal');
+      modal.classList.remove('show');
+    }
+
+    function handleCancelAppointment(event) {
+    event.preventDefault();
+    
+    const appointmentId = document.getElementById('cancelAppointmentId').value;
+    const cancelReason = document.getElementById('cancelReason').value;
+    const confirmBtn = document.getElementById('confirmCancelBtn');
+    
+    console.log('🔍 DEBUG: Starting cancellation...');
+    
+    // Show loading state
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Cancelling...';
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('appointment_id', appointmentId);
+    formData.append('cancel_reason', cancelReason);
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+    console.log('🔍 DEBUG: Headers being sent:');
+    console.log('  X-Requested-With: XMLHttpRequest');
+    console.log('  Accept: application/json');
+    
+    fetch(`/appointments/${appointmentId}/reject/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json', // Explicitly ask for JSON
+        }
+    })
+    .then(response => {
+        console.log('🔍 DEBUG: Response status:', response.status);
+        console.log('🔍 DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        // Check content type first
+        const contentType = response.headers.get('content-type') || '';
+        console.log('🔍 DEBUG: Content-Type:', contentType);
+        
+        if (contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // If not JSON, check if it's a redirect
+            if (response.redirected) {
+                console.log('🔍 DEBUG: Response was redirected!');
+                throw new Error('Server redirected instead of returning JSON');
+            }
+            return response.text().then(text => {
+                console.log('🔍 DEBUG: Got HTML instead of JSON. First 200 chars:', text.substring(0, 200));
+                throw new Error('Server returned HTML instead of JSON');
+            });
+        }
+    })
+    .then(data => {
+        console.log('🔍 DEBUG: Success! JSON data:', data);
+        
+        if (data.success) {
+            closeCancelModal();
+            showNotification(data.message || 'Cancelled successfully!', 'success');
+            
+            // Update UI
+            updateAppointmentUI(appointmentId, 'rejected');
+        } else {
+            throw new Error(data.error || 'Failed to cancel');
+        }
+    })
+    .catch(error => {
+        console.error('🔍 DEBUG: Error:', error);
+        showNotification('Failed: ' + error.message, 'error');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm Cancellation';
+    });
+}
+
+
+function confirmCancellation(appointmentId) {
+    console.log('🔍 DEBUG: Starting cancellation...', appointmentId);
+    
+    const reasonInput = document.getElementById(`cancel_reason_${appointmentId}`);
+    const reason = reasonInput ? reasonInput.value.trim() : '';
+    
+    console.log('🔍 DEBUG: Cancel reason:', reason);
+    
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    console.log('🔍 DEBUG: CSRF token:', csrftoken);
+    
+    // Make the AJAX request
+    fetch(`/appointments/${appointmentId}/reject/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            cancel_reason: reason
+        })
+    })
+    .then(response => {
+        console.log('🔍 DEBUG: Response status:', response.status);
+        console.log('🔍 DEBUG: Response headers:', Object.fromEntries(response.headers));
+        console.log('🔍 DEBUG: Content-Type:', response.headers.get('content-type'));
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            console.error('❌ DEBUG: Response is not JSON!');
+            throw new Error('Server returned HTML instead of JSON');
+        }
+        
+        return response.json();
+    })
+    .then(data => {
+        console.log('🔍 DEBUG: Response data:', data);
+        
+        if (data.success) {
+            // Close modal
+            const modal = document.getElementById(`cancelModal_${appointmentId}`);
+            if (modal) {
+                const backdrop = document.querySelector('.modal-backdrop');
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+            }
+            
+            // Show success message
+            alert(data.message);
+            
+            // Reload page to show updated status
+            window.location.reload();
+        } else {
+            console.error('❌ DEBUG: Server returned error:', data.error);
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('❌ DEBUG: Fetch error:', error);
+        alert('An error occurred: ' + error.message);
+    });
+}
+// Helper function to update the UI without reloading
+function updateAppointmentUI(appointmentId, newStatus) {
+    const appointmentElement = document.getElementById(`appointment-${appointmentId}`);
+    if (appointmentElement) {
+        // Update status badge
+        const statusBadge = document.getElementById(`status-badge-${appointmentId}`);
+        if (statusBadge) {
+            statusBadge.textContent = newStatus;
+            statusBadge.className = `status-badge status-${newStatus}`;
+        }
+        
+        // Remove action buttons
+        const actionButtons = document.getElementById(`action-buttons-${appointmentId}`);
+        if (actionButtons) {
+            actionButtons.innerHTML = '<span class="text-gray-500">Appointment cancelled</span>';
+        }
+        
+        console.log('🔍 DEBUG: UI updated for appointment:', appointmentId);
+    } else {
+        // If we can't find the element, reload the page
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    }
+}
+
+    function markCustomerComplete(appointmentId) {
+      const button = document.getElementById(`customer-complete-btn-${appointmentId}`);
+      const actionButtons = document.getElementById(`action-buttons-${appointmentId}`);
+      
+      // Show loading state
+      button.classList.add('btn-loading');
+      button.disabled = true;
+      
+      fetch(`/appointments/${appointmentId}/customer-complete/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Replace button with waiting status
+          const waitingSpan = document.createElement('span');
+          waitingSpan.className = 'action-button';
+          waitingSpan.style.background = '#f59e0b';
+          waitingSpan.style.color = 'white';
+          waitingSpan.innerHTML = '<i class="fas fa-clock mr-1"></i>Waiting Worker Confirmation';
+          
+          button.replaceWith(waitingSpan);
+          showNotification(data.message, 'success');
+        } else {
+          throw new Error(data.error || 'Failed to mark complete');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        showNotification(error.message, 'error');
+      });
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    // Show notifications panel
+    function showNotificationsPanel() {
+      const panel = document.getElementById('notificationsPanel');
+      panel.classList.toggle('show');
+      loadNotifications();
+    }
+
+    // Load notifications
+    async function loadNotifications() {
       try {
-        const response = await fetch('/customer/check-appointment-updates/', {
+        const response = await fetch('{% url "customer_notifications" %}', {
           headers: {
             'X-Requested-With': 'XMLHttpRequest'
           }
@@ -1483,170 +1696,66 @@
         
         if (response.ok) {
           const data = await response.json();
+          const container = document.getElementById('notificationsList');
           
-          if (data.updates && data.updates.length > 0) {
-            data.updates.forEach(update => {
-              handleStatusUpdate(update);
-            });
+          if (data.notifications && data.notifications.length > 0) {
+            container.innerHTML = data.notifications.map(notification => `
+              <div class="notification-item ${notification.is_read ? '' : 'unread'}" onclick="handleNotificationClick(${notification.id})">
+                <div class="flex items-start gap-3">
+                  ${!notification.is_read ? '<span class="notification-dot"></span>' : ''}
+                  <div class="flex-1">
+                    <div class="font-semibold text-sm text-gray-800">${notification.title}</div>
+                    <div class="text-xs text-gray-600 mt-1">${notification.message}</div>
+                    <div class="text-xs text-gray-400 mt-1">${notification.time_ago}</div>
+                  </div>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            container.innerHTML = `
+              <div class="p-4 text-center text-gray-500">
+                <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                <p>No notifications</p>
+              </div>
+            `;
           }
-          
-          lastChecked = new Date();
         }
       } catch (error) {
-        console.error('Error checking for updates:', error);
+        console.error('Error loading notifications:', error);
       }
     }
 
-    // Handle individual status update
-    function handleStatusUpdate(update) {
-      const requestElement = document.getElementById(`request-${update.appointment_id}`);
-      const statusElement = document.getElementById(`status-${update.appointment_id}`);
-      
-      if (requestElement && statusElement) {
-        // Update status badge
-        statusElement.className = `status-badge status-${update.new_status}`;
-        statusElement.innerHTML = getStatusDisplayText(update.new_status);
-        
-        // Add visual feedback
-        requestElement.classList.add('request-updated', 'status-update-animation');
-        
-        // Remove animation class after animation completes
-        setTimeout(() => {
-          requestElement.classList.remove('status-update-animation');
-        }, 2000);
-        
-        // Show notification toast
-        showStatusNotification(update);
-        
-        // Update request element data attribute
-        requestElement.setAttribute('data-status', update.new_status);
-        
-        // Update actions based on new status
-        updateRequestActions(update.appointment_id, update.new_status);
-        
-        // Update pending requests count
-        updatePendingRequestsCount();
-      }
+    // Handle notification click
+    function handleNotificationClick(notificationId) {
+      // Mark as read and redirect to relevant page
+      fetch(`/notifications/${notificationId}/mark-read/`, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      }).then(() => {
+        updateNotificationCount();
+        loadNotifications();
+      });
     }
 
-    function getStatusDisplayText(status) {
-      switch(status) {
-        case 'pending_payment':
-          return '⏳ Waiting for Payment';
-        case 'pending':
-          return 'Waiting for Response';
-        case 'accepted':
-          return 'Accepted ✓';
-        case 'rejected':
-          return 'Declined ✗';
-        case 'completed':
-          return 'Completed ✓';
-        default:
-          return status.charAt(0).toUpperCase() + status.slice(1);
-      }
+    // Mark all notifications as read
+    function markAllNotificationsAsRead() {
+      fetch('{% url "mark_all_notifications_read" %}', {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      }).then(() => {
+        updateNotificationCount();
+        loadNotifications();
+        showNotification('All notifications marked as read', 'success');
+      });
     }
 
-    // Update request actions based on status
-    function updateRequestActions(appointmentId, status) {
-      const requestElement = document.getElementById(`request-${appointmentId}`);
-      const actionsContainer = requestElement?.querySelector('.request-actions');
-      
-      if (!actionsContainer) return;
-      
-      let newActionsHTML = '';
-      
-      if (status === 'pending_payment') {
-        newActionsHTML = `
-          <a href="/payments/checkout/${appointmentId}/" class="btn btn-accept">
-            <i class="fas fa-credit-card mr-1"></i>Complete Prepayment (Rs50)
-          </a>
-          <form method="post" action="/appointments/${appointmentId}/delete/" class="inline">
-            <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
-            <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
-              <i class="fas fa-trash mr-1"></i>Cancel Request
-            </button>
-          </form>
-          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
-            <i class="fas fa-eye mr-1"></i>View Details
-          </button>
-        `;
-      } else if (status === 'pending') {
-        newActionsHTML = `
-          <form method="post" action="/appointments/${appointmentId}/delete/" class="inline">
-            <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
-            <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
-              <i class="fas fa-trash mr-1"></i>Cancel Request
-            </button>
-          </form>
-          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
-            <i class="fas fa-eye mr-1"></i>View Details
-          </button>
-          <a href="/worker/service-details/${appointmentId}/" class="btn btn-view-details">
-            <i class="fas fa-edit mr-1"></i>Modify Request
-          </a>
-        `;
-      } else if (status === 'accepted') {
-        newActionsHTML = `
-          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
-            <i class="fas fa-eye mr-1"></i>View Details
-          </button>
-          <a href="{% url 'customer_appointments' %}" class="btn btn-accept">
-            <i class="fas fa-calendar-check mr-1"></i>View Booking
-          </a>
-        `;
-      } else if (status === 'rejected') {
-        newActionsHTML = `
-          <button class="btn btn-view-details" onclick="showRequestDetails(${appointmentId})">
-            <i class="fas fa-eye mr-1"></i>View Details
-          </button>
-          <a href="{% url 'worker-list' %}" class="btn btn-view-details">
-            <i class="fas fa-search mr-1"></i>Find Another Worker
-          </a>
-        `;
-      }
-      
-      actionsContainer.innerHTML = newActionsHTML;
-    }
-
-    function updatePendingRequestsCount() {
-      const pendingRequests = document.querySelectorAll('.request-card[data-status="pending"], .request-card[data-status="pending_payment"]');
-      const countElement = document.getElementById('pendingRequestsCount');
-      if (countElement) {
-        countElement.textContent = `${pendingRequests.length} Pending Request${pendingRequests.length !== 1 ? 's' : ''}`;
-      }
-    }
-
-    // Show status notification toast
-    function showStatusNotification(update) {
-      let notificationType, title, message, icon;
-      
-      switch(update.new_status) {
-        case 'accepted':
-          notificationType = 'success';
-          title = 'Appointment Accepted!';
-          message = `${update.worker_name} has accepted your appointment request`;
-          icon = 'fa-check-circle';
-          break;
-        case 'rejected':
-          notificationType = 'error';
-          title = 'Appointment Declined';
-          message = `${update.worker_name} was unable to accept your request`;
-          icon = 'fa-times-circle';
-          break;
-        case 'completed':
-          notificationType = 'info';
-          title = 'Appointment Completed';
-          message = `Your appointment with ${update.worker_name} has been completed`;
-          icon = 'fa-flag-checkered';
-          break;
-        default:
-          return;
-      }
-      
-      showNotification(message, notificationType, title, icon);
-    }
-
-    // Enhanced notification function
+    // Show notification function
     function showNotification(message, type = 'info', title = null, icon = null) {
       const container = document.getElementById('notificationToastContainer');
       const notificationId = 'notification-' + Date.now();
@@ -1713,122 +1822,39 @@
       }
     }
 
-    // Show notifications panel
-    function showNotificationsPanel() {
-      const panel = document.getElementById('notificationsPanel');
-      panel.classList.toggle('show');
-      loadNotifications();
-    }
-
-    // Load notifications
-    async function loadNotifications() {
-      try {
-        const response = await fetch('/customer/notifications/', {
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const container = document.getElementById('notificationsList');
-          
-          if (data.notifications && data.notifications.length > 0) {
-            container.innerHTML = data.notifications.map(notification => `
-              <div class="notification-item ${notification.is_read ? '' : 'unread'}" onclick="handleNotificationClick(${notification.id})">
-                <div class="flex items-start gap-3">
-                  ${!notification.is_read ? '<span class="notification-dot"></span>' : ''}
-                  <div class="flex-1">
-                    <div class="font-semibold text-sm text-gray-800">${notification.title}</div>
-                    <div class="text-xs text-gray-600 mt-1">${notification.message}</div>
-                    <div class="text-xs text-gray-400 mt-1">${notification.time_ago}</div>
-                  </div>
-                </div>
-              </div>
-            `).join('');
-          } else {
-            container.innerHTML = `
-              <div class="p-4 text-center text-gray-500">
-                <i class="fas fa-bell-slash text-2xl mb-2"></i>
-                <p>No notifications</p>
-              </div>
-            `;
-          }
-        }
-      } catch (error) {
-        console.error('Error loading notifications:', error);
-      }
-    }
-
-    // Handle notification click
-    function handleNotificationClick(notificationId) {
-      // Mark as read and redirect to relevant page
-      fetch(`/notifications/${notificationId}/mark-read/`, {
-        method: 'POST',
+    // Update notification count periodically
+    function updateNotificationCount() {
+      fetch('{% url "get_notification_count" %}', {
         headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': getCSRFToken()
+          'X-Requested-With': 'XMLHttpRequest'
         }
-      }).then(() => {
-        updateNotificationCount();
-        loadNotifications();
-      });
-    }
-
-    // Mark all notifications as read
-    function markAllNotificationsAsRead() {
-      fetch('/notifications/mark-all-read/', {
-        method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': getCSRFToken()
-        }
-      }).then(() => {
-        updateNotificationCount();
-        loadNotifications();
-        showNotification('All notifications marked as read', 'success');
-      });
-    }
-
-    // Get CSRF token
-    function getCSRFToken() {
-      return document.querySelector('[name=csrfmiddlewaretoken]').value;
-    }
-
-    // Update notification count
-    async function updateNotificationCount() {
-      try {
-        const response = await fetch('{% url "get_notification_count" %}', {
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const badge = document.getElementById('notification-count');
-          
-          if (data.count > 0) {
-            if (badge) {
-              badge.textContent = data.count;
-            } else {
-              const notificationBadge = document.querySelector('.notification-badge');
-              const newBadge = document.createElement('span');
-              newBadge.className = 'badge';
-              newBadge.id = 'notification-count';
-              newBadge.textContent = data.count;
-              notificationBadge.appendChild(newBadge);
-            }
+      })
+      .then(response => response.json())
+      .then(data => {
+        const badge = document.getElementById('notification-count');
+        if (data.count > 0) {
+          if (badge) {
+            badge.textContent = data.count;
           } else {
-            if (badge) {
-              badge.remove();
-            }
+            // Create badge if it doesn't exist
+            const notificationIcon = document.querySelector('.notification-badge i');
+            const newBadge = document.createElement('span');
+            newBadge.className = 'badge';
+            newBadge.id = 'notification-count';
+            newBadge.textContent = data.count;
+            notificationIcon.parentElement.appendChild(newBadge);
+          }
+        } else {
+          if (badge) {
+            badge.remove();
           }
         }
-      } catch (error) {
-        console.error('Error updating notification count:', error);
-      }
+      })
+      .catch(error => console.error('Error updating notification count:', error));
     }
+
+    // Update notification count every 30 seconds
+    setInterval(updateNotificationCount, 30000);
 
     // Close notifications panel when clicking outside
     document.addEventListener('click', function(event) {
@@ -1842,140 +1868,20 @@
       }
     });
 
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      initializeRealTimeUpdates();
-      updateNotificationCount();
-      
-      // Show any initial messages
-      {% if messages %}
-        {% for message in messages %}
-          showNotification('{{ message }}', '{{ message.tags }}');
-        {% endfor %}
-      {% endif %}
+    // Close cancel modal when clicking outside
+    document.addEventListener('click', function(event) {
+      const modal = document.getElementById('cancelAppointmentModal');
+      if (event.target === modal) {
+        closeCancelModal();
+      }
     });
 
-    // Your existing functions
-    function showRequestDetails(requestId) {
-      // Show loading state
-      document.getElementById('requestDetailsContent').innerHTML = `
-        <div class="text-center py-8">
-          <i class="fas fa-spinner fa-spin text-2xl text-indigo-600 mb-2"></i>
-          <p class="text-gray-600">Loading details...</p>
-        </div>
-      `;
-      
-      // Show modal
-      document.getElementById('requestDetailsModal').classList.remove('hidden');
-      
-      // Fetch request details via AJAX
-      fetch(`/appointments/${requestId}/details/`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            document.getElementById('requestDetailsContent').innerHTML = `
-              <div class="space-y-4">
-                <div class="flex items-center space-x-3">
-                  <div class="worker-avatar">
-                    ${data.worker_profile_pic ? 
-                      `<img src="${data.worker_profile_pic}" alt="${data.worker_name}">` : 
-                      `<span class="text-white font-bold">${data.worker_name.charAt(0)}</span>`
-                    }
-                  </div>
-                  <div>
-                    <h4 class="font-semibold text-gray-800">${data.worker_name}</h4>
-                    <p class="text-sm text-gray-600">${data.worker_tagline || 'Professional Service Provider'}</p>
-                  </div>
-                </div>
-                
-                <div class="bg-gray-50 rounded-lg p-4">
-                  <h5 class="font-semibold text-gray-700 mb-2">Appointment Details</h5>
-                  <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                      <span class="text-gray-600">Service:</span>
-                      <span class="font-medium">${data.service_name}</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-gray-600">Date:</span>
-                      <span class="font-medium">${data.appointment_date}</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-gray-600">Time:</span>
-                      <span class="font-medium">${data.appointment_time}</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-gray-600">Duration:</span>
-                      <span class="font-medium">${data.duration || '2 hours'}</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-gray-600">Estimated Price:</span>
-                      <span class="font-medium">${data.price || 'To be discussed'}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                ${data.special_instructions ? `
-                <div class="bg-blue-50 rounded-lg p-4">
-                  <h5 class="font-semibold text-blue-700 mb-2">Special Instructions</h5>
-                  <p class="text-sm text-blue-600">${data.special_instructions}</p>
-                </div>
-                ` : ''}
-                
-                <div class="bg-yellow-50 rounded-lg p-4">
-                  <h5 class="font-semibold text-yellow-700 mb-2">Status</h5>
-                  <p class="text-sm text-yellow-600">Waiting for ${data.worker_name} to respond to your request</p>
-                </div>
-                
-                <div class="flex space-x-2 pt-4">
-                  <form method="post" action="/appointments/${requestId}/delete/" class="flex-1">
-                    <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
-                    <button type="submit" class="btn btn-delete w-full text-center" onclick="return confirm('Are you sure you want to cancel this appointment request?')">
-                      <i class="fas fa-trash mr-1"></i>Cancel Request
-                    </button>
-                  </form>
-                  <a href="/worker/service-details/${requestId}/" class="btn btn-view-details flex-1 text-center">
-                    <i class="fas fa-edit mr-1"></i>Modify Request
-                  </a>
-                </div>
-              </div>
-            `;
-          } else {
-            document.getElementById('requestDetailsContent').innerHTML = `
-              <div class="text-center py-8">
-                <i class="fas fa-exclamation-triangle text-2xl text-red-500 mb-2"></i>
-                <p class="text-gray-600">Error loading request details</p>
-                <button onclick="closeRequestDetails()" class="btn btn-view-details mt-4">
-                  Close
-                </button>
-              </div>
-            `;
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching request details:', error);
-          document.getElementById('requestDetailsContent').innerHTML = `
-            <div class="text-center py-8">
-              <i class="fas fa-exclamation-triangle text-2xl text-red-500 mb-2"></i>
-              <p class="text-gray-600">Error loading request details</p>
-              <button onclick="closeRequestDetails()" class="btn btn-view-details mt-4">
-                Close
-              </button>
-            </div>
-          `;
-        });
-    }
-
-    function closeRequestDetails() {
-      document.getElementById('requestDetailsModal').classList.add('hidden');
-    }
-
-    // Clean up on page unload
-    window.addEventListener('beforeunload', function() {
-      stopAutoRefresh();
-    });
-
-    // Setup notification badge click
-    document.getElementById('notificationBadge').addEventListener('click', showNotificationsPanel);
+    // Show any initial messages
+    {% if messages %}
+      {% for message in messages %}
+        showNotification('{{ message }}', '{{ message.tags }}');
+      {% endfor %}
+    {% endif %}
   </script>
 </body>
 </html>

@@ -8,7 +8,7 @@
   <title>Reviews - BlueCollar</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
     * {
@@ -18,49 +18,41 @@
     }
 
     :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --primary-light: #818cf8;
-      --secondary: #ec4899;
-      --success: #22c55e;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --secondary: #8b5cf6;
+      --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
       --dark: #0f172a;
       --light: #f8fafc;
-      --sidebar-gradient-start: #1e1b4b;
-      --sidebar-gradient-end: #312e81;
+      --sidebar-gradient-start: #1e1b4b; 
+      --sidebar-gradient-end: #312e81;  
     }
 
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
       min-height: 100vh;
       color: #1e293b;
       overflow-x: hidden;
     }
 
-    /* Animated Background */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
-      animation: backgroundShift 15s ease-in-out infinite;
-      z-index: -1;
+    .glass {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
-    @keyframes backgroundShift {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.1); }
+    .glass-dark {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Sidebar Styles */
+    /* Sidebar */
+        
     .sidebar {
       background: linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
       backdrop-filter: blur(20px);
@@ -163,22 +155,22 @@
     }
 
     .nav-item.active {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(236, 72, 153, 0.3));
-      color: white;
-      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(236, 72, 153, 0.3));
+    color: white;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
-    .nav-item.active::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: linear-gradient(180deg, #6366f1, #ec4899);
-      border-radius: 0 4px 4px 0;
-    }
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #6366f1, #ec4899);
+    border-radius: 0 4px 4px 0;
+}
 
     .main-content {
       margin-left: 280px;
@@ -186,60 +178,150 @@
       min-height: 100vh;
     }
 
-    .header-card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      border-radius: 24px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.5);
+    .sidebar.mobile-hidden {
+      transform: translateX(-100%);
+    }
+
+    .nav-item {
+      padding: 1rem 1.5rem;
+      margin: 0.5rem 1rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      font-weight: 500;
       position: relative;
       overflow: hidden;
+      cursor: pointer;
     }
 
-    .header-card::before {
+    .nav-item::before {
       content: '';
       position: absolute;
+      left: 0;
       top: 0;
-      right: 0;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
-      border-radius: 50%;
-      transform: translate(30%, -30%);
+      width: 0;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.15);
+      transition: width 0.3s ease;
+      z-index: -1;
     }
 
-    /* Keep your original review styles below */
-    .glass {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+    .nav-item:hover::before,
+    .nav-item.active::before {
+      width: 100%;
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-item:hover {
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .nav-item i {
+      width: 24px;
+      margin-right: 1rem;
+      font-size: 1.1rem;
+    }
+
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: 280px;
+      padding: 2rem;
+      min-height: 100vh;
+      transition: all 0.3s ease;
     }
 
     .stat-card {
       background: white;
-      border-radius: 20px;
-      padding: 2rem;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
     }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+    }
 
+    .stat-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, var(--color-start), var(--color-end));
+      box-shadow: 0 6px 16px var(--color-shadow);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover .stat-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    /* Review Cards */
     .review-card {
       background: white;
-      border-radius: 16px;
+      border-radius: 12px;
       padding: 1.5rem;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       transition: all 0.3s ease;
       border-left: 4px solid;
+      margin-bottom: 1rem;
     }
 
     .review-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
+
+    .review-card.pending { border-left-color: #f59e0b; }
+    .review-card.accepted { border-left-color: #10b981; }
+    .review-card.completed { border-left-color: #3b82f6; }
+    .review-card.rejected { border-left-color: #ef4444; }
 
     .rating-stars {
       color: #fbbf24;
@@ -257,29 +339,6 @@
       transition: width 0.6s ease;
     }
 
-    .floating-action-btn {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 10px 25px rgba(99, 102, 241, 0.5);
-      z-index: 100;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    .floating-action-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 15px 30px rgba(99, 102, 241, 0.6);
-    }
-    
     .tab-button {
       padding: 0.5rem 1rem;
       border-radius: 8px;
@@ -288,6 +347,8 @@
       font-weight: 500;
       transition: all 0.3s ease;
       cursor: pointer;
+      border: none;
+      font-size: 0.875rem;
     }
     
     .tab-button.active {
@@ -316,17 +377,6 @@
     .badge-info {
       background: #dbeafe;
       color: #1e40af;
-    }
-    
-    .stat-icon {
-      width: 60px;
-      height: 60px;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, var(--color-start), var(--color-end));
-      box-shadow: 0 8px 16px var(--color-shadow);
     }
     
     .review-sentiment {
@@ -362,14 +412,15 @@
     .customer-avatar {
       width: 40px;
       height: 40px;
-      border-radius: 12px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #6366f1, #ec4899);
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
       color: white;
       font-weight: 700;
       font-size: 1rem;
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
     }
 
     .btn-secondary {
@@ -411,32 +462,103 @@
     .empty-state {
       text-align: center;
       padding: 2rem;
-      color: #94a3b8;
+      color: #64748b;
     }
 
     .empty-state i {
       font-size: 3rem;
       margin-bottom: 1rem;
-      opacity: 0.5;
+      background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Mobile overlay for sidebar */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      backdrop-filter: blur(4px);
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    /* Floating Action Button */
+    .floating-action-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(99, 102, 241, 0.5);
+      z-index: 100;
+      cursor: pointer;
+      transition: all 0.3s ease;
     }
     
+    .floating-action-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 15px 30px rgba(99, 102, 241, 0.6);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .sidebar {
+        width: 260px;
+      }
+      .main-content {
+        margin-left: 260px;
+      }
+    }
+
     @media (max-width: 1024px) {
       .sidebar {
+        width: 240px;
+      }
+      .main-content {
+        margin-left: 240px;
+        padding: 1.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: block;
+      }
+      
+      .sidebar {
+        width: 280px;
         transform: translateX(-100%);
+      }
+      
+      .sidebar.mobile-open {
+        transform: translateX(0);
       }
       
       .main-content {
         margin-left: 0;
         padding: 1rem;
+        padding-top: 4rem;
       }
-    }
-
-    @media (max-width: 768px) {
-      .header-card {
-        padding: 1.5rem;
-      }
-
+      
       .stat-card {
+        padding: 1.25rem;
+      }
+      
+      .review-card {
         padding: 1.25rem;
       }
       
@@ -445,11 +567,53 @@
         right: 1rem;
       }
     }
+
+    @media (max-width: 640px) {
+      .main-content {
+        padding: 0.75rem;
+        padding-top: 4rem;
+      }
+      
+      .stat-card {
+        padding: 1rem;
+      }
+      
+      .review-card {
+        padding: 1rem;
+      }
+      
+      .tab-button {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
+  <!-- Mobile Menu Button -->
+  <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <i class="fas fa-bars text-lg"></i>
+  </button>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <!-- Sidebar Navigation -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="logo-container">
       <div class="flex items-center gap-3">
         <div class="logo-box">
@@ -479,13 +643,9 @@
         <i class="fas fa-star"></i>
         <span>Reviews</span>
       </a>
-      <a href="{% url 'worker_analytics' %}" class="nav-item">
-        <i class="fas fa-chart-line"></i>
-        <span>Analytics</span>
-      </a>
-      <a href="{% url 'worker_earnings' %}" class="nav-item">
-        <i class="fas fa-wallet"></i>
-        <span>Earnings</span>
+      <a href="{% url 'worker_profile' %}" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>My Profile</span>
       </a>
       <a href="{% url 'worker_settings' %}" class="nav-item">
         <i class="fas fa-cog"></i>
@@ -497,7 +657,7 @@
       <div class="flex items-center gap-3 mb-3">
         <div class="customer-avatar">
           {% if worker.profile_pic %}
-            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" style="width: 100%; height: 100%; border-radius: 12px; object-fit: cover;">
+            <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
           {% else %}
             <span>{{ worker.name|first }}</span>
           {% endif %}
@@ -518,30 +678,32 @@
   </div>
 
   <!-- Main Content -->
-  <div class="main-content">
+  <div class="main-content" id="mainContent">
     <!-- Header -->
-    <div class="header-card fade-in-up">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">Customer Reviews ⭐</h1>
-          <p class="text-gray-600 text-lg">See what your customers are saying about your services</p>
-        </div>
-        <div class="flex items-center space-x-4">
-          <div class="text-right bg-gradient-to-r from-yellow-50 to-amber-50 px-4 py-3 rounded-xl border border-yellow-200">
-            <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Overall Rating</p>
-            <p class="font-bold text-gray-900">{{ average_rating|default:"0" }}/5</p>
+    <div class="bg-white rounded-xl shadow-lg border border-gray-100 mb-6 fade-in-up">
+      <div class="p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div class="flex-1">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Customer Reviews ⭐</h1>
+            <p class="text-gray-600 text-base sm:text-lg">See what your customers are saying about your services</p>
+          </div>
+          <div class="flex items-center space-x-3 w-full sm:w-auto">
+            <div class="text-right bg-gradient-to-r from-yellow-50 to-amber-50 px-4 py-3 rounded-xl border border-yellow-200">
+              <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Overall Rating</p>
+              <p class="font-bold text-gray-900 text-sm sm:text-base">{{ average_rating|default:"0" }}/5</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Rating Overview -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
       <!-- Rating Summary -->
       <div class="stat-card fade-in-up" style="animation-delay: 0.1s">
         <div class="text-center">
-          <div class="text-6xl font-bold text-gray-900 mb-2">{{ average_rating|default:"0" }}</div>
-          <div class="rating-stars text-2xl mb-4">
+          <div class="text-5xl sm:text-6xl font-bold text-gray-900 mb-2">{{ average_rating|default:"0" }}</div>
+          <div class="rating-stars text-xl sm:text-2xl mb-4">
             {% for i in "12345" %}
               {% if forloop.counter <= average_rating %}
                 <i class="fas fa-star"></i>
@@ -552,16 +714,16 @@
               {% endif %}
             {% endfor %}
           </div>
-          <p class="text-gray-600">Based on {{ total_reviews|default:"0" }} reviews</p>
+          <p class="text-gray-600 text-sm sm:text-base">Based on {{ total_reviews|default:"0" }} reviews</p>
         </div>
       </div>
 
       <!-- Rating Distribution -->
-      <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 fade-in-up" style="animation-delay: 0.2s">
-        <h3 class="text-xl font-bold text-gray-900 mb-6">Rating Distribution</h3>
+      <div class="lg:col-span-2 bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6 fade-in-up" style="animation-delay: 0.2s">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Rating Distribution</h3>
         <div class="space-y-3">
           {% for rating in rating_distribution %}
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3 sm:gap-4">
             <span class="text-sm font-semibold text-gray-600 w-8">{{ rating.stars }}★</span>
             <div class="flex-1 progress-bar">
               <div class="progress-fill bg-yellow-500" style="width: {{ rating.percentage }}%"></div>
@@ -578,12 +740,12 @@
     </div>
 
     <!-- Review Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
       <div class="stat-card fade-in-up" style="animation-delay: 0.3s">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">5-Star Reviews</p>
-            <p class="text-4xl font-bold text-yellow-600">{{ five_star_count|default:"0" }}</p>
+            <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">5-Star Reviews</p>
+            <p class="text-2xl sm:text-3xl font-bold text-yellow-600">{{ five_star_count|default:"0" }}</p>
             <p class="text-xs text-gray-500 mt-2">Excellent ratings</p>
           </div>
           <div class="stat-icon" style="--color-start: #f59e0b; --color-end: #d97706; --color-shadow: rgba(245, 158, 11, 0.3);">
@@ -595,8 +757,8 @@
       <div class="stat-card fade-in-up" style="animation-delay: 0.4s">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Response Rate</p>
-            <p class="text-4xl font-bold text-green-600">{{ response_rate|default:"0" }}%</p>
+            <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Response Rate</p>
+            <p class="text-2xl sm:text-3xl font-bold text-green-600">{{ response_rate|default:"0" }}%</p>
             <p class="text-xs text-gray-500 mt-2">Reviews responded to</p>
           </div>
           <div class="stat-icon" style="--color-start: #10b981; --color-end: #059669; --color-shadow: rgba(16, 185, 129, 0.3);">
@@ -608,8 +770,8 @@
       <div class="stat-card fade-in-up" style="animation-delay: 0.5s">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">This Month</p>
-            <p class="text-4xl font-bold text-blue-600">{{ monthly_reviews|default:"0" }}</p>
+            <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">This Month</p>
+            <p class="text-2xl sm:text-3xl font-bold text-blue-600">{{ monthly_reviews|default:"0" }}</p>
             <p class="text-xs text-gray-500 mt-2">New reviews</p>
           </div>
           <div class="stat-icon" style="--color-start: #3b82f6; --color-end: #2563eb; --color-shadow: rgba(59, 130, 246, 0.3);">
@@ -620,10 +782,10 @@
     </div>
 
     <!-- Customer Reviews -->
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 fade-in-up" style="animation-delay: 0.6s">
-      <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-bold text-gray-900">Customer Reviews</h3>
-        <div class="flex gap-2">
+    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6 fade-in-up" style="animation-delay: 0.6s">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-900">Customer Reviews</h3>
+        <div class="flex flex-wrap gap-2">
           <button class="tab-button active" onclick="filterReviews('all')">All Reviews</button>
           <button class="tab-button" onclick="filterReviews('5')">5 Stars</button>
           <button class="tab-button" onclick="filterReviews('4')">4 Stars</button>
@@ -633,25 +795,25 @@
         </div>
       </div>
 
-      <div class="space-y-6" id="reviews-container">
+      <div class="space-y-4 sm:space-y-6" id="reviews-container">
         {% for review in reviews %}
         <div class="review-card {% if review.rating >= 4 %}review-highlight{% endif %}" data-rating="{{ review.rating }}">
-          <div class="flex justify-between items-start mb-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <div class="flex items-center gap-3">
-              <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+              <div class="customer-avatar">
                 {% if review.customer.profile_pic %}
-                  <img src="{{ review.customer.profile_pic.url }}" alt="{{ review.customer.name }}" class="w-full h-full object-cover rounded-full">
+                  <img src="{{ review.customer.profile_pic.url }}" alt="{{ review.customer.name }}" class="w-full h-full rounded-full object-cover">
                 {% else %}
-                  <span class="font-semibold text-blue-600">{{ review.customer.name|first }}</span>
+                  <span class="text-white">{{ review.customer.name|first }}</span>
                 {% endif %}
               </div>
               <div>
-                <h4 class="font-semibold text-gray-900">{{ review.customer.name }}</h4>
-                <p class="text-sm text-gray-500">{{ review.created_at|date:"M j, Y" }}</p>
+                <h4 class="font-semibold text-gray-900 text-sm sm:text-base">{{ review.customer.name }}</h4>
+                <p class="text-xs sm:text-sm text-gray-500">{{ review.created_at|date:"M j, Y" }}</p>
               </div>
             </div>
             <div class="flex items-center gap-3">
-              <div class="rating-stars">
+              <div class="rating-stars text-sm sm:text-base">
                 {% for i in "12345" %}
                   {% if forloop.counter <= review.rating %}
                     <i class="fas fa-star"></i>
@@ -676,20 +838,19 @@
             </div>
           </div>
           
-          <p class="text-gray-700 mb-4">{{ review.comment }}</p>
+          <p class="text-gray-700 text-sm sm:text-base mb-4">{{ review.comment }}</p>
           
           <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-500">
+            <span class="text-xs sm:text-sm text-gray-500">
               Service: {{ review.appointment.service_subtask.subtask.name|default:"General Service" }}
             </span>
-            <!-- Reply functionality removed since there's no reply field in the model -->
           </div>
         </div>
         {% empty %}
-        <div class="text-center text-gray-500 py-12">
-          <i class="fas fa-comments text-3xl mb-2"></i>
-          <h4 class="text-xl font-semibold text-gray-900 mb-2">No Reviews Yet</h4>
-          <p class="text-gray-600">Your customer reviews will appear here once they start rating your services.</p>
+        <div class="empty-state py-8">
+          <i class="fas fa-comments"></i>
+          <h4 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Reviews Yet</h4>
+          <p class="text-gray-600 text-sm sm:text-base">Your customer reviews will appear here once they start rating your services.</p>
         </div>
         {% endfor %}
       </div>
@@ -702,6 +863,38 @@
   </div>
 
   <script>
+    // Mobile menu functionality
+    function toggleMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+
+    // Close mobile menu when clicking overlay
+    document.getElementById('sidebarOverlay').addEventListener('click', toggleMobileMenu);
+
+    // Initialize mobile menu button
+    document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+
+    // Close mobile menu when clicking on a nav item (on mobile)
+    if (window.innerWidth <= 768) {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', toggleMobileMenu);
+        });
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            // Ensure sidebar is visible on larger screens
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+    });
+
     // Filter reviews by rating
     function filterReviews(rating) {
       const tabButtons = document.querySelectorAll('.tab-button');
@@ -725,18 +918,18 @@
         if (data.reviews && data.reviews.length > 0) {
           container.innerHTML = data.reviews.map(review => `
             <div class="review-card ${review.rating >= 4 ? 'review-highlight' : ''}" data-rating="${review.rating}">
-              <div class="flex justify-between items-start mb-4">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                    <span class="font-semibold text-blue-600">${review.customer_name.charAt(0)}</span>
+                  <div class="customer-avatar">
+                    <span class="text-white">${review.customer_name.charAt(0)}</span>
                   </div>
                   <div>
-                    <h4 class="font-semibold text-gray-900">${review.customer_name}</h4>
-                    <p class="text-sm text-gray-500">${review.created_at}</p>
+                    <h4 class="font-semibold text-gray-900 text-sm sm:text-base">${review.customer_name}</h4>
+                    <p class="text-xs sm:text-sm text-gray-500">${review.created_at}</p>
                   </div>
                 </div>
                 <div class="flex items-center gap-3">
-                  <div class="rating-stars">
+                  <div class="rating-stars text-sm sm:text-base">
                     ${'<i class="fas fa-star"></i>'.repeat(review.rating)}${'<i class="far fa-star"></i>'.repeat(5 - review.rating)}
                   </div>
                   ${review.rating >= 4 ? 
@@ -748,10 +941,10 @@
                 </div>
               </div>
               
-              <p class="text-gray-700 mb-4">${review.comment}</p>
+              <p class="text-gray-700 text-sm sm:text-base mb-4">${review.comment}</p>
               
               <div class="flex justify-between items-center">
-                <span class="text-sm text-gray-500">
+                <span class="text-xs sm:text-sm text-gray-500">
                   Service: ${review.service_name}
                 </span>
               </div>
@@ -759,10 +952,10 @@
           `).join('');
         } else {
           container.innerHTML = `
-            <div class="text-center text-gray-500 py-12">
-              <i class="fas fa-comments text-3xl mb-2"></i>
-              <h4 class="text-xl font-semibold text-gray-900 mb-2">No Reviews Found</h4>
-              <p class="text-gray-600">No reviews match your selected filter.</p>
+            <div class="empty-state py-8">
+              <i class="fas fa-comments"></i>
+              <h4 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Reviews Found</h4>
+              <p class="text-gray-600 text-sm sm:text-base">No reviews match your selected filter.</p>
             </div>
           `;
         }

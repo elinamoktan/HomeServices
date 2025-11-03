@@ -957,6 +957,52 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🟢 DOM loaded, initializing map...');
     initMap();
   });
+
+  // Enhanced search functionality - PRESERVES MAP
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    
+    if (searchForm && searchInput) {
+        // Preserve all existing parameters when searching
+        searchForm.addEventListener('submit', function(e) {
+            // Form will naturally preserve all parameters due to hidden fields
+            console.log('Search submitted with current location parameters');
+        });
+    }
+    
+    // Update distance form to preserve search query and location
+    const distanceForm = document.getElementById('distanceForm');
+    if (distanceForm && '{{ q }}') {
+        // Search query is already preserved via hidden field in template
+        console.log('Distance filter will preserve search query:', '{{ q }}');
+    }
+    
+});
+
+// Enhanced search functionality - PRESERVES MAP
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    
+    if (searchForm && searchInput) {
+        // Preserve all existing parameters when searching
+        searchForm.addEventListener('submit', function(e) {
+            // Form will naturally preserve all parameters due to hidden fields
+            console.log('Search submitted with current location parameters');
+        });
+    }
+    
+    // Update distance form to preserve search query and location
+    const distanceForm = document.getElementById('distanceForm');
+    if (distanceForm && '{{ q }}') {
+        // Search query is already preserved via hidden field in template
+        console.log('Distance filter will preserve search query:', '{{ q }}');
+    }
+    
+});
+
+
 </script>
 
 <div class="max-w-7xl mx-auto mb-12 px-4" style="max-width:unset;width:100%;padding:0">
@@ -1001,148 +1047,162 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="flex flex-col gap-8 w-full">
         
         <!-- Search and Filter Section -->
-        <div class="bg-white rounded-2xl shadow-xl p-6">
-          <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-            <!-- Search Form -->
-            <form method="get" class="flex-1 min-w-0">
-              <div class="flex flex-col sm:flex-row gap-4">
+<div class="bg-white rounded-2xl shadow-xl p-6">
+    <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+        <!-- Search Form - FIXED -->
+        <form method="get" class="flex-1 min-w-0" id="searchForm">
+            <div class="flex flex-col sm:flex-row gap-4">
                 <input
-                  type="text"
-                  name="q"
-                  value="{{ query|default:'' }}"
-                  placeholder="Search workers by tagline..."
-                  class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg"
-                >
+                    type="text"
+                    name="q"
+                    value="{{ q|default:'' }}"
+                    placeholder="Search workers by name, tagline, or services..."
+                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-400 focus:outline-none transition text-lg"
+                    id="searchInput"
+                />
+                
+                <!-- Hidden fields to preserve location parameters -->
+                {% if request.GET.lat %}
+                <input type="hidden" name="lat" value="{{ request.GET.lat }}">
+                {% endif %}
+                {% if request.GET.lng %}
+                <input type="hidden" name="lng" value="{{ request.GET.lng }}">
+                {% endif %}
+                {% if request.GET.max_distance %}
+                <input type="hidden" name="max_distance" value="{{ request.GET.max_distance }}">
+                {% endif %}
                 
                 <div class="flex gap-4">
-                  <div class="relative">
                     <button
-                      type="button"
-                      onclick="this.nextElementSibling.classList.toggle('hidden')"
-                      class="px-6 py-3 bg-indigo-200 rounded-lg hover:bg-indigo-300 focus:outline-none transition flex items-center space-x-2 whitespace-nowrap text-lg"
-                      aria-label="Filter options"
+                        type="submit"
+                        class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-2xl hover:scale-105 transition transform duration-300 whitespace-nowrap text-lg"
                     >
-                      <img src="{{ '/media/filter.png' }}" alt="Filter Icon" class="h-6 w-6">
-                      <span class="text-indigo-700 font-medium">Filter</span>
+                        Search
                     </button>
-
-                    <div class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50">
-                      <button
-                        type="submit"
-                        name="filter"
-                        value="rating"
-                        class="block w-full px-4 py-3 text-left text-gray-700 hover:bg-indigo-100 transition text-lg"
-                      >
-                        Filter by Rating
-                      </button>
-                      <button
-                        type="submit"
-                        name="filter"
-                        value="distance"
-                        class="block w-full px-4 py-3 text-left text-gray-700 hover:bg-indigo-100 transition text-lg"
-                      >
-                        Filter by Distance
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-2xl hover:scale-105 transition transform duration-300 whitespace-nowrap text-lg"
-                  >
-                    Search
-                  </button>
+                    
+                    <!-- Clear search button -->
+                    {% if q %}
+                    <a 
+                        href="{% url 'worker-list' %}{% if request.GET.max_distance %}?max_distance={{ request.GET.max_distance }}{% endif %}{% if request.GET.lat and request.GET.lng %}{% if request.GET.max_distance %}&{% else %}?{% endif %}lat={{ request.GET.lat }}&lng={{ request.GET.lng }}{% endif %}"
+                        class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition whitespace-nowrap text-lg font-semibold"
+                    >
+                        Clear Search
+                    </a>
+                    {% endif %}
                 </div>
-              </div>
-            </form>
-          </div>
+            </div>
+        </form>
+    </div>
 
-          <!-- Distance Filter -->
-          <div class="mt-6 pt-6 border-t border-gray-200">
-            <form id="distanceForm" method="get" class="flex flex-col lg:flex-row items-center gap-6">
-              <input type="hidden" name="q" value="{{ query|default:'' }}">
-              
-              <div class="flex items-center gap-4 flex-1 min-w-0">
+    <!-- Show search results info -->
+    {% if q %}
+    <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+        <p class="text-blue-800 font-semibold">
+            🔍 Search results for: "<span class="font-bold">{{ q }}</span>"
+            {% if workers %}
+            - Found {{ workers|length }} worker{{ workers|length|pluralize }}
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Distance Filter - KEEP THIS SECTION -->
+    <div class="mt-6 pt-6 border-t border-gray-200">
+        <form id="distanceForm" method="get" class="flex flex-col lg:flex-row items-center gap-6">
+            <!-- Preserve search query in distance filter -->
+            {% if q %}
+            <input type="hidden" name="q" value="{{ q }}">
+            {% endif %}
+            <!-- Preserve location parameters -->
+            {% if request.GET.lat %}
+            <input type="hidden" name="lat" value="{{ request.GET.lat }}">
+            {% endif %}
+            {% if request.GET.lng %}
+            <input type="hidden" name="lng" value="{{ request.GET.lng }}">
+            {% endif %}
+            
+            <div class="flex items-center gap-4 flex-1 min-w-0">
                 <label for="distanceSlider" class="text-indigo-700 font-semibold whitespace-nowrap text-lg min-w-[120px]">
-                  Max Distance:
+                    Max Distance:
                 </label>
                 <span id="distanceValue" class="text-indigo-600 font-medium whitespace-nowrap text-lg min-w-[60px]">
-                  {{ max_distance|default:50 }} km
+                    {{ max_distance|default:50 }} km
                 </span>
                 <input
-                  type="range"
-                  id="distanceSlider"
-                  name="max_distance"
-                  min="1"
-                  max="100"
-                  value="{{ max_distance|default:50 }}"
-                  class="flex-1 min-w-0 h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer slider"
+                    type="range"
+                    id="distanceSlider"
+                    name="max_distance"
+                    min="1"
+                    max="100"
+                    value="{{ max_distance|default:50 }}"
+                    class="flex-1 min-w-0 h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer slider"
                 >
-              </div>
-              
-              <button
+            </div>
+            
+            <button
                 type="submit"
                 class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-lg font-semibold min-w-[120px]"
-              >
+            >
                 Apply Filter
-              </button>
-            </form>
-          </div>
+            </button>
+        </form>
+    </div>
+</div>
 
-          <!-- Enhanced Location Selection Map -->
-          <div class="mt-6 pt-6 border-t border-gray-200">
-            <h3 class="text-xl font-semibold text-indigo-800 mb-4 flex items-center">
-              <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
-              Select Your Location for Distance-Based Sorting
-            </h3>
-            
-            <div class="bg-gray-50 rounded-xl p-4 mb-4">
-              <div class="relative">
-                <div id="locationMap"></div>
-              </div>
-              
-              <div id="locationStatus" class="location-status loading mt-3">
-                <i class="fas fa-spinner fa-spin mr-2"></i>Detecting your location...
-              </div>
-              
-              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-4">
-                <div class="flex-1">
-                  <p class="text-gray-600 text-sm">
+<!-- ✅ KEEP THE ENTIRE MAP SECTION EXACTLY AS IT IS - DON'T MODIFY -->
+<!-- Enhanced Location Selection Map -->
+<div class="mt-6 pt-6 border-t border-gray-200">
+    <h3 class="text-xl font-semibold text-indigo-800 mb-4 flex items-center">
+        <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+        Select Your Location for Distance-Based Sorting
+    </h3>
+    
+    <div class="bg-gray-50 rounded-xl p-4 mb-4">
+        <div class="relative">
+            <div id="locationMap"></div>
+        </div>
+        
+        <div id="locationStatus" class="location-status loading mt-3">
+            <i class="fas fa-spinner fa-spin mr-2"></i>Detecting your location...
+        </div>
+        
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-4">
+            <div class="flex-1">
+                <p class="text-gray-600 text-sm">
                     Workers will be automatically sorted by distance from your selected location.
                     {% if request.GET.lat and request.GET.lng %}
                       <br><strong>Currently showing workers near your selected location.</strong>
                     {% endif %}
-                  </p>
-                </div>
-                
-                <div class="flex gap-2 flex-shrink-0">
-                  {% if request.GET.lat and request.GET.lng or customer_location %}
-                  <button
-                    onclick="clearLocationFilter()"
-                    class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm font-semibold"
-                  >
-                    Clear Location
-                  </button>
-                  {% endif %}
-                </div>
-              </div>
+                </p>
             </div>
             
-            <!-- Information about automatic sorting -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div class="flex items-start">
-                <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
-                <div>
-                  <p class="text-blue-800 font-medium text-sm">
+            <div class="flex gap-2 flex-shrink-0">
+                {% if request.GET.lat and request.GET.lng or customer_location %}
+                <button
+                    onclick="clearLocationFilter()"
+                    class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm font-semibold"
+                >
+                    Clear Location
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Information about automatic sorting -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex items-start">
+            <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+            <div>
+                <p class="text-blue-800 font-medium text-sm">
                     <strong>How it works:</strong> Your location is automatically detected when you visit this page. 
                     Click anywhere on the map to change your location. 
                     The system will automatically update and sort workers by distance from your selected location.
-                  </p>
-                </div>
-              </div>
+                </p>
             </div>
-          </div>
         </div>
+    </div>
+</div>
 
         <!-- Your existing action buttons remain the same -->
         <div class="flex flex-col sm:flex-row gap-6">
