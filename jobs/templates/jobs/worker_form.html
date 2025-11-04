@@ -308,7 +308,7 @@
                             {% endfor %}
                             <!-- Custom validation message container -->
                             <div id="{{ field.id_for_label }}-error" class="error-message hidden">
-                                <i class="fas fa-exclamation-circle"></i>
+                            
                                 <span id="{{ field.id_for_label }}-error-text"></span>
                             </div>
                         </div>
@@ -399,25 +399,27 @@
     // Fix map size after CSS animation
     setTimeout(() => { map.invalidateSize(); }, 900);
 
-    // Name validation function - allows only letters, hyphens, and apostrophes
+    // VALIDATION FUNCTIONS
+
+    // Name validation function - allows ONLY letters (no spaces, numbers, special characters)
     function validateName(input, fieldName) {
         const value = input.value.trim();
         const errorElement = document.getElementById(`${input.id}-error`);
         const errorTextElement = document.getElementById(`${input.id}-error-text`);
         
-        // Regular expression to allow only letters, hyphens, apostrophes, and spaces
-        const nameRegex = /^[A-Za-z\s\-']+$/;
+        // Regular expression to allow ONLY letters (no spaces, hyphens, apostrophes, numbers, or special characters)
+        const nameRegex = /^[A-Za-z]+$/;
         
         if (value === '') {
-            // Don't show error for empty field, let required attribute handle it
-            input.classList.remove('error');
-            errorElement.classList.add('hidden');
-            return true;
+            input.classList.add('error');
+            errorTextElement.textContent = `${fieldName} is required.`;
+            errorElement.classList.remove('hidden');
+            return false;
         }
         
         if (!nameRegex.test(value)) {
             input.classList.add('error');
-            errorTextElement.textContent = `${fieldName} can only contain letters, spaces, hyphens, and apostrophes. Numbers and special characters are not allowed.`;
+            errorTextElement.textContent = `${fieldName} must contain only letters (no spaces, numbers, or special characters).`;
             errorElement.classList.remove('hidden');
             return false;
         } else {
@@ -427,30 +429,63 @@
         }
     }
 
-    // Phone number validation function - allows only numbers and maximum 10 digits
+    // Tagline validation function - allows ONLY letters, max 150 characters
+    function validateTagline(input) {
+        const value = input.value.trim();
+        const errorElement = document.getElementById(`${input.id}-error`);
+        const errorTextElement = document.getElementById(`${input.id}-error-text`);
+        
+        // Regular expression to allow ONLY letters (no spaces, numbers, or special characters)
+        const taglineRegex = /^[A-Za-z]+$/;
+        
+        if (value === '') {
+            input.classList.add('error');
+            errorTextElement.textContent = 'Tagline is required.';
+            errorElement.classList.remove('hidden');
+            return false;
+        }
+        
+        if (!taglineRegex.test(value)) {
+            input.classList.add('error');
+            errorTextElement.textContent = 'Tagline must contain only letters (no spaces, numbers, or special characters).';
+            errorElement.classList.remove('hidden');
+            return false;
+        } else if (value.length > 150) {
+            input.classList.add('error');
+            errorTextElement.textContent = 'Tagline must be maximum 150 characters.';
+            errorElement.classList.remove('hidden');
+            return false;
+        } else {
+            input.classList.remove('error');
+            errorElement.classList.add('hidden');
+            return true;
+        }
+    }
+
+    // Phone number validation function - allows ONLY numbers and exactly 10 digits
     function validatePhone(input) {
         const value = input.value.trim();
         const errorElement = document.getElementById(`${input.id}-error`);
         const errorTextElement = document.getElementById(`${input.id}-error-text`);
         
-        // Regular expression to allow only numbers
+        // Regular expression to allow ONLY numbers
         const phoneRegex = /^\d+$/;
         
         if (value === '') {
-            // Don't show error for empty field, let required attribute handle it
-            input.classList.remove('error');
-            errorElement.classList.add('hidden');
-            return true;
+            input.classList.add('error');
+            errorTextElement.textContent = 'Phone number is required.';
+            errorElement.classList.remove('hidden');
+            return false;
         }
         
         if (!phoneRegex.test(value)) {
             input.classList.add('error');
-            errorTextElement.textContent = 'Phone number can only contain numbers. Letters and special characters are not allowed.';
+            errorTextElement.textContent = 'Phone number must contain only digits (no spaces, hyphens, or other characters).';
             errorElement.classList.remove('hidden');
             return false;
-        } else if (value.length > 10) {
+        } else if (value.length !== 10) {
             input.classList.add('error');
-            errorTextElement.textContent = 'Phone number cannot exceed 10 digits.';
+            errorTextElement.textContent = 'Phone number must contain exactly 10 digits.';
             errorElement.classList.remove('hidden');
             return false;
         } else {
@@ -479,6 +514,83 @@
         validatePhone(input);
     }
 
+    // Function to restrict name input to letters only
+    function restrictNameInput(event, fieldName) {
+        const input = event.target;
+        let value = input.value;
+        
+        // Remove any non-letter characters (keep only A-Z, a-z)
+        value = value.replace(/[^A-Za-z]/g, '');
+        
+        input.value = value;
+        
+        // Validate the name
+        validateName(input, fieldName);
+    }
+
+    // Function to restrict tagline input to letters only and limit to 150 chars
+    function restrictTaglineInput(event) {
+        const input = event.target;
+        let value = input.value;
+        
+        // Remove any non-letter characters (keep only A-Z, a-z)
+        value = value.replace(/[^A-Za-z]/g, '');
+        
+        // Limit to 150 characters
+        if (value.length > 150) {
+            value = value.substring(0, 150);
+        }
+        
+        input.value = value;
+        
+        // Validate the tagline
+        validateTagline(input);
+    }
+
+    // Main form validation function
+    function validateForm() {
+        let isValid = true;
+
+        // Validate name fields by finding them through various selectors
+        const nameFields = document.querySelectorAll('input[name*="name"], input[id*="name"]');
+        nameFields.forEach(field => {
+            const fieldName = field.name.includes('first') ? 'First name' : 
+                            field.name.includes('last') ? 'Last name' : 'Name';
+            if (!validateName(field, fieldName)) {
+                isValid = false;
+            }
+        });
+
+        // Validate tagline
+        const taglineInput = document.querySelector('[name="tagline"], #id_tagline, textarea[name="tagline"], textarea[id*="tagline"]');
+        if (taglineInput && !validateTagline(taglineInput)) {
+            isValid = false;
+        }
+
+        // Validate phone number
+        const phoneInput = document.querySelector('[name*="phone"], input[id*="phone"]');
+        if (phoneInput && !validatePhone(phoneInput)) {
+            isValid = false;
+        }
+
+        // Validate location
+        const latitude = document.getElementById('latitude').value;
+        const longitude = document.getElementById('longitude').value;
+        if (!latitude || !longitude) {
+            showNotification('Please select your location on the map.', 'error');
+            isValid = false;
+        }
+
+        // Validate citizenship document
+        const citizenshipFile = document.getElementById('id_citizenship_image').files[0];
+        if (!citizenshipFile) {
+            showNotification('Please upload your citizenship document.', 'error');
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
     // Location status function
     function updateLocationStatus(lat, lon) {
         const statusElement = document.getElementById('location-status-text');
@@ -503,31 +615,59 @@
             locateUserOnLoad();
         }, 1000);
 
-        // Add validation for first name and last name fields
-        const firstNameInput = document.getElementById('id_first_name');
-        const lastNameInput = document.getElementById('id_last_name');
-        const phoneInput = document.getElementById('id_phone_number');
+        // Setup validation for all required fields
+        setupFieldValidations();
+    });
 
-        if (firstNameInput) {
-            firstNameInput.addEventListener('input', function() {
-                validateName(this, 'First name');
+    function setupFieldValidations() {
+        console.log('Setting up field validations...');
+        
+        // Name fields validation - using multiple selectors to catch all name fields
+        const nameFields = document.querySelectorAll('input[name*="name"], input[id*="name"]');
+        console.log('Found name fields:', nameFields);
+        
+        nameFields.forEach(field => {
+            const fieldName = field.name.includes('first') ? 'First name' : 
+                            field.name.includes('last') ? 'Last name' : 'Name';
+            
+            field.addEventListener('input', function(event) {
+                restrictNameInput(event, fieldName);
             });
             
-            firstNameInput.addEventListener('blur', function() {
-                validateName(this, 'First name');
+            field.addEventListener('blur', function() {
+                validateName(this, fieldName);
+            });
+            
+            // Add paste event to handle pasted content
+            field.addEventListener('paste', function(event) {
+                setTimeout(() => {
+                    restrictNameInput({target: this}, fieldName);
+                }, 0);
+            });
+        });
+
+        // Tagline validation - find the tagline field by common selectors
+        const taglineInput = document.querySelector('[name="tagline"], #id_tagline, textarea[name="tagline"], textarea[id*="tagline"]');
+        console.log('Found tagline field:', taglineInput);
+        
+        if (taglineInput) {
+            taglineInput.addEventListener('input', restrictTaglineInput);
+            
+            taglineInput.addEventListener('blur', function() {
+                validateTagline(this);
+            });
+            
+            taglineInput.addEventListener('paste', function(event) {
+                setTimeout(() => {
+                    restrictTaglineInput({target: this});
+                }, 0);
             });
         }
 
-        if (lastNameInput) {
-            lastNameInput.addEventListener('input', function() {
-                validateName(this, 'Last name');
-            });
-            
-            lastNameInput.addEventListener('blur', function() {
-                validateName(this, 'Last name');
-            });
-        }
-
+        // Phone number validation
+        const phoneInput = document.querySelector('[name*="phone"], input[id*="phone"]');
+        console.log('Found phone field:', phoneInput);
+        
         if (phoneInput) {
             // Add input event listener to restrict input to numbers only
             phoneInput.addEventListener('input', restrictPhoneInput);
@@ -537,10 +677,17 @@
                 validatePhone(this);
             });
             
+            // Add paste event
+            phoneInput.addEventListener('paste', function(event) {
+                setTimeout(() => {
+                    restrictPhoneInput({target: this});
+                }, 0);
+            });
+            
             // Add keydown event to prevent non-numeric input
             phoneInput.addEventListener('keydown', function(event) {
-                // Allow: backspace, delete, tab, escape, enter, and decimal point
-                if ([46, 8, 9, 27, 13, 110, 190].includes(event.keyCode) ||
+                // Allow: backspace, delete, tab, escape, enter
+                if ([46, 8, 9, 27, 13].includes(event.keyCode) ||
                     // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
                     (event.keyCode === 65 && event.ctrlKey === true) ||
                     (event.keyCode === 67 && event.ctrlKey === true) ||
@@ -558,7 +705,7 @@
                 }
             });
         }
-    });
+    }
 
     function locateUserOnLoad() {
         if (navigator.geolocation) {
@@ -681,50 +828,10 @@
         const form = document.getElementById('worker-form');
         form.addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submit-btn');
-            const latitude = document.getElementById('latitude').value;
-            const longitude = document.getElementById('longitude').value;
-            const citizenshipFile = document.getElementById('id_citizenship_image').files[0];
             
-            // Validate name fields
-            const firstNameInput = document.getElementById('id_first_name');
-            const lastNameInput = document.getElementById('id_last_name');
-            const phoneInput = document.getElementById('id_phone_number');
-            
-            let validationPassed = true;
-            
-            if (firstNameInput) {
-                if (!validateName(firstNameInput, 'First name')) {
-                    validationPassed = false;
-                }
-            }
-            
-            if (lastNameInput) {
-                if (!validateName(lastNameInput, 'Last name')) {
-                    validationPassed = false;
-                }
-            }
-            
-            if (phoneInput) {
-                if (!validatePhone(phoneInput)) {
-                    validationPassed = false;
-                }
-            }
-            
-            // Validate required fields
-            if (!validationPassed) {
+            // Validate entire form
+            if (!validateForm()) {
                 showNotification('Please correct the form errors before submitting.', 'error');
-                e.preventDefault();
-                return;
-            }
-            
-            if (!latitude || !longitude) {
-                showNotification('Please select your location on the map before submitting.', 'error');
-                e.preventDefault();
-                return;
-            }
-            
-            if (!citizenshipFile) {
-                showNotification('Please upload your citizenship document.', 'error');
                 e.preventDefault();
                 return;
             }

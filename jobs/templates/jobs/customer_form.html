@@ -1,7 +1,11 @@
 {% extends 'jobs/_base.html' %}
+
 {% load tailwind_filters %}
 
+
+
 {% block content %}
+
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap');
 
@@ -139,6 +143,20 @@
         transform: translateY(-2px);
         background-color: #ffffff;
     }
+
+    .form-input.error {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+    }
+
+    .error-message {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
     
     label {
         font-weight: 600;
@@ -221,9 +239,13 @@
     }
 </style>
 
+
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+
 
 <div class="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="form-container max-w-5xl w-full p-8 lg:p-12 relative z-10">
@@ -235,7 +257,7 @@
             <p class="text-lg text-gray-700 font-medium max-w-lg mx-auto">Join our community and connect with skilled professionals.</p>
         </div>
         
-        <form method="POST" enctype="multipart/form-data" class="space-y-8">
+        <form method="POST" enctype="multipart/form-data" class="space-y-8" id="profile-form">
             {% csrf_token %}
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -272,13 +294,15 @@
             </div>
 
             <div class="flex justify-center pt-8">
-                <button class="btn-primary" type="submit">
+                <button class="btn-primary" type="submit" id="submit-btn">
                     <i class="fas fa-user-plus mr-2"></i>Create Profile
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+
 
 <div id="error-modal" class="modal-overlay hidden">
     <div class="modal-content">
@@ -296,6 +320,161 @@
 </div>
 
 <script>
+    // Validation Functions
+    function validateName(name) {
+        // Must contain only letters (A-Z, a-z), no spaces, numbers, or special characters
+        const nameRegex = /^[A-Za-z]+$/;
+        return nameRegex.test(name) && name.trim() !== '';
+    }
+
+    function validateTagline(tagline) {
+        // Must contain only letters (A-Z, a-z), no spaces, numbers, or special characters
+        // Maximum 150 characters
+        const taglineRegex = /^[A-Za-z]+$/;
+        return taglineRegex.test(tagline) && tagline.trim() !== '' && tagline.length <= 150;
+    }
+
+    function validatePhone(phone) {
+        // Must contain exactly 10 digits, no formatting characters
+        const phoneRegex = /^\d{10}$/;
+        return phoneRegex.test(phone) && phone.trim() !== '';
+    }
+
+    function showFieldError(field, message) {
+        // Remove any existing error message
+        const existingError = field.parentNode.querySelector('.error-message');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Add error class to field
+        field.classList.add('error');
+
+        // Create and show error message
+        const errorElement = document.createElement('div');
+        errorElement.className = 'error-message';
+        errorElement.innerHTML = `<i class="fas fa-exclamation-circle"></i>${message}`;
+        field.parentNode.appendChild(errorElement);
+    }
+
+    function clearFieldError(field) {
+        // Remove error class
+        field.classList.remove('error');
+
+        // Remove error message
+        const existingError = field.parentNode.querySelector('.error-message');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+
+    function validateForm() {
+        let isValid = true;
+
+        // Find the form fields by their common names (you may need to adjust these selectors)
+        const nameField = document.querySelector('input[name="name"], input[id*="name"], #id_name');
+        const taglineField = document.querySelector('input[name="tagline"], input[id*="tagline"], #id_tagline, textarea[name="tagline"], textarea[id*="tagline"]');
+        const phoneField = document.querySelector('input[name="phone"], input[name="phone_number"], input[id*="phone"], #id_phone');
+
+        // Validate Name
+        if (nameField) {
+            const nameValue = nameField.value.trim();
+            if (!nameValue) {
+                showFieldError(nameField, 'Name is required');
+                isValid = false;
+            } else if (!validateName(nameValue)) {
+                showFieldError(nameField, 'Name must contain only letters (no spaces, numbers, or special characters)');
+                isValid = false;
+            } else {
+                clearFieldError(nameField);
+            }
+        }
+
+        // Validate Tagline
+        if (taglineField) {
+            const taglineValue = taglineField.value.trim();
+            if (!taglineValue) {
+                showFieldError(taglineField, 'Tagline is required');
+                isValid = false;
+            } else if (!validateTagline(taglineValue)) {
+                if (taglineValue.length > 150) {
+                    showFieldError(taglineField, 'Tagline must be maximum 150 characters and contain only letters');
+                } else {
+                    showFieldError(taglineField, 'Tagline must contain only letters (no spaces, numbers, or special characters)');
+                }
+                isValid = false;
+            } else {
+                clearFieldError(taglineField);
+            }
+        }
+
+        // Validate Phone
+        if (phoneField) {
+            const phoneValue = phoneField.value.trim();
+            if (!phoneValue) {
+                showFieldError(phoneField, 'Phone number is required');
+                isValid = false;
+            } else if (!validatePhone(phoneValue)) {
+                showFieldError(phoneField, 'Phone number must contain exactly 10 digits (no spaces, hyphens, or other characters)');
+                isValid = false;
+            } else {
+                clearFieldError(phoneField);
+            }
+        }
+
+        return isValid;
+    }
+
+    // Real-time validation as user types
+    function setupRealTimeValidation() {
+        const nameField = document.querySelector('input[name="name"], input[id*="name"], #id_name');
+        const taglineField = document.querySelector('input[name="tagline"], input[id*="tagline"], #id_tagline, textarea[name="tagline"], textarea[id*="tagline"]');
+        const phoneField = document.querySelector('input[name="phone"], input[name="phone_number"], input[id*="phone"], #id_phone');
+
+        if (nameField) {
+            nameField.addEventListener('input', function() {
+                const value = this.value.trim();
+                if (!value) {
+                    showFieldError(this, 'Name is required');
+                } else if (!validateName(value)) {
+                    showFieldError(this, 'Name must contain only letters');
+                } else {
+                    clearFieldError(this);
+                }
+            });
+        }
+
+        if (taglineField) {
+            taglineField.addEventListener('input', function() {
+                const value = this.value.trim();
+                if (!value) {
+                    showFieldError(this, 'Tagline is required');
+                } else if (!validateTagline(value)) {
+                    if (value.length > 150) {
+                        showFieldError(this, 'Tagline must be maximum 150 characters');
+                    } else {
+                        showFieldError(this, 'Tagline must contain only letters');
+                    }
+                } else {
+                    clearFieldError(this);
+                }
+            });
+        }
+
+        if (phoneField) {
+            phoneField.addEventListener('input', function() {
+                const value = this.value.trim();
+                if (!value) {
+                    showFieldError(this, 'Phone number is required');
+                } else if (!validatePhone(value)) {
+                    showFieldError(this, 'Must be exactly 10 digits');
+                } else {
+                    clearFieldError(this);
+                }
+            });
+        }
+    }
+
     // Initialize map
     var map = L.map('map', { zoomControl: false }).setView([27.7172, 85.3240], 13);
     
@@ -313,6 +492,22 @@
 
     // Automatically get user's location when page loads
     document.addEventListener('DOMContentLoaded', function() {
+        // Setup real-time validation
+        setupRealTimeValidation();
+
+        // Add form submit event listener
+        const form = document.getElementById('profile-form');
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                showNotification('Please fix the validation errors before submitting.', 'error');
+            } else {
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating Profile...';
+                submitBtn.disabled = true;
+            }
+        });
+
         // Wait for animations to complete before trying to get location
         setTimeout(() => {
             locateUserOnLoad();
@@ -433,13 +628,6 @@
             if (input.type !== 'hidden') {
                 input.classList.add('form-input', 'w-full');
             }
-        });
-
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating Profile...';
-            submitBtn.disabled = true;
         });
     });
 </script>

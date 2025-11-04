@@ -2136,7 +2136,7 @@ def reject_appointment(request, appointment_id):
         messages.error(request, f"Error: {str(e)}")
         return redirect('customer_dashboard')
     
-    
+
 @login_required
 def accept_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -2226,14 +2226,13 @@ def delete_appointment(request, appointment_id):
         messages.success(request, "Appointment deleted successfully.")
 
         if request.user == appointment.customer.owner:
-            return redirect('customer_appointments')
+            return redirect('customer_dashboard')  # ✅ FIXED: Changed to customer_dashboard
         elif request.user == appointment.worker.owner:
             return redirect('worker_dashboard')
     else:
         messages.error(request, "You are not authorized to delete this appointment.")
         
     return redirect('worker_dashboard')
-
 
 @login_required
 def complete_appointment(request, appointment_id):
