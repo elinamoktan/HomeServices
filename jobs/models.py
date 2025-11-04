@@ -13,6 +13,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from datetime import timedelta
+
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
@@ -743,7 +744,6 @@ class Customer(models.Model):
     def __str__(self):
         return f"{self.name}"
 
-
 class Appointment(models.Model):
     """
     Appointment model for booking services between customers and workers
@@ -766,14 +766,15 @@ class Appointment(models.Model):
     original_end_time = models.DateTimeField(null=True, blank=True) 
     is_delayed = models.BooleanField(default=False) 
     
-    # Status choices
+    # ✅ UPDATED: Status choices - differentiate between cancelled and rejected
     STATUS_CHOICES = [
         ('pending_payment', 'Pending Payment'),
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
-        ('rejected', 'Rejected'),
+        ('rejected', 'Rejected by Worker'),      # Worker rejects request
+        ('cancelled', 'Cancelled by Customer'),  # Customer cancels appointment
         ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
+        ('expired', 'Expired'),                  # System auto-cancelled
     ]
     
     # Shift type choices
@@ -781,6 +782,24 @@ class Appointment(models.Model):
         ('day', 'Day Shift'),
         ('night', 'Night Shift'),
     ]
+    
+    # ✅ ADD: Cancellation/Rejection tracking fields
+    cancelled_by = models.CharField(
+        max_length=20, 
+        choices=[('customer', 'Customer'), ('worker', 'Worker'), ('system', 'System')],
+        blank=True, null=True,
+        help_text="Who cancelled the appointment"
+    )
+    cancelled_at = models.DateTimeField(blank=True, null=True)
+    cancellation_reason = models.TextField(blank=True, null=True)
+    
+    rejected_by = models.CharField(
+        max_length=20, 
+        blank=True, null=True,
+        help_text="Who rejected the appointment"
+    )
+    rejected_at = models.DateTimeField(blank=True, null=True)
+    rejection_reason = models.TextField(blank=True, null=True)
     
     # Foreign Keys
     customer = models.ForeignKey(
@@ -855,6 +874,9 @@ class Appointment(models.Model):
             models.Index(fields=['worker', 'status']),
             models.Index(fields=['appointment_date']),
             models.Index(fields=['created_at']),
+            # ✅ ADD: Index for cancellation/rejection tracking
+            models.Index(fields=['cancelled_by', 'cancelled_at']),
+            models.Index(fields=['rejected_by', 'rejected_at']),
         ]
         verbose_name = 'Appointment'
         verbose_name_plural = 'Appointments'
@@ -880,122 +902,211 @@ class Appointment(models.Model):
             is_night_shift=night_shift
         )
 
-
     def save(self, *args, **kwargs):
-            """
-            Override save to auto-calculate total_price if not manually set
-            """
-            # Auto-calculate total_price if service_subtask exists and total_price not set
-            if self.service_subtask and not self.total_price:
-                self.total_price = self.calculate_total_price()
-            
-            # Set is_night_shift based on shift_type if not manually set
-            if self.shift_type == 'night' and not self.is_night_shift:
-                self.is_night_shift = True
-            
-            super().save(*args, **kwargs)
+        """
+        Override save to auto-calculate total_price if not manually set
+        """
+        # Auto-calculate total_price if service_subtask exists and total_price not set
+        if self.service_subtask and not self.total_price:
+            self.total_price = self.calculate_total_price()
+        
+        # Set is_night_shift based on shift_type if not manually set
+        if self.shift_type == 'night' and not self.is_night_shift:
+            self.is_night_shift = True
+        
+        super().save(*args, **kwargs)
 
-        # ✅ ADD THESE METHODS to handle time slot parsing
+    # ✅ ADD THESE METHODS to handle time slot parsing
     def get_start_time_from_slot(self):
-            """Extract start time from time slot format '14:00-16:00'"""
-            if self.time_slot and '-' in self.time_slot:
-                return self.time_slot.split('-')[0].strip()
-            return None
+        """Extract start time from time slot format '14:00-16:00'"""
+        if self.time_slot and '-' in self.time_slot:
+            return self.time_slot.split('-')[0].strip()
+        return None
 
     def get_end_time_from_slot(self):
-            """Extract end time from time slot format '14:00-16:00'"""
-            if self.time_slot and '-' in self.time_slot:
-                return self.time_slot.split('-')[1].strip()
-            return None
+        """Extract end time from time slot format '14:00-16:00'"""
+        if self.time_slot and '-' in self.time_slot:
+            return self.time_slot.split('-')[1].strip()
+        return None
 
     def get_status_display_color(self):
-            """Return Bootstrap color class for status"""
-            status_colors = {
-                'pending_payment': 'warning',
-                'pending': 'warning',
-                'accepted': 'info',
-                'rejected': 'danger',
-                'completed': 'success',
-                'cancelled': 'secondary',
-            }
-            return status_colors.get(self.status, 'secondary')
+        """Return Bootstrap color class for status"""
+        status_colors = {
+            'pending_payment': 'warning',
+            'pending': 'warning',
+            'accepted': 'info',
+            'rejected': 'danger',
+            'cancelled': 'secondary',
+            'completed': 'success',
+            'expired': 'dark',
+        }
+        return status_colors.get(self.status, 'secondary')
 
     def can_be_completed(self):
-            """Check if appointment can be marked as completed"""
-            return (
-                self.status == 'accepted' and 
-                self.appointment_date and 
-                self.appointment_date < timezone.now()
-            )
+        """Check if appointment can be marked as completed"""
+        return (
+            self.status == 'accepted' and 
+            self.appointment_date and 
+            self.appointment_date < timezone.now()
+        )
 
-    def can_be_cancelled(self):
-            """Check if appointment can be cancelled"""
-            return self.status in ['pending', 'accepted']
+    # ✅ UPDATED: Separate cancellation and rejection logic
+    def can_be_cancelled_by_customer(self):
+        """Check if customer can cancel this appointment"""
+        return self.status in ['pending', 'accepted', 'pending_payment']
+
+    def can_be_rejected_by_worker(self):
+        """Check if worker can reject this appointment"""
+        return self.status == 'pending'
+
+    def cancel_by_customer(self, reason=""):
+        """Cancel appointment by customer"""
+        if not self.can_be_cancelled_by_customer():
+            return False
+        
+        self.status = 'cancelled'
+        self.cancelled_by = 'customer'
+        self.cancelled_at = timezone.now()
+        self.cancellation_reason = reason
+        self.save()
+        return True
+
+    def reject_by_worker(self, reason=""):
+        """Reject appointment by worker"""
+        if not self.can_be_rejected_by_worker():
+            return False
+        
+        self.status = 'rejected'
+        self.rejected_by = 'worker'
+        self.rejected_at = timezone.now()
+        self.rejection_reason = reason
+        self.save()
+        return True
+
+    def accept_by_worker(self):
+        """Accept appointment by worker"""
+        if self.status != 'pending':
+            return False
+        
+        self.status = 'accepted'
+        self.save()
+        return True
 
     def get_service_name(self):
-            """Get the service name safely"""
-            if self.service_subtask and self.service_subtask.subtask:
-                return self.service_subtask.subtask.name
-            return "General Service"
+        """Get the service name safely"""
+        if self.service_subtask and self.service_subtask.subtask:
+            return self.service_subtask.subtask.name
+        return "General Service"
 
     def get_price_display(self):
-            """Get formatted price display"""
-            if self.total_price:
-                return f"Rs{self.total_price:,.2f}"
-            elif self.service_subtask:
-                return f"Rs{self.service_subtask.price:,.2f}"
-            return "Contact for pricing"
+        """Get formatted price display"""
+        if self.total_price:
+            return f"Rs{float(self.total_price):,.2f}"
+        elif self.service_subtask:
+            return f"Rs{float(self.service_subtask.price):,.2f}"
+        return "Contact for pricing"
 
     @property
     def is_past(self):
-            """Check if appointment date is in the past"""
-            if not self.appointment_date:
-                return False
-            return self.appointment_date < timezone.now()
+        """Check if appointment date is in the past"""
+        if not self.appointment_date:
+            return False
+        return self.appointment_date < timezone.now()
 
     @property
     def is_today(self):
-            """Check if appointment is today"""
-            if not self.appointment_date:
-                return False
-            return self.appointment_date.date() == timezone.now().date()
+        """Check if appointment is today"""
+        if not self.appointment_date:
+            return False
+        return self.appointment_date.date() == timezone.now().date()
 
     @property
     def is_upcoming(self):
-            """Check if appointment is in the future"""
-            if not self.appointment_date:
-                return False
-            return self.appointment_date > timezone.now()
-        
+        """Check if appointment is in the future"""
+        if not self.appointment_date:
+            return False
+        return self.appointment_date > timezone.now()
+    
     def requires_payment(self):
-            """Check if appointment requires payment"""
-            return self.status == 'pending_payment'
-        
+        """Check if appointment requires payment"""
+        return self.status == 'pending_payment'
+    
     def get_payment_info(self):
-            """Get payment information for this appointment"""
-            try:
-                from payments.models import Payment
-                return Payment.objects.get(appointment=self)
-            except Payment.DoesNotExist:
-                return None
+        """Get payment information for this appointment"""
+        try:
+            from payments.models import Payment
+            return Payment.objects.get(appointment=self)
+        except Payment.DoesNotExist:
+            return None
 
-            
     def has_rated(self, customer=None):
-            """Check if this appointment has been rated by the customer"""
-            if customer is None:
-                # If no customer provided, check if we can get it from the relationship
-                if hasattr(self, 'customer'):
-                    customer = self.customer
-                else:
-                    return False
-            
-            return WorkerRating.objects.filter(
-                appointment=self,
-                customer=customer
-            ).exists()
+        """Check if this appointment has been rated by the customer"""
+        if customer is None:
+            # If no customer provided, check if we can get it from the relationship
+            if hasattr(self, 'customer'):
+                customer = self.customer
+            else:
+                return False
+        
+        return WorkerRating.objects.filter(
+            appointment=self,
+            customer=customer
+        ).exists()
 
+    # ✅ NEW: Get cancellation/rejection details
+    def get_cancellation_details(self):
+        """Get formatted cancellation details"""
+        if self.status != 'cancelled':
+            return None
+        
+        details = {
+            'by': self.cancelled_by,
+            'at': self.cancelled_at,
+            'reason': self.cancellation_reason or 'No reason provided'
+        }
+        
+        if self.cancelled_by == 'customer':
+            details['display_text'] = f"Cancelled by customer on {self.cancelled_at.strftime('%b %d, %Y at %I:%M %p')}"
+        elif self.cancelled_by == 'worker':
+            details['display_text'] = f"Cancelled by worker on {self.cancelled_at.strftime('%b %d, %Y at %I:%M %p')}"
+        else:
+            details['display_text'] = f"Cancelled on {self.cancelled_at.strftime('%b %d, %Y at %I:%M %p')}"
+        
+        return details
 
+    def get_rejection_details(self):
+        """Get formatted rejection details"""
+        if self.status != 'rejected':
+            return None
+        
+        details = {
+            'by': self.rejected_by,
+            'at': self.rejected_at,
+            'reason': self.rejection_reason or 'No reason provided'
+        }
+        
+        if self.rejected_by == 'worker':
+            details['display_text'] = f"Rejected by worker on {self.rejected_at.strftime('%b %d, %Y at %I:%M %p')}"
+        else:
+            details['display_text'] = f"Rejected on {self.rejected_at.strftime('%b %d, %Y at %I:%M %p')}"
+        
+        return details
 
+    # ✅ NEW: Check who can take action
+    def can_customer_take_action(self, user):
+        """Check if user (as customer) can take action on this appointment"""
+        if not hasattr(user, 'customer'):
+            return False
+        return self.customer == user.customer and self.can_be_cancelled_by_customer()
+
+    def can_worker_take_action(self, user):
+        """Check if user (as worker) can take action on this appointment"""
+        if not hasattr(user, 'worker'):
+            return False
+        return self.worker == user.worker and (
+            self.can_be_rejected_by_worker() or 
+            self.status == 'pending'
+        )
 # Worker Rating Model
 class WorkerRating(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='ratings')

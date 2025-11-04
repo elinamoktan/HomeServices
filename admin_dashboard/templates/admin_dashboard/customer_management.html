@@ -2,20 +2,50 @@
 
 {% block title %}Customer Management - BlueCollar Admin{% endblock %}
 
+{% block extra_css %}
+<style>
+    .alert {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.075);
+        cursor: pointer;
+    }
+    .customer-avatar {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+    }
+    .stats-card {
+        transition: transform 0.2s ease-in-out;
+    }
+    .stats-card:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<!-- Alert Container for Messages -->
+<div id="alertContainer"></div>
+
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Customer Management</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/super-admin/jobs/customer/add/" class="btn btn-sm btn-primary">
+        <button class="btn btn-sm btn-primary" id="addCustomerBtn">
             <i class="fas fa-plus me-1"></i> Add Customer
-        </a>
+        </button>
     </div>
 </div>
 
 <!-- Quick Stats -->
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card border-left-primary shadow h-100 py-2 stats-card">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
@@ -33,7 +63,7 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
+        <div class="card border-left-success shadow h-100 py-2 stats-card">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
@@ -51,7 +81,7 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
+        <div class="card border-left-info shadow h-100 py-2 stats-card">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
@@ -69,7 +99,7 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card border-left-warning shadow h-100 py-2 stats-card">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
@@ -95,7 +125,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <form method="get" class="d-flex">
-                            <input type="text" name="search" class="form-control me-2" placeholder="Search customers..." value="{{ request.GET.search }}">
+                            <input type="text" name="search" class="form-control me-2" placeholder="Search customers..." value="{{ search_query }}">
                             <button type="submit" class="btn btn-outline-primary">
                                 <i class="fas fa-search"></i>
                             </button>
@@ -140,9 +170,9 @@
                         <td>
                             <div class="d-flex align-items-center">
                                 {% if customer.profile_pic %}
-                                <img src="{{ customer.profile_pic.url }}" alt="{{ customer.name }}" class="rounded-circle me-3" width="50" height="50">
+                                <img src="{{ customer.profile_pic.url }}" alt="{{ customer.name }}" class="rounded-circle me-3 customer-avatar">
                                 {% else %}
-                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3 customer-avatar">
                                     <i class="fas fa-user text-white"></i>
                                 </div>
                                 {% endif %}
@@ -211,12 +241,17 @@
                         </td>
                         <td>
                             <div class="btn-group-vertical btn-group-sm">
-                                <a href="/super-admin/jobs/customer/{{ customer.id }}/change/" class="btn btn-outline-primary mb-1" title="Edit Customer">
+                                <button class="btn btn-outline-primary mb-1 edit-customer-btn" 
+                                        data-customer-id="{{ customer.id }}" 
+                                        title="Edit Customer">
                                     <i class="fas fa-edit"></i> Edit
-                                </a>
-                                <a href="/super-admin/jobs/customer/{{ customer.id }}/delete/" class="btn btn-outline-danger" title="Delete Customer">
+                                </button>
+                                <button class="btn btn-outline-danger delete-customer-btn" 
+                                        data-customer-id="{{ customer.id }}"
+                                        data-customer-name="{{ customer.name }}"
+                                        title="Delete Customer">
                                     <i class="fas fa-trash"></i> Delete
-                                </a>
+                                </button>
                                 <a href="/super-admin/jobs/appointment/?customer__id__exact={{ customer.id }}" class="btn btn-outline-info mt-1" title="View Appointments">
                                     <i class="fas fa-calendar"></i> Appointments
                                 </a>
@@ -236,9 +271,9 @@
                                 {% endif %}
                             </p>
                             {% if not request.GET.search and not request.GET.filter %}
-                            <a href="/super-admin/jobs/customer/add/" class="btn btn-primary">
+                            <button class="btn btn-primary" id="addFirstCustomerBtn">
                                 <i class="fas fa-plus me-1"></i> Add First Customer
-                            </a>
+                            </button>
                             {% endif %}
                         </td>
                     </tr>
@@ -346,64 +381,352 @@
         <small class="text-muted d-block mt-2">Export customer data for analysis or backup purposes.</small>
     </div>
 </div>
+
+<!-- Customer Edit Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCustomerModalLabel">Edit Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editCustomerForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" id="editCustomerId" name="customer_id">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerName" class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="editCustomerName" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerPhone" class="form-label">Phone Number *</label>
+                            <input type="text" class="form-control" id="editCustomerPhone" name="phone_number" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editCustomerEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="editCustomerEmail" disabled>
+                        <small class="text-muted">Email can only be changed by the user</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editCustomerLocation" class="form-label">Location Address</label>
+                        <textarea class="form-control" id="editCustomerLocation" name="location_address" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editCustomerProfilePic" class="form-label">Profile Picture</label>
+                        <input type="file" class="form-control" id="editCustomerProfilePic" name="profile_pic" accept="image/*">
+                        <div class="mt-2">
+                            <img id="currentCustomerProfilePic" src="" alt="Current profile pic" class="img-thumbnail" style="max-width: 150px; display: none;">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Appointments</label>
+                            <div class="form-control" id="editCustomerAppointments" style="background-color: #f8f9fa;">0</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Total Spent</label>
+                            <div class="form-control" id="editCustomerTotalSpent" style="background-color: #f8f9fa;">Rs 0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Delete Confirmation Modal -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-labelledby="deleteCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCustomerModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete customer: <strong id="deleteCustomerName"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone. All associated data will be permanently deleted.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteCustomer">
+                    <i class="fas fa-trash me-1"></i> Delete Customer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCustomerModalLabel">Add New Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addCustomerForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="addCustomerName" class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="addCustomerName" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="addCustomerPhone" class="form-label">Phone Number *</label>
+                            <input type="text" class="form-control" id="addCustomerPhone" name="phone_number" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="addCustomerEmail" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="addCustomerEmail" name="email" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="addCustomerUsername" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="addCustomerUsername" name="username" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addCustomerLocation" class="form-label">Location Address</label>
+                        <textarea class="form-control" id="addCustomerLocation" name="location_address" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addCustomerProfilePic" class="form-label">Profile Picture</label>
+                        <input type="file" class="form-control" id="addCustomerProfilePic" name="profile_pic" accept="image/*">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addCustomerPassword" class="form-label">Password *</label>
+                        <input type="password" class="form-control" id="addCustomerPassword" name="password" required>
+                        <small class="text-muted">Minimum 8 characters with letters and numbers</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add search functionality
-        const searchInput = document.querySelector('input[name="search"]');
-        if (searchInput) {
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    this.form.submit();
+$(document).ready(function() {
+    // CSRF token setup
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
-            });
+            }
         }
-        
-        // Add customer row highlighting
-        const customerRows = document.querySelectorAll('tbody tr');
-        customerRows.forEach(row => {
-            row.addEventListener('click', function() {
-                this.classList.toggle('table-active');
-            });
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Alert function
+    function showAlert(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertId = 'alert-' + Date.now();
+        const alertHtml = `
+            <div id="${alertId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        $('#alertContainer').html(alertHtml);
+        setTimeout(() => {
+            $('#' + alertId).alert('close');
+        }, 5000);
+    }
+
+    // Edit Customer
+    $('.edit-customer-btn').click(function() {
+        const customerId = $(this).data('customer-id');
+        loadCustomerData(customerId);
+    });
+
+    function loadCustomerData(customerId) {
+        $.ajax({
+            url: "{% url 'admin_dashboard:edit_customer' 0 %}".replace('0', customerId),
+            type: 'GET',
+            success: function(response) {
+                $('#editCustomerId').val(response.id);
+                $('#editCustomerName').val(response.name);
+                $('#editCustomerPhone').val(response.phone_number);
+                $('#editCustomerEmail').val(response.email);
+                $('#editCustomerLocation').val(response.location_address);
+                $('#editCustomerAppointments').text(response.appointment_count);
+                $('#editCustomerTotalSpent').text('Rs ' + response.total_spent);
+                
+                // Show current profile picture if exists
+                if (response.profile_pic_url) {
+                    $('#currentCustomerProfilePic').attr('src', response.profile_pic_url).show();
+                } else {
+                    $('#currentCustomerProfilePic').hide();
+                }
+                
+                $('#editCustomerModal').modal('show');
+            },
+            error: function(xhr, status, error) {
+                showAlert('Error loading customer data: ' + error, 'error');
+            }
         });
+    }
+
+    // Save Customer Edit
+    $('#editCustomerForm').submit(function(e) {
+        e.preventDefault();
+        const customerId = $('#editCustomerId').val();
+        const formData = new FormData(this);
         
-        // Add quick view modal functionality
-        const quickViewButtons = document.querySelectorAll('.quick-view');
-        quickViewButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const customerId = this.dataset.customerId;
-                // Implement quick view modal here
-                console.log('Quick view for customer:', customerId);
-            });
+        $.ajax({
+            url: "{% url 'admin_dashboard:edit_customer' 0 %}".replace('0', customerId),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#editCustomerModal').modal('hide');
+                    showAlert(response.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('Error: ' + response.error, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                let errorMessage = 'Error updating customer';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage += ': ' + xhr.responseJSON.error;
+                }
+                showAlert(errorMessage, 'error');
+            }
         });
     });
-</script>
 
-<style>
-    .table-hover tbody tr:hover {
-        background-color: rgba(0, 123, 255, 0.075);
-        cursor: pointer;
-    }
-    
-    .table-active {
-        background-color: rgba(0, 123, 255, 0.1) !important;
-    }
-    
-    .customer-avatar {
-        width: 50px;
-        height: 50px;
-        object-fit: cover;
-    }
-    
-    .stats-card {
-        transition: transform 0.2s ease-in-out;
-    }
-    
-    .stats-card:hover {
-        transform: translateY(-2px);
-    }
-</style>
+    // Delete Customer
+    let customerToDelete = null;
+    $('.delete-customer-btn').click(function(e) {
+        e.preventDefault();
+        customerToDelete = $(this).data('customer-id');
+        const customerName = $(this).data('customer-name');
+        $('#deleteCustomerName').text(customerName);
+        $('#deleteCustomerModal').modal('show');
+    });
+
+    $('#confirmDeleteCustomer').click(function() {
+        if (!customerToDelete) return;
+        
+        const deleteBtn = $(this);
+        deleteBtn.prop('disabled', true).html('<div class="spinner-border spinner-border-sm me-1" role="status"></div> Deleting...');
+        
+        $.ajax({
+            url: "{% url 'admin_dashboard:delete_customer' 0 %}".replace('0', customerToDelete),
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#deleteCustomerModal').modal('hide');
+                    showAlert(response.message, 'success');
+                    // Remove the row from table
+                    $(`tr:has(button[data-customer-id="${customerToDelete}"])`).fadeOut(300, function() {
+                        $(this).remove();
+                        if ($('tbody tr').length === 0) {
+                            setTimeout(() => location.reload(), 1000);
+                        }
+                    });
+                } else {
+                    showAlert('Error: ' + response.error, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                let errorMessage = 'Error deleting customer';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage += ': ' + xhr.responseJSON.error;
+                }
+                showAlert(errorMessage, 'error');
+            },
+            complete: function() {
+                deleteBtn.prop('disabled', false).html('<i class="fas fa-trash me-1"></i> Delete Customer');
+                customerToDelete = null;
+            }
+        });
+    });
+
+    // Add Customer
+    $('#addCustomerBtn, #addFirstCustomerBtn').click(function() {
+        $('#addCustomerForm')[0].reset();
+        $('#addCustomerModal').modal('show');
+    });
+
+    $('#addCustomerForm').submit(function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: "{% url 'admin_dashboard:create_customer' %}",
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#addCustomerModal').modal('hide');
+                    showAlert(response.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('Error: ' + response.error, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                let errorMessage = 'Error creating customer';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage += ': ' + xhr.responseJSON.error;
+                }
+                showAlert(errorMessage, 'error');
+            }
+        });
+    });
+
+    // Auto-generate username from phone number
+    $('#addCustomerPhone').on('blur', function() {
+        const phone = $(this).val();
+        if (phone && !$('#addCustomerUsername').val()) {
+            $('#addCustomerUsername').val('customer_' + phone.replace(/\D/g, ''));
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -40,6 +40,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from admin_dashboard.models import AdminActivityLog
 from django.db.models import Q 
 from django.views.decorators.http import require_http_methods 
+from django.utils import timezone 
+from jobs.models import WorkerRating
 # ✅ FIXED: Import CustomUser instead of User
 try:
     from accounts.models import CustomUser
@@ -1931,9 +1933,9 @@ def worker_dashboard(request):
     """
     try:
         worker = request.user.worker
-    except AttributeError:
-        messages.error(request, "You don't have a worker profile.")
-        return redirect('worker-list')
+    except Worker.DoesNotExist:
+        messages.error(request, "You need a worker profile to access the worker dashboard.")
+        return redirect('create-worker-profile')  # Redirect to profile creation
     
     # Refresh worker from database to ensure we have latest data
     worker = Worker.objects.get(id=worker.id)
@@ -1964,8 +1966,6 @@ def worker_dashboard(request):
     wait_time = worker.get_resubmission_wait_time()
     wait_time_display = worker.get_resubmission_wait_time_display()
     
-    print(f"DEBUG - Worker: {worker.name}, Status: {worker.verification_status}, Can Resubmit: {can_resubmit}")  # Debug print
-    
     context = {
         'worker': worker,
         'appointments': appointments,
@@ -1976,7 +1976,7 @@ def worker_dashboard(request):
         'customer_completed_appointments': customer_completed_appointments,  
         'today': timezone.now().date(),
         
-        # ✅ VERIFICATION CONTEXT - MAKE SURE THESE ARE INCLUDED
+        # ✅ VERIFICATION CONTEXT
         'can_resubmit': can_resubmit,
         'wait_time': wait_time,
         'wait_time_display': wait_time_display,
@@ -1984,25 +1984,26 @@ def worker_dashboard(request):
     
     return render(request, 'jobs/worker_dashboard.html', context)
 
+
 # MODIFIED: Worker Appointments View (keep for backward compatibility)
 @login_required
 def worker_appointments(request, worker_id=None):
     """
     View worker appointments - can be called with worker_id or for current user's worker profile
     """
-    if worker_id:
-        worker = get_object_or_404(Worker, id=worker_id)
-        # Check if the user is authorized to view this worker's appointments
-        if worker.owner != request.user:
-            messages.error(request, "You are not authorized to view these appointments.")
-            return redirect('worker-list')
-    else:
-        # Get current user's worker profile
-        try:
+    try:
+        if worker_id:
+            worker = get_object_or_404(Worker, id=worker_id)
+            # Check if the user is authorized to view this worker's appointments
+            if worker.owner != request.user:
+                messages.error(request, "You are not authorized to view these appointments.")
+                return redirect('worker-list')
+        else:
+            # Get current user's worker profile
             worker = request.user.worker
-        except AttributeError:
-            messages.error(request, "You don't have a worker profile.")
-            return redirect('worker-list')
+    except Worker.DoesNotExist:
+        messages.error(request, "You don't have a worker profile.")
+        return redirect('create-worker-profile')
     
     appointments = Appointment.objects.filter(worker=worker).order_by('-appointment_date')
     return render(request, 'jobs/worker_appointments.html', {
@@ -2010,40 +2011,45 @@ def worker_appointments(request, worker_id=None):
         'worker': worker
     })
 
-# For customer : appointment reject
-
-@require_http_methods(["POST"])
+@require_POST
 @login_required
-def reject_appointment(request, appointment_id):
-    """Handle appointment rejection/cancellation - COMPLETE FIX"""
+def cancel_appointment(request, appointment_id):
+    """Handle appointment CANCELLATION by CUSTOMER - Enhanced version"""
     
-    # ✅ FIX 1: Check AJAX FIRST before any redirects
     is_ajax = (
         request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 
-        request.content_type == 'application/json' or
-        request.headers.get('Accept') == 'application/json'
+        request.content_type == 'application/json'
     )
     
-    logger.info(f"🔍 reject_appointment called - ID: {appointment_id}, AJAX: {is_ajax}")
+    logger.info(f"🔍 cancel_appointment called - ID: {appointment_id}")
     
     try:
         appointment = get_object_or_404(Appointment, id=appointment_id)
         
-        # Check authorization
-        is_customer = hasattr(request.user, 'customer') and appointment.customer.owner == request.user
-        is_worker = hasattr(request.user, 'worker') and appointment.worker.owner == request.user
-        
-        if not (is_customer or is_worker):
+        # ✅ NEW: Check if customer already marked as completed
+        if appointment.customer_completed:
+            error_msg = "Cannot cancel appointment that has been marked as completed."
             if is_ajax:
                 return JsonResponse({
                     'success': False, 
-                    'error': 'Not authorized'
-                }, status=403)
-            messages.error(request, "Not authorized")
+                    'error': error_msg
+                }, status=400)
+            messages.error(request, error_msg)
             return redirect('customer_dashboard')
         
-        # ✅ FIX 2: Check appointment status
-        if appointment.status != 'pending':
+        # ✅ FIXED: Check if user is a CUSTOMER (not worker) and owns this appointment
+        if not hasattr(request.user, 'customer') or appointment.customer.owner != request.user:
+            error_msg = "You need a customer profile to cancel appointments."
+            if is_ajax:
+                return JsonResponse({
+                    'success': False, 
+                    'error': error_msg
+                }, status=403)
+            messages.error(request, error_msg)
+            return redirect('customer_dashboard')
+        
+        # Check appointment status - only pending/accepted appointments can be cancelled
+        if appointment.status not in ['pending', 'accepted']:
             error_msg = f'Cannot cancel appointment with status: {appointment.status}'
             if is_ajax:
                 return JsonResponse({
@@ -2051,83 +2057,47 @@ def reject_appointment(request, appointment_id):
                     'error': error_msg
                 }, status=400)
             messages.error(request, error_msg)
-            return redirect('customer_dashboard' if is_customer else 'worker_dashboard')
+            return redirect('customer_dashboard')
         
-        # ✅ FIX 3: Extract cancellation reason from JSON or POST
-        cancel_reason = ''
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-                cancel_reason = data.get('cancel_reason', '').strip()
-            else:
-                cancel_reason = request.POST.get('cancel_reason', '').strip()
-        except json.JSONDecodeError:
-            cancel_reason = request.POST.get('cancel_reason', '').strip()
-        
-        logger.info(f"🔍 Cancel reason: {cancel_reason}")
-        
-        # ✅ FIX 4: Update appointment
-        appointment.status = 'rejected'
-        
-        # Save cancellation info
-        if cancel_reason:
-            if appointment.special_instructions:
-                appointment.special_instructions += f"\n\n[Cancelled] Reason: {cancel_reason}"
-            else:
-                appointment.special_instructions = f"[Cancelled] Reason: {cancel_reason}"
-        
+        # ✅ CUSTOMER CANCELLATION: Store previous status and cancel
+        previous_status = appointment.status
+        appointment.status = 'cancelled'
+        appointment.cancelled_by = 'customer'
+        appointment.cancelled_at = timezone.now()
         appointment.save()
-        logger.info(f"✅ Appointment {appointment_id} marked as rejected")
         
-        # ✅ FIX 5: Create notifications
+        logger.info(f"✅ Appointment {appointment_id} cancelled by customer (was {previous_status})")
+        
+        # Create notification for worker
         try:
-            if is_customer:
-                # Customer cancelled - notify worker
-                Notification.objects.create(
-                    worker=appointment.worker,
-                    notification_type='appointment_cancelled',
-                    title='Appointment Cancelled',
-                    message=f'{appointment.customer.name} cancelled the appointment.' + 
-                           (f' Reason: {cancel_reason}' if cancel_reason else ''),
-                    appointment=appointment
-                )
-                logger.info("✅ Worker notified")
+            Notification.objects.create(
+                worker=appointment.worker,
+                notification_type='appointment_cancelled',
+                title='Appointment Cancelled by Customer',
+                message=f'{appointment.customer.name} cancelled the appointment.',
+                appointment=appointment
+            )
+            
+            # Send email to worker
+            send_appointment_cancellation_email(appointment, "Customer cancelled the appointment")
                 
-            elif is_worker:
-                # Worker rejected - notify customer
-                Notification.objects.create(
-                    customer=appointment.customer,
-                    notification_type='appointment_rejected',
-                    title='Appointment Declined',
-                    message=f'{appointment.worker.name} declined your appointment.' +
-                           (f' Reason: {cancel_reason}' if cancel_reason else ''),
-                    appointment=appointment
-                )
-                logger.info("✅ Customer notified")
-                
-                # Send email
-                try:
-                    send_appointment_status_email(appointment, 'rejected')
-                except Exception as e:
-                    logger.error(f"❌ Email failed: {e}")
-                    
         except Exception as e:
             logger.error(f"❌ Notification failed: {e}")
         
-        # ✅ FIX 6: Return proper response
+        # Return response
         if is_ajax:
             return JsonResponse({
                 'success': True,
-                'message': 'Appointment cancelled successfully!' if is_customer else 'Appointment rejected.',
+                'message': 'Appointment cancelled successfully!',
                 'appointment_id': appointment.id,
-                'new_status': 'rejected'
+                'new_status': 'cancelled'
             })
         else:
-            messages.success(request, 'Appointment cancelled successfully!' if is_customer else 'Appointment rejected.')
-            return redirect('customer_dashboard' if is_customer else 'worker_dashboard')
+            messages.success(request, 'Appointment cancelled successfully!')
+            return redirect('customer_dashboard')
             
     except Exception as e:
-        logger.error(f"❌ Error: {str(e)}", exc_info=True)
+        logger.error(f"❌ Error in cancel_appointment: {str(e)}", exc_info=True)
         if is_ajax:
             return JsonResponse({
                 'success': False,
@@ -2136,6 +2106,36 @@ def reject_appointment(request, appointment_id):
         messages.error(request, f"Error: {str(e)}")
         return redirect('customer_dashboard')
     
+    
+def send_appointment_cancellation_email(appointment, cancel_reason):
+    """Send email notification to worker when customer cancels appointment"""
+    try:
+        worker = appointment.worker
+        customer = appointment.customer
+        
+        subject = f"Appointment Cancelled - {customer.name}"
+        
+        context = {
+            'worker_name': worker.name,
+            'customer_name': customer.name,
+            'service_name': appointment.service_subtask.subtask.name if appointment.service_subtask else 'Service',
+            'appointment_date': appointment.appointment_date.strftime('%B %d, %Y at %I:%M %p'),
+            'cancel_reason': cancel_reason or 'No reason provided',  # Handle empty reason
+            'site_url': getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+        }
+        
+        html_message = render_to_string('emails/appointment_cancellation_to_worker.html', context)
+        plain_message = strip_tags(html_message)
+        
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecaller.com')
+        recipients = [worker.owner.email]
+        
+        send_email_async(subject, plain_message, from_email, recipients, html_message)
+        
+        logger.info(f"Appointment cancellation email sent to worker {worker.name}")
+        
+    except Exception as e:
+        logger.error(f"Failed to send appointment cancellation email: {str(e)}")
 
 @login_required
 def accept_appointment(request, appointment_id):
@@ -2175,48 +2175,97 @@ def accept_appointment(request, appointment_id):
     
     return redirect('worker_dashboard')
 
-
+@require_http_methods(["POST"])
 @login_required
 def reject_appointment(request, appointment_id):
-    appointment = get_object_or_404(Appointment, id=appointment_id)
+    """Handle appointment REJECTION by WORKER"""
     
-    # Check if the current user is the owner of the worker
-    if appointment.worker.owner != request.user:
-        messages.error(request, "You are not authorized to reject this appointment.")
-        return redirect('worker_dashboard')
-
-    if request.method == 'POST':
-        if appointment.status == 'pending':
-            appointment.status = 'rejected'
-            appointment.save()
-            
-            # ✅ FIXED: Create notification for customer
+    is_ajax = (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 
+        request.content_type == 'application/json'
+    )
+    
+    logger.info(f"🔍 reject_appointment called - ID: {appointment_id}")
+    
+    try:
+        appointment = get_object_or_404(Appointment, id=appointment_id)
+        
+        # ✅ CHECK: Only worker can reject appointments assigned to them
+        if not hasattr(request.user, 'worker') or appointment.worker.owner != request.user:
+            error_msg = "You need a worker profile to reject appointments."
+            if is_ajax:
+                return JsonResponse({
+                    'success': False, 
+                    'error': error_msg
+                }, status=403)
+            messages.error(request, error_msg)
+            return redirect('worker_dashboard')
+        
+        # Check appointment status - only pending appointments can be rejected by worker
+        if appointment.status != 'pending':
+            error_msg = f'Cannot reject appointment with status: {appointment.status}'
+            if is_ajax:
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                }, status=400)
+            messages.error(request, error_msg)
+            return redirect('worker_dashboard')
+        
+        # ✅ WORKER REJECTION: Get rejection reason
+        rejection_reason = "No reason provided"
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            rejection_reason = data.get('rejection_reason', 'No reason provided')
+        else:
+            rejection_reason = request.POST.get('rejection_reason', 'No reason provided')
+        
+        appointment.status = 'rejected'  # Use 'rejected' status for worker rejections
+        appointment.rejection_reason = rejection_reason
+        appointment.rejected_by = 'worker'
+        appointment.rejected_at = timezone.now()
+        appointment.save()
+        
+        logger.info(f"✅ Appointment {appointment_id} rejected by worker: {rejection_reason}")
+        
+        # Create notification for customer
+        try:
             Notification.objects.create(
                 customer=appointment.customer,
                 notification_type='appointment_rejected',
-                title='Appointment Declined',
-                message=f'{appointment.worker.name} was unable to accept your appointment request.',
+                title='Appointment Rejected',
+                message=f'{appointment.worker.name} rejected your appointment request. Reason: {rejection_reason}',
                 appointment=appointment
             )
             
-            # ✅ FIXED: Send email notification to customer with better error handling
-            try:
-                send_appointment_status_email(appointment, 'rejected')
-                logger.info(f"✅ Appointment rejection email sent for appointment {appointment.id}")
-            except Exception as email_error:
-                logger.error(f"❌ FAILED to send rejection email for appointment {appointment.id}: {str(email_error)}")
-                # Add a message but don't fail the appointment rejection
-                messages.warning(request, "Appointment rejected but email notification failed to send.")
-            
-            messages.info(request, "Appointment rejected.")
+            # Send email to customer
+            send_appointment_rejection_email(appointment, rejection_reason)
+                
+        except Exception as e:
+            logger.error(f"❌ Notification failed: {e}")
+        
+        # Return response
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'message': 'Appointment rejected successfully!',
+                'appointment_id': appointment.id,
+                'new_status': 'rejected'
+            })
         else:
-            messages.warning(request, "This appointment is not in a pending state.")
+            messages.info(request, 'Appointment rejected successfully!')
+            return redirect('worker_dashboard')
+            
+    except Exception as e:
+        logger.error(f"❌ Error in reject_appointment: {str(e)}", exc_info=True)
+        if is_ajax:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+        messages.error(request, f"Error: {str(e)}")
+        return redirect('worker_dashboard')
     
-    return redirect('worker_dashboard')
-
-
-
-
 @login_required
 def delete_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -3356,6 +3405,8 @@ def customer_mark_complete(request, appointment_id):
         'message': 'Appointment marked as complete. Waiting for worker confirmation.',
         'status': 'customer_completed'
     })
+
+
 
 @require_POST
 @login_required

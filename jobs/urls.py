@@ -139,5 +139,7 @@ urlpatterns = [
     # Dynamic pricing URLs
     path('calculate-dynamic-price/', views.calculate_dynamic_price, name='calculate_dynamic_price'),
     path('get-pricing-config/<int:service_id>/', views.get_pricing_config, name='get_pricing_config'),
-    path('appointments/<int:appointment_id>/reject/', views.reject_appointment, name='reject_appointment_plural'),
+    path('customer/appointment/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
+    path('worker/create-profile/', views.create_worker_profile, name='create-worker-profile'),
+    
 ]

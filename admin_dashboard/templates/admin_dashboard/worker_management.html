@@ -34,25 +34,31 @@
     .worker-name-link:hover {
         text-decoration: underline;
     }
-    .form-control:disabled, .form-select:disabled {
-        background-color: #e9ecef;
-        cursor: not-allowed;
+    .bulk-actions {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        display: none;
     }
-    .action-dropdown {
-        min-width: 100px;
+    .bulk-actions.show {
+        display: block;
     }
-    .table thead th {
-        background-color: #212529;
-        color: white;
-        font-weight: 600;
-        text-transform: uppercase;
+    .checkbox-cell {
+        width: 30px;
+    }
+    .worker-table-container {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .quick-verify-btn {
         font-size: 0.75rem;
-        padding: 12px 8px;
-        border: none;
+        padding: 2px 8px;
     }
-    .table tbody td {
-        padding: 12px 8px;
-        vertical-align: middle;
+    .pending-badge {
+        background-color: #ffc107;
+        color: #000;
     }
     .location-pin {
         color: #dc3545;
@@ -72,33 +78,6 @@
         padding: 8px 12px;
         width: 300px;
     }
-    .filter-buttons {
-        display: inline-flex;
-        gap: 10px;
-    }
-    .filter-buttons .btn {
-        border-radius: 4px;
-        padding: 8px 16px;
-        font-size: 0.875rem;
-    }
-    .bulk-actions {
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 4px;
-        margin-bottom: 15px;
-        display: none;
-    }
-    .bulk-actions.show {
-        display: block;
-    }
-    .checkbox-cell {
-        width: 30px;
-    }
-    .worker-table-container {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
 </style>
 {% endblock %}
 
@@ -106,19 +85,97 @@
 <!-- Alert Container for Messages -->
 <div id="alertContainer"></div>
 
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Workers
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_workers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-briefcase fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Verified Workers
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ verified_workers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pending Verification
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ unverified_workers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Available Workers
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ available_workers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Search and Filters Section -->
 <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
-            <input type="text" class="search-box" id="searchWorkers" placeholder="Search workers..." value="{{ search_query }}">
+            <input type="text" class="form-control search-box" id="searchWorkers" placeholder="Search workers..." value="{{ search_query }}">
             <button class="btn btn-primary" id="searchBtn">
                 <i class="fas fa-search"></i>
             </button>
         </div>
         <div class="filter-buttons">
-            <button class="btn btn-outline-secondary filter-btn {% if not current_filter %}active{% endif %}" data-filter="">All</button>
-            <button class="btn btn-outline-success filter-btn {% if current_filter == 'verified' %}active{% endif %}" data-filter="verified">Verified</button>
-            <button class="btn btn-outline-warning filter-btn {% if current_filter == 'unverified' %}active{% endif %}" data-filter="unverified">Unverified</button>
+            <a href="{% url 'admin_dashboard:pending_verifications' %}" class="btn btn-warning">
+                <i class="fas fa-clock me-1"></i> Pending Verifications ({{ unverified_workers }})
+            </a>
+            <button class="btn btn-success" id="addWorkerBtn">
+                <i class="fas fa-plus me-1"></i> Add Worker
+            </button>
         </div>
     </div>
 </div>
@@ -126,14 +183,15 @@
 <!-- Bulk Actions Bar -->
 <div class="bulk-actions" id="bulkActionsBar">
     <div class="d-flex align-items-center gap-3">
-        <span><strong id="selectedCount">0</strong> of <strong>{{ workers.paginator.count }}</strong> selected</span>
+        <span><strong id="selectedCount">0</strong> workers selected</span>
         <select class="form-select form-select-sm" style="width: 200px;" id="bulkActionSelect">
-            <option value="">---------</option>
+            <option value="">Select Action</option>
             <option value="verify">Verify Workers</option>
             <option value="unverify">Unverify Workers</option>
             <option value="delete">Delete Workers</option>
         </select>
-        <button class="btn btn-sm btn-primary" id="bulkActionGo">Go</button>
+        <button class="btn btn-sm btn-primary" id="bulkActionGo">Apply</button>
+        <button class="btn btn-sm btn-outline-secondary" id="clearSelection">Clear</button>
     </div>
 </div>
 
@@ -149,16 +207,14 @@
                     <th class="checkbox-cell">
                         <input type="checkbox" id="selectAll">
                     </th>
-                    <th>NAME</th>
-                    <th>PHONE NUMBER</th>
-                    <th>TAGLINE</th>
-                    <th>VERIFIED</th>
-                    <th>AVERAGE RATING</th>
-                    <th>CURRENT LOCATION</th>
-                    <th>PREVIOUS LOCATION</th>
-                    <th>LOCATION UPDATED AT</th>
-                    <th>LOCATION SOURCE</th>
-                    <th>ACTION</th>
+                    <th>WORKER DETAILS</th>
+                    <th>CONTACT INFO</th>
+                    <th>VERIFICATION</th>
+                    <th>RATING</th>
+                    <th>APPOINTMENTS</th>
+                    <th>LOCATION</th>
+                    <th>STATUS</th>
+                    <th>ACTIONS</th>
                 </tr>
             </thead>
             <tbody>
@@ -168,47 +224,100 @@
                         <input type="checkbox" class="worker-checkbox" value="{{ worker.id }}">
                     </td>
                     <td>
-                        <a href="#" class="worker-name-link" data-worker-id="{{ worker.id }}">
-                            {{ worker.name }}
-                        </a>
+                        <div class="d-flex align-items-center">
+                            {% if worker.profile_pic %}
+                                <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="rounded-circle me-3" width="50" height="50">
+                            {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <strong class="d-block">{{ worker.name }}</strong>
+                                <small class="text-muted">ID: {{ worker.id }}</small>
+                                {% if worker.tagline %}
+                                    <small class="d-block text-muted">{{ worker.tagline|truncatewords:5 }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
                     </td>
-                    <td>{{ worker.phone_number }}</td>
-                    <td>{{ worker.tagline|default:"—" }}</td>
-                    <td class="text-center">
-                        {% if worker.verified %}
-                            <i class="fas fa-check-circle verified-icon"></i>
-                        {% else %}
-                            <i class="fas fa-times-circle unverified-icon"></i>
-                        {% endif %}
-                    </td>
-                    <td>{{ worker.avg_rating|default:"0.00"|floatformat:2 }}</td>
                     <td>
-                        {% if worker.latitude and worker.longitude %}
-                            <i class="fas fa-map-marker-alt location-pin"></i>
-                            {{ worker.latitude|floatformat:5 }}, {{ worker.longitude|floatformat:5 }}
+                        <div>
+                            <strong><i class="fas fa-phone me-1"></i></strong> {{ worker.phone_number }}<br>
+                            <strong><i class="fas fa-envelope me-1"></i></strong> {{ worker.owner.email }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if worker.verified %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i> Verified
+                            </span>
                         {% else %}
-                            —
+                            <span class="badge pending-badge">
+                                <i class="fas fa-clock me-1"></i> Pending
+                            </span>
+                            <br>
+                            <small class="text-muted">{{ worker.created_at|timesince }} ago</small>
                         {% endif %}
                     </td>
-                    <td>No previous location</td>
-                    <td>{{ worker.location_updated_at|date:"M. j, Y, P"|default:"—" }}</td>
-                    <td>Browser Geolocation</td>
+                    <td>
+                        <div class="text-center">
+                            <strong class="text-warning">⭐ {{ worker.avg_rating|default:"0.00"|floatformat:1 }}</strong>
+                            <small class="text-muted d-block">{{ worker.ratings.count }} ratings</small>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="text-center">
+                            <strong>{{ worker.appointment_count }}</strong>
+                            <small class="text-muted d-block">appointments</small>
+                        </div>
+                    </td>
+                    <td>
+                        {% if worker.location_address %}
+                            <small>{{ worker.location_address|truncatewords:3 }}</small>
+                        {% else %}
+                            <small class="text-muted">No location</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if worker.is_available %}
+                            <span class="badge bg-success">Available</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Unavailable</span>
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">{{ worker.shift|title }} shift</small>
+                    </td>
                     <td>
                         <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle action-dropdown" type="button" data-bs-toggle="dropdown">
-                                Actions
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-cog"></i>
                             </button>
                             <ul class="dropdown-menu">
+                                {% if not worker.verified %}
                                 <li>
-                                    <a class="dropdown-item verify-worker-btn" href="#" data-worker-id="{{ worker.id }}" data-verified="{{ worker.verified }}">
-                                        <i class="fas fa-{% if worker.verified %}times-circle{% else %}check-circle{% endif %} me-1"></i>
-                                        {% if worker.verified %}Unverify{% else %}Verify{% endif %}
+                                    <a class="dropdown-item verify-worker-btn" href="#" data-worker-id="{{ worker.id }}">
+                                        <i class="fas fa-check-circle me-1 text-success"></i> Verify Worker
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li>
+                                    <a class="dropdown-item edit-worker-btn" href="#" data-worker-id="{{ worker.id }}">
+                                        <i class="fas fa-edit me-1"></i> Edit Worker
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/super-admin/jobs/appointment/?worker__id__exact={{ worker.id }}">
+                                        <i class="fas fa-calendar me-1"></i> View Appointments
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item text-danger delete-worker-btn" href="#" data-worker-id="{{ worker.id }}" data-worker-name="{{ worker.name }}">
-                                        <i class="fas fa-trash me-1"></i> Delete
+                                    <a class="dropdown-item text-danger delete-worker-btn" href="#" 
+                                       data-worker-id="{{ worker.id }}" 
+                                       data-worker-name="{{ worker.name }}">
+                                        <i class="fas fa-trash me-1"></i> Delete Worker
                                     </a>
                                 </li>
                             </ul>
@@ -217,9 +326,21 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="11" class="text-center py-4">
+                    <td colspan="9" class="text-center py-4">
                         <i class="fas fa-users fa-3x text-muted mb-3"></i>
                         <h5>No Workers Found</h5>
+                        <p class="text-muted">
+                            {% if search_query or current_filter %}
+                                Try adjusting your search criteria
+                            {% else %}
+                                No workers have registered yet.
+                            {% endif %}
+                        </p>
+                        {% if not search_query and not current_filter %}
+                        <button class="btn btn-primary" id="addFirstWorkerBtn">
+                            <i class="fas fa-plus me-1"></i> Add First Worker
+                        </button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -253,255 +374,135 @@
 </nav>
 {% endif %}
 
-<!-- Worker Detail Modal -->
-<div class="modal fade" id="workerDetailModal" tabindex="-1" aria-labelledby="workerDetailModalLabel" aria-hidden="true">
+<!-- Export Options -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-download me-2"></i>Export Data</h5>
+    </div>
+    <div class="card-body">
+        <div class="btn-group">
+            <a href="{% url 'admin_dashboard:export_data' 'workers' %}?format=csv" class="btn btn-outline-success">
+                <i class="fas fa-file-csv me-1"></i> Export as CSV
+            </a>
+            <a href="{% url 'admin_dashboard:export_data' 'workers' %}?format=json" class="btn btn-outline-primary">
+                <i class="fas fa-file-code me-1"></i> Export as JSON
+            </a>
+        </div>
+        <small class="text-muted d-block mt-2">Export worker data for analysis or backup purposes.</small>
+    </div>
+</div>
+
+<!-- Worker Edit Modal -->
+<div class="modal fade" id="editWorkerModal" tabindex="-1" aria-labelledby="editWorkerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="workerDetailModalLabel">Worker Details</h5>
+                <h5 class="modal-title" id="editWorkerModalLabel">Edit Worker</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="workerDetailForm" enctype="multipart/form-data">
+            <form id="editWorkerForm" enctype="multipart/form-data">
                 <div class="modal-body">
                     {% csrf_token %}
-                    <input type="hidden" id="detailWorkerId" name="worker_id">
+                    <input type="hidden" id="editWorkerId" name="worker_id">
                     
-                    <!-- Basic Information Section -->
-                    <div class="card mb-3">
-                        <div class="card-header text-white" style="background-color: #5a9ba8;">
-                            <h6 class="mb-0">Basic Information</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editWorkerName" class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="editWorkerName" name="name" required>
                         </div>
-                        <div class="card-body" style="background-color: #2b2b2b; color: white;">
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Owner:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <select class="form-select" id="detailOwner" name="owner" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                        <option>Loading...</option>
-                                    </select>
-                                </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editWorkerPhone" class="form-label">Phone Number *</label>
+                            <input type="text" class="form-control" id="editWorkerPhone" name="phone_number" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editWorkerEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="editWorkerEmail" disabled>
+                        <small class="text-muted">Email can only be changed by the user</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editWorkerTagline" class="form-label">Tagline</label>
+                        <input type="text" class="form-control" id="editWorkerTagline" name="tagline" placeholder="Professional tagline">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editWorkerBio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="editWorkerBio" name="bio" rows="4" placeholder="About the worker..."></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editWorkerShift" class="form-label">Shift</label>
+                            <select class="form-select" id="editWorkerShift" name="shift">
+                                <option value="day">Day</option>
+                                <option value="night">Night</option>
+                                <option value="all">All</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="editWorkerVerified" name="verified">
+                                <label class="form-check-label" for="editWorkerVerified">
+                                    Verified Worker
+                                </label>
                             </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Name:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailName" name="name" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Profile pic:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <div class="mb-2">
-                                        <strong>Currently:</strong> <span id="currentProfilePic">profileImg.jpg</span>
-                                        <a href="#" id="clearProfilePic" class="ms-2">
-                                            <input type="checkbox"> Clear
-                                        </a>
-                                    </div>
-                                    <div>
-                                        <strong>Change:</strong>
-                                        <input type="file" class="form-control mt-1" id="detailProfilePicUpload" name="profile_pic" accept="image/*" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Tagline:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailTagline" name="tagline" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Phone number:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailPhone" name="phone_number" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Bio:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <textarea class="form-control" id="detailBio" name="bio" rows="4" disabled style="background-color: #1a1a1a; color: white; border-color: #444;"></textarea>
-                                </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editWorkerAvailable" name="is_available">
+                                <label class="form-check-label" for="editWorkerAvailable">
+                                    Available for Work
+                                </label>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Location Information Section -->
-                    <div class="card mb-3">
-                        <div class="card-header text-white" style="background-color: #5a9ba8;">
-                            <h6 class="mb-0">Current Location Information</h6>
-                            <small>Location is automatically updated when worker logs in or moves</small>
-                        </div>
-                        <div class="card-body" style="background-color: #2b2b2b; color: white;">
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Latitude:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailLatitude" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Longitude:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailLongitude" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Location accuracy:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailLocationAccuracy" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Location source:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailLocationSource" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Location updated at:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailLocationUpdatedAt" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
+                    
+                    <div class="mb-3">
+                        <label for="editWorkerProfilePic" class="form-label">Profile Picture</label>
+                        <input type="file" class="form-control" id="editWorkerProfilePic" name="profile_pic" accept="image/*">
+                        <div class="mt-2">
+                            <img id="currentWorkerProfilePic" src="" alt="Current profile pic" class="img-thumbnail" style="max-width: 150px; display: none;">
                         </div>
                     </div>
-
-                    <!-- Verification & Documents Section -->
-                    <div class="card mb-3">
-                        <div class="card-header text-white" style="background-color: #5a9ba8;">
-                            <h6 class="mb-0">Verification & Documents</h6>
-                        </div>
-                        <div class="card-body" style="background-color: #2b2b2b; color: white;">
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label"></label>
-                                </div>
-                                <div class="col-md-9">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="detailVerified" name="verified" disabled>
-                                        <label class="form-check-label" for="detailVerified">
-                                            Verified
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Citizenship image:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <div class="mb-2">
-                                        <strong>Currently:</strong> <span id="currentCitizenship">citizenship.jpg</span>
-                                        <a href="#" id="clearCitizenship" class="ms-2">
-                                            <input type="checkbox"> Clear
-                                        </a>
-                                    </div>
-                                    <div>
-                                        <strong>Change:</strong>
-                                        <input type="file" class="form-control mt-1" id="detailCitizenship" name="citizenship_image" accept="image/*" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Certificate file:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <div class="mb-2">
-                                        <strong>Currently:</strong> <span id="currentCertificate">certificate.jpg</span>
-                                        <a href="#" id="clearCertificate" class="ms-2">
-                                            <input type="checkbox"> Clear
-                                        </a>
-                                    </div>
-                                    <div>
-                                        <strong>Change:</strong>
-                                        <input type="file" class="form-control mt-1" id="detailCertificate" name="certificate_file" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                    </div>
-                                </div>
-                            </div>
+                    
+                    <div class="mb-3">
+                        <label for="editWorkerCitizenship" class="form-label">Citizenship Image</label>
+                        <input type="file" class="form-control" id="editWorkerCitizenship" name="citizenship_image" accept="image/*">
+                        <div class="mt-2">
+                            <img id="currentWorkerCitizenship" src="" alt="Current citizenship" class="img-thumbnail" style="max-width: 150px; display: none;">
                         </div>
                     </div>
-
-                    <!-- Work Details Section -->
-                    <div class="card">
-                        <div class="card-header text-white" style="background-color: #5a9ba8;">
-                            <h6 class="mb-0">Work Details</h6>
+                    
+                    <div class="mb-3">
+                        <label for="editWorkerCertificate" class="form-label">Certificate File</label>
+                        <input type="file" class="form-control" id="editWorkerCertificate" name="certificate_file">
+                        <div class="mt-2">
+                            <span id="currentWorkerCertificate" class="text-muted" style="display: none;">Current file: </span>
                         </div>
-                        <div class="card-body" style="background-color: #2b2b2b; color: white;">
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Shift:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <select class="form-select" id="detailShift" name="shift" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                        <option value="all">All</option>
-                                        <option value="day">Day</option>
-                                        <option value="night">Night</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Average rating:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailAvgRating" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Rating count:</label>
-                                </div>
-                                <div class="col-md-9">
-                                    <input type="text" class="form-control" id="detailRatingCount" disabled style="background-color: #1a1a1a; color: white; border-color: #444;">
-                                </div>
-                            </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Average Rating</label>
+                            <div class="form-control" id="editWorkerRating" style="background-color: #f8f9fa;">0.00</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Appointments</label>
+                            <div class="form-control" id="editWorkerAppointments" style="background-color: #f8f9fa;">0</div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer" style="background-color: #2b2b2b;">
-                    <button type="button" class="btn btn-info" id="editBtn">Edit</button>
-                    <button type="submit" class="btn btn-info" id="saveBtn" style="display: none;">Save</button>
-                    <button type="button" class="btn btn-info" id="saveAndAddBtn" style="display: none;">Save and add another</button>
-                    <button type="button" class="btn btn-info" id="saveAndContinueBtn" style="display: none;">Save and continue editing</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- Worker Delete Confirmation Modal -->
 <div class="modal fade" id="deleteWorkerModal" tabindex="-1" aria-labelledby="deleteWorkerModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -519,6 +520,95 @@
                     <i class="fas fa-trash me-1"></i> Delete Worker
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Worker Modal -->
+<div class="modal fade" id="addWorkerModal" tabindex="-1" aria-labelledby="addWorkerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addWorkerModalLabel">Add New Worker</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addWorkerForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="addWorkerName" class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="addWorkerName" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="addWorkerPhone" class="form-label">Phone Number *</label>
+                            <input type="text" class="form-control" id="addWorkerPhone" name="phone_number" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="addWorkerEmail" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="addWorkerEmail" name="email" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="addWorkerUsername" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="addWorkerUsername" name="username" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addWorkerTagline" class="form-label">Tagline</label>
+                        <input type="text" class="form-control" id="addWorkerTagline" name="tagline" placeholder="Professional tagline">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addWorkerBio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="addWorkerBio" name="bio" rows="4" placeholder="About the worker..."></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="addWorkerShift" class="form-label">Shift</label>
+                            <select class="form-select" id="addWorkerShift" name="shift">
+                                <option value="day">Day</option>
+                                <option value="night">Night</option>
+                                <option value="all">All</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="addWorkerVerified" name="verified">
+                                <label class="form-check-label" for="addWorkerVerified">
+                                    Verified Worker
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="addWorkerAvailable" name="is_available" checked>
+                                <label class="form-check-label" for="addWorkerAvailable">
+                                    Available for Work
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addWorkerProfilePic" class="form-label">Profile Picture</label>
+                        <input type="file" class="form-control" id="addWorkerProfilePic" name="profile_pic" accept="image/*">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addWorkerPassword" class="form-label">Password *</label>
+                        <input type="password" class="form-control" id="addWorkerPassword" name="password" required>
+                        <small class="text-muted">Minimum 8 characters with letters and numbers</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Worker</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -561,18 +651,21 @@ $(document).ready(function() {
         }, 5000);
     }
 
-    let isEditMode = false;
-
-    // Select all checkboxes
+    // Bulk selection functionality
     $('#selectAll').change(function() {
         $('.worker-checkbox').prop('checked', this.checked);
         updateBulkActionsBar();
     });
 
-    // Individual checkbox
     $('.worker-checkbox').change(function() {
         updateBulkActionsBar();
         $('#selectAll').prop('checked', $('.worker-checkbox:checked').length === $('.worker-checkbox').length);
+    });
+
+    $('#clearSelection').click(function() {
+        $('.worker-checkbox').prop('checked', false);
+        $('#selectAll').prop('checked', false);
+        updateBulkActionsBar();
     });
 
     function updateBulkActionsBar() {
@@ -632,23 +725,7 @@ $(document).ready(function() {
         }
     });
 
-    // Filter buttons
-    $('.filter-btn').click(function() {
-        const filter = $(this).data('filter');
-        const currentUrl = new URL(window.location.href);
-        
-        if (filter) {
-            currentUrl.searchParams.set('status', filter);
-        } else {
-            currentUrl.searchParams.delete('status');
-        }
-        
-        // Remove page parameter when filtering
-        currentUrl.searchParams.delete('page');
-        window.location.href = currentUrl.toString();
-    });
-
-    // Search
+    // Search functionality
     $('#searchBtn').click(function() {
         const query = $('#searchWorkers').val();
         const currentUrl = new URL(window.location.href);
@@ -659,7 +736,6 @@ $(document).ready(function() {
             currentUrl.searchParams.delete('search');
         }
         
-        // Remove page parameter when searching
         currentUrl.searchParams.delete('page');
         window.location.href = currentUrl.toString();
     });
@@ -670,47 +746,52 @@ $(document).ready(function() {
         }
     });
 
-    // Click on worker name
-    $('.worker-name-link').click(function(e) {
+    // Edit Worker
+    $('.edit-worker-btn').click(function(e) {
         e.preventDefault();
         const workerId = $(this).data('worker-id');
-        loadWorkerDetails(workerId);
+        loadWorkerData(workerId);
     });
 
-    // Load worker details
-    function loadWorkerDetails(workerId) {
+    function loadWorkerData(workerId) {
         $.ajax({
             url: "{% url 'admin_dashboard:edit_worker' 0 %}".replace('0', workerId),
             type: 'GET',
             success: function(response) {
-                $('#detailWorkerId').val(response.id);
-                $('#detailName').val(response.name);
-                $('#detailPhone').val(response.phone_number);
-                $('#detailTagline').val(response.tagline);
-                $('#detailBio').val(response.bio);
-                $('#detailShift').val(response.shift);
-                $('#detailVerified').prop('checked', response.verified);
-                $('#detailAvgRating').val(response.average_rating || '0.00');
-                $('#detailRatingCount').val(response.total_ratings || '0');
+                $('#editWorkerId').val(response.id);
+                $('#editWorkerName').val(response.name);
+                $('#editWorkerPhone').val(response.phone_number);
+                $('#editWorkerEmail').val(response.email);
+                $('#editWorkerTagline').val(response.tagline);
+                $('#editWorkerBio').val(response.bio);
+                $('#editWorkerShift').val(response.shift);
+                $('#editWorkerVerified').prop('checked', response.verified);
+                $('#editWorkerAvailable').prop('checked', response.is_available);
+                $('#editWorkerRating').text(response.average_rating);
+                $('#editWorkerAppointments').text(response.appointment_count);
                 
-                $('#detailLatitude').val(response.latitude || '—');
-                $('#detailLongitude').val(response.longitude || '—');
-                $('#detailLocationAccuracy').val('12/0');
-                $('#detailLocationSource').val('Browser Geolocation');
-                $('#detailLocationUpdatedAt').val(response.location_updated_at || '—');
+                // Show current profile picture if exists
+                if (response.profile_pic_url) {
+                    $('#currentWorkerProfilePic').attr('src', response.profile_pic_url).show();
+                } else {
+                    $('#currentWorkerProfilePic').hide();
+                }
                 
-                $('#currentProfilePic').text(response.profile_pic_url ? response.profile_pic_url.split('/').pop() : 'No file selected');
-                $('#currentCitizenship').text(response.citizenship_image_url ? response.citizenship_image_url.split('/').pop() : 'No file selected');
-                $('#currentCertificate').text(response.certificate_file_url ? response.certificate_file_url.split('/').pop() : 'No file selected');
+                // Show citizenship image if exists
+                if (response.citizenship_image_url) {
+                    $('#currentWorkerCitizenship').attr('src', response.citizenship_image_url).show();
+                } else {
+                    $('#currentWorkerCitizenship').hide();
+                }
                 
-                $('#detailOwner').html(`<option value="${response.owner_id}">${response.email}</option>`);
+                // Show certificate file if exists
+                if (response.certificate_file_url) {
+                    $('#currentWorkerCertificate').text('Current file: ' + response.certificate_file_url.split('/').pop()).show();
+                } else {
+                    $('#currentWorkerCertificate').hide();
+                }
                 
-                isEditMode = false;
-                $('#editBtn').show();
-                $('#saveBtn, #saveAndAddBtn, #saveAndContinueBtn').hide();
-                disableAllFields();
-                
-                $('#workerDetailModal').modal('show');
+                $('#editWorkerModal').modal('show');
             },
             error: function(xhr, status, error) {
                 showAlert('Error loading worker data: ' + error, 'error');
@@ -718,46 +799,11 @@ $(document).ready(function() {
         });
     }
 
-    function disableAllFields() {
-        $('#detailName, #detailPhone, #detailTagline, #detailBio, #detailShift, #detailVerified, #detailProfilePicUpload, #detailCitizenship, #detailCertificate, #detailOwner').prop('disabled', true);
-    }
-
-    function enableAllFields() {
-        $('#detailName, #detailPhone, #detailTagline, #detailBio, #detailShift, #detailVerified, #detailProfilePicUpload, #detailCitizenship, #detailCertificate').prop('disabled', false);
-    }
-
-    // Edit button
-    $('#editBtn').click(function() {
-        isEditMode = true;
-        enableAllFields();
-        $(this).hide();
-        $('#saveBtn, #saveAndAddBtn, #saveAndContinueBtn').show();
-    });
-
-    // Save worker details
-    $('#workerDetailForm').submit(function(e) {
+    // Save Worker Edit
+    $('#editWorkerForm').submit(function(e) {
         e.preventDefault();
-        saveWorkerDetails();
-    });
-
-    $('#saveBtn').click(function(e) {
-        e.preventDefault();
-        saveWorkerDetails('close');
-    });
-
-    $('#saveAndAddBtn').click(function(e) {
-        e.preventDefault();
-        saveWorkerDetails('add');
-    });
-
-    $('#saveAndContinueBtn').click(function(e) {
-        e.preventDefault();
-        saveWorkerDetails('continue');
-    });
-
-    function saveWorkerDetails(action = 'close') {
-        const workerId = $('#detailWorkerId').val();
-        const formData = new FormData($('#workerDetailForm')[0]);
+        const workerId = $('#editWorkerId').val();
+        const formData = new FormData(this);
         
         $.ajax({
             url: "{% url 'admin_dashboard:edit_worker' 0 %}".replace('0', workerId),
@@ -770,20 +816,9 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
+                    $('#editWorkerModal').modal('hide');
                     showAlert(response.message, 'success');
-                    
-                    if (action === 'close') {
-                        $('#workerDetailModal').modal('hide');
-                        setTimeout(() => location.reload(), 1500);
-                    } else if (action === 'add') {
-                        $('#workerDetailModal').modal('hide');
-                        // Could open create modal here
-                        setTimeout(() => location.reload(), 1500);
-                    } else if (action === 'continue') {
-                        // Reload the same worker's details
-                        loadWorkerDetails(workerId);
-                        showAlert('Worker updated successfully', 'success');
-                    }
+                    setTimeout(() => location.reload(), 1500);
                 } else {
                     showAlert('Error: ' + response.error, 'error');
                 }
@@ -796,21 +831,19 @@ $(document).ready(function() {
                 showAlert(errorMessage, 'error');
             }
         });
-    }
+    });
 
-    // Verify/Unverify worker - using dropdown action
-    $(document).on('click', '.verify-worker-btn', function(e) {
+    // Verify Worker
+    $('.verify-worker-btn').click(function(e) {
         e.preventDefault();
         const workerId = $(this).data('worker-id');
-        const isVerified = $(this).data('verified') === 'True' || $(this).data('verified') === true;
-        const newStatus = !isVerified;
         
-        if (confirm(`Are you sure you want to ${newStatus ? 'verify' : 'unverify'} this worker?`)) {
+        if (confirm('Are you sure you want to verify this worker?')) {
             $.ajax({
                 url: "{% url 'admin_dashboard:verify_worker' 0 %}".replace('0', workerId),
                 type: 'POST',
                 data: {
-                    action: newStatus ? 'verify' : 'unverify'
+                    action: 'verify'
                 },
                 headers: {
                     'X-CSRFToken': csrftoken
@@ -824,7 +857,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(xhr, status, error) {
-                    showAlert('Error updating verification status', 'error');
+                    showAlert('Error verifying worker', 'error');
                 }
             });
         }
@@ -878,6 +911,52 @@ $(document).ready(function() {
                 workerToDelete = null;
             }
         });
+    });
+
+    // Add Worker
+    $('#addWorkerBtn, #addFirstWorkerBtn').click(function() {
+        $('#addWorkerForm')[0].reset();
+        $('#addWorkerModal').modal('show');
+    });
+
+    $('#addWorkerForm').submit(function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: "{% url 'admin_dashboard:create_worker' %}",
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#addWorkerModal').modal('hide');
+                    showAlert(response.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('Error: ' + response.error, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                let errorMessage = 'Error creating worker';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage += ': ' + xhr.responseJSON.error;
+                }
+                showAlert(errorMessage, 'error');
+            }
+        });
+    });
+
+    // Auto-generate username from phone number
+    $('#addWorkerPhone').on('blur', function() {
+        const phone = $(this).val();
+        if (phone && !$('#addWorkerUsername').val()) {
+            $('#addWorkerUsername').val('worker_' + phone.replace(/\D/g, ''));
+        }
     });
 });
 </script>
