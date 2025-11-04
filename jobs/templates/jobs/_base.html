@@ -36,6 +36,41 @@
             transition: opacity 1s ease-out;
             opacity: 0;
         }
+        /* Fix for sidebar logout button alignment */
+        .sidebar-nav form.nav-item {
+            display: block !important;
+            width: 100%;
+        }
+
+        .sidebar-nav form.nav-item button {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 8px 16px !important;
+            text-align: left !important;
+            justify-content: flex-start !important;
+            border: none !important;
+            background: none !important;
+            cursor: pointer !important;
+            font-family: inherit !important;
+            font-size: inherit !important;
+            color: inherit !important;
+        }
+
+        /* Ensure the button content aligns with other nav items */
+        .sidebar-nav form.nav-item button {
+            display: flex !important;
+            align-items: center !important;
+            padding-left: 16px !important; /* Match other nav items */
+        }
+
+        /* Remove any unusual width or margin */
+        .sidebar-nav form.nav-item button[style*="width: 198%"] {
+            width: 100% !important;
+        }
+
+        .sidebar-nav form.nav-item button[style*="margin-right: 588px"] {
+            margin-right: 0 !important;
+        }
     </style>
 </head>
 {% block banner_slider %}{% endblock banner_slider %}

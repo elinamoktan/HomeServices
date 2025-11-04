@@ -34,4 +34,7 @@ urlpatterns = [
     path('bulk-actions/', views.bulk_actions, name='bulk_actions'),
     path('api/quick-stats/', views.quick_stats_api, name='quick_stats_api'),
     path('export/<str:model_type>/', views.export_data, name='export_data'),
+
+    path('super-admin/logout/', views.admin_logout, name='admin_logout'),
+   
 ]

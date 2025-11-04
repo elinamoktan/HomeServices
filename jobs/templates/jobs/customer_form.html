@@ -262,7 +262,7 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {% for field in form %}
-                    {% if field.name != 'latitude' and field.name != 'longitude' %}
+                    {% if field.name != 'latitude' and field.name != 'longitude' and field.name != 'gender' %}
                         <div class="form-group">
                             <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
                                 {{ field.label }}
@@ -275,6 +275,23 @@
                         </div>
                     {% endif %}
                 {% endfor %}
+                
+                <!-- Gender Field -->
+                <div class="form-group">
+                    <label for="id_gender" class="block text-sm font-medium text-gray-700 mb-2">
+                        Gender
+                    </label>
+                    <select name="gender" id="id_gender" class="form-input w-full">
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer_not_to_say">Prefer not to say</option>
+                    </select>
+                    {% for error in form.gender.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
             </div>
 
             <div class="pt-6">
@@ -340,6 +357,11 @@
         return phoneRegex.test(phone) && phone.trim() !== '';
     }
 
+    function validateGender(gender) {
+        // Must select a gender option
+        return gender.trim() !== '';
+    }
+
     function showFieldError(field, message) {
         // Remove any existing error message
         const existingError = field.parentNode.querySelector('.error-message');
@@ -375,6 +397,7 @@
         const nameField = document.querySelector('input[name="name"], input[id*="name"], #id_name');
         const taglineField = document.querySelector('input[name="tagline"], input[id*="tagline"], #id_tagline, textarea[name="tagline"], textarea[id*="tagline"]');
         const phoneField = document.querySelector('input[name="phone"], input[name="phone_number"], input[id*="phone"], #id_phone');
+        const genderField = document.getElementById('id_gender');
 
         // Validate Name
         if (nameField) {
@@ -422,6 +445,17 @@
             }
         }
 
+        // Validate Gender
+        if (genderField) {
+            const genderValue = genderField.value.trim();
+            if (!genderValue) {
+                showFieldError(genderField, 'Please select your gender');
+                isValid = false;
+            } else {
+                clearFieldError(genderField);
+            }
+        }
+
         return isValid;
     }
 
@@ -430,6 +464,7 @@
         const nameField = document.querySelector('input[name="name"], input[id*="name"], #id_name');
         const taglineField = document.querySelector('input[name="tagline"], input[id*="tagline"], #id_tagline, textarea[name="tagline"], textarea[id*="tagline"]');
         const phoneField = document.querySelector('input[name="phone"], input[name="phone_number"], input[id*="phone"], #id_phone');
+        const genderField = document.getElementById('id_gender');
 
         if (nameField) {
             nameField.addEventListener('input', function() {
@@ -468,6 +503,17 @@
                     showFieldError(this, 'Phone number is required');
                 } else if (!validatePhone(value)) {
                     showFieldError(this, 'Must be exactly 10 digits');
+                } else {
+                    clearFieldError(this);
+                }
+            });
+        }
+
+        if (genderField) {
+            genderField.addEventListener('change', function() {
+                const value = this.value.trim();
+                if (!value) {
+                    showFieldError(this, 'Please select your gender');
                 } else {
                     clearFieldError(this);
                 }

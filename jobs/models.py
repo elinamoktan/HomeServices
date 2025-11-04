@@ -119,6 +119,19 @@ class Worker(models.Model):
     tagline = models.CharField(max_length=200, blank=True, null=True)
     bio = models.TextField(blank=True)
     profile_pic = models.ImageField(upload_to="worker_profiles/", blank=True, null=True)
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+        ('prefer_not_to_say', 'Prefer not to say'),
+    ]
+    gender = models.CharField(
+        max_length=20,
+        choices=GENDER_CHOICES,
+        default='prefer_not_to_say',
+        blank=True,
+        null=True
+    )
     
     # Verification fields
     verified = models.BooleanField(default=False)
@@ -424,6 +437,8 @@ class Worker(models.Model):
             is_available=True
         ).select_related('owner').prefetch_related('ratings')
 
+
+
 class WorkerService(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, related_name='worker_services')
     service = models.ForeignKey(Service, on_delete=models.CASCADE)
@@ -644,6 +659,19 @@ class Customer(models.Model):
     name = models.CharField(max_length=100)
     phone_number = PhoneNumberField(region="NP")
     profile_pic = models.ImageField(upload_to="customer_profiles/", blank=True, null=True)
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+        ('prefer_not_to_say', 'Prefer not to say'),
+    ]
+    gender = models.CharField(
+        max_length=20,
+        choices=GENDER_CHOICES,
+        default='prefer_not_to_say',
+        blank=True,
+        null=True
+    )
     
     # Enhanced location fields
     latitude = models.FloatField(null=True, blank=True)

@@ -15,6 +15,7 @@ import csv
 import logging
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth import logout
 
 from jobs.models import (
     Worker, Customer, Appointment, WorkerRating, Service, 
@@ -1370,3 +1371,26 @@ def send_worker_verification_email(worker, approved, rejection_reason=None):
     except Exception as e:
         logger.error(f"Failed to send email: {str(e)}")
         return False
+    
+@login_required
+@user_passes_test(admin_required)
+@require_http_methods(["GET", "POST"])
+def admin_logout(request):
+    """Admin logout view that accepts both GET and POST requests"""
+    # Log admin activity before logout
+    try:
+        AdminActivityLog.objects.create(
+            admin_user=request.user,
+            action='LOGOUT',
+            model_name='System',
+            object_id=0,
+            description=f'Admin {request.user.username} logged out'
+        )
+    except Exception as e:
+        logger.error(f"Failed to log admin logout activity: {e}")
+    
+    logout(request)
+    messages.success(request, "You have been successfully logged out.")
+    
+    # ✅ FIX: Redirect to existing login URL
+    return redirect('account_login')  # This uses your existing allauth login

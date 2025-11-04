@@ -293,7 +293,7 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {% for field in form %}
-                    {% if field.name != 'latitude' and field.name != 'longitude' and field.name != 'citizenship_image' and field.name != 'certificate_file' %}
+                    {% if field.name != 'latitude' and field.name != 'longitude' and field.name != 'citizenship_image' and field.name != 'certificate_file' and field.name != 'gender' %}
                         <div class="form-group">
                             <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
                                 {{ field.label }}
@@ -314,6 +314,23 @@
                         </div>
                     {% endif %}
                 {% endfor %}
+                
+                <!-- Gender Field -->
+                <div class="form-group">
+                    <label for="id_gender" class="block text-sm font-medium text-gray-700 mb-2">
+                        Gender
+                    </label>
+                    <select name="gender" id="id_gender" class="form-input w-full">
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer_not_to_say">Prefer not to say</option>
+                    </select>
+                    {% for error in form.gender.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
             </div>
 
             <!-- Verification Document Fields -->

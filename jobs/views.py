@@ -3025,14 +3025,20 @@ def worker_notifications(request):
     except AttributeError:
         return JsonResponse({'error': 'Worker profile required'}, status=403)
     
-    # Get notifications from the last 7 days
-    seven_days_ago = timezone.now() - timedelta(days=7)
+    # ✅ FIXED: Get notifications from the last 30 days (increased from 7 days)
+    # Or remove date filter entirely to show all notifications
+    thirty_days_ago = timezone.now() - timedelta(days=30)
     
-    # Get ONLY database notifications
+    # ✅ FIXED: Query all notifications within time window
     db_notifications = Notification.objects.filter(
         worker=worker,
-        created_at__gte=seven_days_ago
+        created_at__gte=thirty_days_ago
     ).select_related('appointment', 'appointment__customer').order_by('-created_at')
+    
+    # Alternative: To show ALL notifications regardless of age (uncomment if needed)
+    # db_notifications = Notification.objects.filter(
+    #     worker=worker
+    # ).select_related('appointment', 'appointment__customer').order_by('-created_at')[:50]
     
     # Format notifications
     notifications = []
@@ -3050,18 +3056,18 @@ def worker_notifications(request):
             'customer_name': notification.appointment.customer.name if notification.appointment else None
         })
     
-    # ✅ REMOVED: The duplicate notification creation logic that was causing double notifications
-    
     # Count unread notifications
     unread_count = len([n for n in notifications if not n['is_read']])
     
     # Sort all notifications by creation date (newest first)
     notifications.sort(key=lambda x: x['created_at'], reverse=True)
     
+    # ✅ FIXED: Return up to 50 notifications (increased from 20)
     return JsonResponse({
-        'notifications': notifications,
+        'notifications': notifications[:50],
         'unread_count': unread_count
     })
+
 @require_POST
 @login_required
 def mark_notification_read(request):
