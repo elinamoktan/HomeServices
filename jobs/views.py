@@ -2135,6 +2135,8 @@ def reject_appointment(request, appointment_id):
             }, status=500)
         messages.error(request, f"Error: {str(e)}")
         return redirect('customer_dashboard')
+    
+    
 @login_required
 def accept_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -2231,6 +2233,8 @@ def delete_appointment(request, appointment_id):
         messages.error(request, "You are not authorized to delete this appointment.")
         
     return redirect('worker_dashboard')
+
+
 @login_required
 def complete_appointment(request, appointment_id):
     """Complete appointment and trigger final payment notification"""

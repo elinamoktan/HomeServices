@@ -989,10 +989,10 @@
           <i class="fas fa-heart"></i>
           <span class="nav-text">Favorites</span>
         </a>
-        <a href="{% url 'customer_appointments' %}" class="nav-item {% if current_page == 'appointments' %}active{% endif %}">
+        {% comment %} <a href="{% url 'customer_appointments' %}" class="nav-item {% if current_page == 'appointments' %}active{% endif %}">
           <i class="fas fa-history"></i>
           <span class="nav-text">Appointments</span>
-        </a>
+        </a> {% endcomment %}
         <a href="{% url 'customer_reviews' %}" class="nav-item {% if current_page == 'reviews' %}active{% endif %}">
           <i class="fas fa-star"></i>
           <span class="nav-text">Reviews</span>
@@ -1089,7 +1089,7 @@
           <div class="card-header">
             <h2 class="card-title">
               <i class="fas fa-calendar-alt"></i>
-              My Appointments
+              Recent Activity
             </h2>
             <a href="{% url 'worker-list' %}" class="card-action">Book New →</a>
           </div>
