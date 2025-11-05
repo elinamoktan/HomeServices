@@ -133,7 +133,14 @@
                                     <ul class="dropdown-menu">
                                         {% comment %} <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li> {% endcomment %}
                                         {% comment %} <li><hr class="dropdown-divider"></li> {% endcomment %}
-                                        <li><a class="dropdown-item" href="{% url 'admin:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                                        <li>
+                                            <form method="post" action="{% url 'admin_dashboard:logout' %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="dropdown-item" style="border: none; background: none; width: 100%; text-align: left;">
+                                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                                </button>
+                                            </form>
+                                        </li>
                                     </ul>
                                 </li>
                             </ul>

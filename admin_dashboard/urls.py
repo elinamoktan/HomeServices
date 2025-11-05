@@ -40,5 +40,5 @@ urlpatterns = [
     path('suspend-worker/<int:worker_id>/', views.suspend_worker, name='suspend_worker'),
     path('unsuspend-worker/<int:worker_id>/', views.unsuspend_worker, name='unsuspend_worker'),
     path('worker/<int:worker_id>/documents/', views.get_worker_documents, name='get_worker_documents'),
-    
+    path('logout/', views.admin_logout, name='logout'),
 ]

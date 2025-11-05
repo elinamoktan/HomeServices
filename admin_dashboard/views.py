@@ -1786,3 +1786,14 @@ def send_worker_unsuspension_email(worker):
     except Exception as e:
         logger.error(f"Failed to send unsuspension email: {str(e)}")
         return False
+    
+from django.contrib.auth import logout
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
+
+@require_POST
+@csrf_protect
+def admin_logout(request):
+    """Admin logout view"""
+    logout(request)
+    return redirect('admin:login')
