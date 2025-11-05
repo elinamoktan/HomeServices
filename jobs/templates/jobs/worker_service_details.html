@@ -246,6 +246,40 @@ body {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+/* Enhanced form styles for custom service */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--dark);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--gray);
+}
+
 /* ================== SEARCH AND FILTER SECTION - FIXED ================== */
 .search-filter-section {
     max-width: none;
@@ -1495,81 +1529,121 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
         </div>
         
         <div id="customServiceForm" style="display: none; background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-top: 1rem;">
-            <form id="addSubtaskForm">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="form-group">
-                        <label for="serviceSelect" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Select Service Category</label>
-                        <select id="serviceSelect" class="form-select">
-                            <option value="">Loading services...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="subtaskName" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Service Name *</label>
-                        <input type="text" id="subtaskName" required style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem;" placeholder="e.g., Deep Cleaning, Emergency Repair">
-                    </div>
+            <form id="addSubtaskForm" enctype="multipart/form-data"> 
+                <!-- Service Category Selection -->
+                <div class="form-group">
+                    <label for="serviceCategory" class="form-label">Service Category *</label>
+                    <select id="serviceCategory" class="form-control" required>
+                        <option value="">Select a service category</option>
+                        {% for category in categories_data %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">Choose the main category for your service (e.g., Painter, Carpenter, Plumber)</small>
                 </div>
                 
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="subtaskDescription" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Description *</label>
-                    <textarea id="subtaskDescription" required style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem; min-height: 80px;" placeholder="Describe what this service includes..."></textarea>
+                <!-- Service Image Upload -->
+        <div class="form-group">
+            <label for="serviceImage" class="form-label">Service Image</label>
+            <input type="file" id="serviceImage" class="form-control" accept="image/*">
+            <small class="form-text">Upload an image for your service (optional)</small>
+            
+            <!-- Image Preview -->
+            <div id="imagePreview" style="display: none; margin-top: 1rem;">
+                <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 2px solid #e2e8f0;">
+            </div>
+        </div>
+
+
+                <!-- Service Name -->
+                <div class="form-group">
+                    <label for="serviceName" class="form-label">Service Name *</label>
+                    <input type="text" id="serviceName" class="form-control" required placeholder="e.g., Deep Cleaning, Emergency Repair">
+                    <small class="form-text">Give your service a clear and descriptive name</small>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="form-group">
-                        <label for="pricingType" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Pricing Type</label>
-                        <select id="pricingType" class="form-select">
-                            <option value="fixed">Fixed Price</option>
-                            <option value="hourly">Hourly Rate</option>
-                            <option value="sqft">Per Square Foot</option>
-                            <option value="unit">Per Unit</option>
-                            <option value="shift">Shift-based</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="subtaskPrice" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Price (Rs) *</label>
-                        <input type="number" id="subtaskPrice" required step="0.01" min="0" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem;" placeholder="0.00">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="subtaskDuration" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Duration</label>
-                        <input type="text" id="subtaskDuration" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem;" placeholder="e.g., 2 hours, 1 day">
-                    </div>
+                <!-- Service Description -->
+                <div class="form-group">
+                    <label for="serviceDescription" class="form-label">Service Description *</label>
+                    <textarea id="serviceDescription" class="form-control" required rows="3" placeholder="Describe what this service includes..."></textarea>
+                    <small class="form-text">Provide detailed information about what the service includes</small>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div class="form-group">
-                        <label for="experienceLevel" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Experience Level</label>
-                        <select id="experienceLevel" class="form-select">
-                            <option value="beginner">Beginner</option>
-                            <option value="intermediate" selected>Intermediate</option>
-                            <option value="expert">Expert</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="nightShiftExtra" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Night Shift Extra (Rs)</label>
-                        <input type="number" id="nightShiftExtra" step="0.01" min="0" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem;" value="0" placeholder="0.00">
-                    </div>
+                <!-- Service Type -->
+                <div class="form-group">
+                    <label for="serviceType" class="form-label">Service Type *</label>
+                    <select id="serviceType" class="form-control" required>
+                        <option value="">Select service type</option>
+                        <option value="fixed">Fixed Price</option>
+                        <option value="hourly">Hourly Rate</option>
+                        <option value="sqft">Per Square Foot</option>
+                        <option value="unit">Per Unit</option>
+                        <option value="shift">Shift-based</option>
+                        <option value="inspection">Inspection/Consultation</option>
+                    </select>
+                    <small class="form-text">Choose how you want to charge for this service</small>
                 </div>
                 
+                <!-- Pricing -->
+                <div class="form-group">
+                    <label for="servicePrice" class="form-label">Price (Rs) *</label>
+                    <input type="number" id="servicePrice" class="form-control" required step="0.01" min="0" placeholder="0.00">
+                    <small class="form-text">Set the base price for your service</small>
+                </div>
+                
+                <!-- Duration -->
+                <div class="form-group">
+                    <label for="serviceDuration" class="form-label">Duration</label>
+                    <input type="text" id="serviceDuration" class="form-control" placeholder="e.g., 2 hours, 1 day">
+                    <small class="form-text">Estimated time to complete this service</small>
+                </div>
+                
+                <!-- Experience Level -->
+                <div class="form-group">
+                    <label for="experienceLevel" class="form-label">Experience Level</label>
+                    <select id="experienceLevel" class="form-control">
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate" selected>Intermediate</option>
+                        <option value="expert">Expert</option>
+                    </select>
+                </div>
+                
+                <!-- Night Shift Extra -->
+                <div class="form-group">
+                    <label for="nightShiftExtra" class="form-label">Night Shift Extra (Rs)</label>
+                    <input type="number" id="nightShiftExtra" class="form-control" step="0.01" min="0" value="0" placeholder="0.00">
+                    <small class="form-text">Additional charge for night shift work</small>
+                </div>
+                
+                <!-- Minimum Hours (for hourly services) -->
+                <div class="form-group" id="minHoursGroup" style="display: none;">
+                    <label for="minHours" class="form-label">Minimum Hours</label>
+                    <input type="number" id="minHours" class="form-control" min="1" value="1">
+                    <small class="form-text">Minimum number of hours for hourly services</small>
+                </div>
+                
+                <!-- Checkboxes -->
                 <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="materialsIncluded" style="width: 18px; height: 18px;">
+                        <input type="checkbox" id="materialsIncluded">
                         <span style="font-weight: 600; color: #374151;">Materials Included</span>
                     </label>
                     
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="specialOffer" style="width: 18px; height: 18px;">
+                    {% comment %} <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="specialOffer">
                         <span style="font-weight: 600; color: #374151;">Special Offer</span>
-                    </label>
+                    </label> {% endcomment %}
                 </div>
                 
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label for="subtaskRequirements" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Requirements</label>
-                    <textarea id="subtaskRequirements" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1rem; min-height: 60px;" placeholder="Any specific requirements or notes..."></textarea>
+                <!-- Requirements -->
+                <div class="form-group">
+                    <label for="serviceRequirements" class="form-label">Requirements</label>
+                    <textarea id="serviceRequirements" class="form-control" rows="2" placeholder="Any specific requirements or notes..."></textarea>
+                    <small class="form-text">Special requirements or notes for customers</small>
                 </div>
+            
+
+
                 
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                     <button type="button" id="cancelSubtask" class="btn-secondary">
@@ -1700,12 +1774,14 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                  data-service-price="{{ service.base_price }}"
                  data-service-category="{{ category.name|lower }}">
                 
-                {% if service.image %}
-                <img src="{{ service.image }}" alt="{{ service.name }}" class="service-image">
-                {% else %}
-                <img src="https://via.placeholder.com/400x200/f3f4f6/6b7280?text={{ service.name|urlencode }}" 
-                     alt="{{ service.name }}" class="service-image">
-                {% endif %}
+                {% if service.subtask_image %}
+        <img src="{{ service.subtask_image }}" alt="{{ service.name }}" class="service-image">
+        {% elif service.image %}
+        <img src="{{ service.image }}" alt="{{ service.name }}" class="service-image">
+        {% else %}
+        <img src="https://via.placeholder.com/400x200/f3f4f6/6b7280?text={{ service.name|urlencode }}" 
+             alt="{{ service.name }}" class="service-image">
+        {% endif %}
                 
                 <div class="service-content">
                     <h3 class="service-title-card">{{ service.name }}</h3>
@@ -2148,13 +2224,11 @@ function initializeCustomServiceForm() {
     const form = document.getElementById('customServiceForm');
     const cancelBtn = document.getElementById('cancelSubtask');
     const addSubtaskForm = document.getElementById('addSubtaskForm');
-    const serviceSelect = document.getElementById('serviceSelect');
+    const serviceCategorySelect = document.getElementById('serviceCategory');
+    const serviceTypeSelect = document.getElementById('serviceType');
     const messageDiv = document.getElementById('customServiceMessage');
     
     if (toggleBtn && form) {
-        // Load worker services
-        loadWorkerServices();
-        
         toggleBtn.addEventListener('click', function() {
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
             toggleBtn.innerHTML = form.style.display === 'block' 
@@ -2171,91 +2245,151 @@ function initializeCustomServiceForm() {
             });
         }
         
+        // Show/hide minimum hours based on service type
+        if (serviceTypeSelect) {
+            serviceTypeSelect.addEventListener('change', function() {
+                const minHoursGroup = document.getElementById('minHoursGroup');
+                if (this.value === 'hourly') {
+                    minHoursGroup.style.display = 'block';
+                } else {
+                    minHoursGroup.style.display = 'none';
+                }
+            });
+        }
+        
         if (addSubtaskForm) {
             addSubtaskForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                addCustomSubtask();
+                addCustomService();
             });
         }
     }
-    
-    function loadWorkerServices() {
-        fetch('/worker/services/')
-            .then(response => response.json())
-            .then(data => {
-                if (data.services && data.services.length > 0) {
-                    serviceSelect.innerHTML = '<option value="">Select a service category</option>';
-                    data.services.forEach(service => {
-                        const option = document.createElement('option');
-                        option.value = service.id;
-                        option.textContent = `${service.category_name} - ${service.service_name}`;
-                        serviceSelect.appendChild(option);
-                    });
-                } else {
-                    serviceSelect.innerHTML = '<option value="">No services available</option>';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading services:', error);
-                serviceSelect.innerHTML = '<option value="">Error loading services</option>';
-            });
-    }
-    
-    function addCustomSubtask() {
-        const serviceId = document.getElementById('serviceSelect').value;
-        const name = document.getElementById('subtaskName').value;
-        const description = document.getElementById('subtaskDescription').value;
-        const pricingType = document.getElementById('pricingType').value;
-        const price = document.getElementById('subtaskPrice').value;
-        const duration = document.getElementById('subtaskDuration').value;
-        const experienceLevel = document.getElementById('experienceLevel').value;
-        const nightShiftExtra = document.getElementById('nightShiftExtra').value;
-        const materialsIncluded = document.getElementById('materialsIncluded').checked;
-        const requirements = document.getElementById('subtaskRequirements').value;
-        
-        if (!serviceId || !name || !description || !price) {
-            showMessage('Please fill in all required fields', 'error');
-            return;
-        }
-        
-        const formData = {
-            name: name,
-            description: description,
-            pricing_type: pricingType,
-            price: parseFloat(price),
-            duration: duration,
-            experience_level: experienceLevel,
-            night_shift_extra: parseFloat(nightShiftExtra) || 0,
-            materials_included: materialsIncluded,
-            requirements: requirements
-        };
-        
-        fetch(`/worker/add-subtask/${serviceId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showMessage('Custom service added successfully! The page will refresh...', 'success');
-                addSubtaskForm.reset();
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-            } else {
-                showMessage('Error: ' + (data.error || 'Unknown error'), 'error');
+    // Add image preview functionality
+const imageInput = document.getElementById('serviceImage');
+const imagePreview = document.getElementById('imagePreview');
+const previewImg = document.getElementById('previewImg');
+
+if (imageInput && imagePreview && previewImg) {
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
             }
-        })
-        .catch(error => {
-            console.error('Error adding subtask:', error);
-            showMessage('Error adding service. Please try again.', 'error');
-        });
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
+}
+
+function addCustomService() {
+    const serviceCategory = document.getElementById('serviceCategory').value;
+    const serviceName = document.getElementById('serviceName').value;
+    const serviceDescription = document.getElementById('serviceDescription').value;
+    const serviceType = document.getElementById('serviceType').value;
+    const servicePrice = document.getElementById('servicePrice').value;
+    const serviceDuration = document.getElementById('serviceDuration').value;
+    const experienceLevel = document.getElementById('experienceLevel').value;
+    const nightShiftExtra = document.getElementById('nightShiftExtra').value;
+    const minHours = document.getElementById('minHours').value || 1;
+    const materialsIncluded = document.getElementById('materialsIncluded').checked;
+    const requirements = document.getElementById('serviceRequirements').value;
+    const imageInput = document.getElementById('serviceImage');
+    
+    // Basic validation
+    if (!serviceCategory || !serviceName || !serviceDescription || !serviceType || !servicePrice) {
+        showMessage('Please fill in all required fields', 'error');
+        return;
     }
     
+    // Get CSRF token
+    const csrfToken = getCookie('csrftoken');
+    if (!csrfToken) {
+        showMessage('Security token missing. Please refresh the page.', 'error');
+        return;
+    }
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('service_category', serviceCategory);
+    formData.append('name', serviceName);
+    formData.append('description', serviceDescription);
+    formData.append('pricing_type', serviceType);
+    formData.append('price', parseFloat(servicePrice));
+    formData.append('duration', serviceDuration);
+    formData.append('experience_level', experienceLevel);
+    formData.append('night_shift_extra', parseFloat(nightShiftExtra) || 0);
+    formData.append('min_hours', parseInt(minHours));
+    formData.append('materials_included', materialsIncluded);
+    formData.append('requirements', requirements);
+    formData.append('features', JSON.stringify([])); // Empty features array for now
+    
+    // Add image if selected
+    if (imageInput.files && imageInput.files[0]) {
+        formData.append('service_image', imageInput.files[0]);
+        console.log('📸 Image file added:', imageInput.files[0].name);
+    }
+    
+    console.log('📤 Sending service data...');
+    console.log('🔐 CSRF Token:', csrfToken ? 'Found' : 'NOT FOUND');
+    
+    // Show loading state
+    const submitBtn = document.querySelector('#addSubtaskForm button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    submitBtn.disabled = true;
+    
+    // Send request
+    fetch(`/jobs/add-custom-service/{{ worker.id }}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+            // Don't set Content-Type - let browser set it with boundary
+        },
+        body: formData
+    })
+    .then(response => {
+        console.log('📥 Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('❌ Server error response:', text);
+                throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('✅ Success response:', data);
+        
+        if (data.success) {
+            showMessage('Custom service added successfully! The page will refresh...', 'success');
+            document.getElementById('addSubtaskForm').reset();
+            // Reset image preview
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('previewImg').src = '';
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            throw new Error(data.error || 'Unknown server error');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error adding custom service:', error);
+        showMessage('Error adding service: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Restore button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
     function showMessage(message, type) {
         const messageDiv = document.getElementById('customServiceMessage');
         messageDiv.textContent = message;
@@ -2320,6 +2454,20 @@ function initializeMap() {
         setMarkerLocation(defaultLat, defaultLng);
     }
 }
+function debugFormData() {
+    const formData = new FormData(document.getElementById('addSubtaskForm'));
+    let debugContent = '<strong>Form Data:</strong><br>';
+    for (let [key, value] of formData.entries()) {
+        debugContent += `${key}: ${value}<br>`;
+    }
+    document.getElementById('debugContent').innerHTML = debugContent;
+    document.getElementById('debugInfo').style.display = 'block';
+}
+
+// Call this when form is shown
+document.getElementById('toggleCustomServiceForm').addEventListener('click', function() {
+    setTimeout(debugFormData, 100);
+}); 
 
 function setMarkerLocation(lat, lng) {
     // Remove existing marker

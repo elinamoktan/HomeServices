@@ -6,12 +6,7 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Service Management</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/super-admin/jobs/service/add/" class="btn btn-sm btn-primary me-2">
-            <i class="fas fa-plus me-1"></i> Add Service
-        </a>
-        <a href="/super-admin/jobs/servicecategory/add/" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-folder-plus me-1"></i> Add Category
-        </a>
+        <!-- REMOVED: Both Add Service and Add Category buttons -->
     </div>
 </div>
 
@@ -70,25 +65,10 @@
             </div>
         </div>
     </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            Service Categories
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ categories.count }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-folder fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
+
+<!-- Alert Container -->
+<div id="alertContainer"></div>
 
 <!-- Services Table -->
 <div class="card mb-4">
@@ -112,7 +92,7 @@
                 </thead>
                 <tbody>
                     {% for service in services %}
-                    <tr>
+                    <tr class="service-row" data-service-id="{{ service.id }}">
                         <td>{{ forloop.counter }}</td>
                         <td>
                             <div class="d-flex align-items-center">
@@ -149,12 +129,19 @@
                         </td>
                         <td>
                             <div class="btn-group-vertical btn-group-sm">
-                                <a href="/super-admin/jobs/service/{{ service.id }}/change/" class="btn btn-outline-primary mb-1" title="Edit Service">
+                                <!-- Edit Service Button -->
+                                <a href="{% url 'admin_dashboard:edit_service' service.id %}" class="btn btn-outline-primary mb-1 edit-service-btn" 
+                                   data-service-id="{{ service.id }}"
+                                   title="Edit Service">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
-                                <a href="/super-admin/jobs/service/{{ service.id }}/delete/" class="btn btn-outline-danger" title="Delete Service">
+                                <!-- Delete Service Button -->
+                                <button class="btn btn-outline-danger delete-service-btn" 
+                                        data-service-id="{{ service.id }}"
+                                        data-service-name="{{ service.name }}"
+                                        title="Delete Service">
                                     <i class="fas fa-trash"></i> Delete
-                                </a>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -164,9 +151,7 @@
                             <i class="fas fa-concierge-bell fa-3x text-muted mb-3"></i>
                             <h5>No Services Found</h5>
                             <p class="text-muted">No services have been created yet.</p>
-                            <a href="/super-admin/jobs/service/add/" class="btn btn-primary">
-                                <i class="fas fa-plus me-1"></i> Create First Service
-                            </a>
+                            <!-- REMOVED: Create First Service button -->
                         </td>
                     </tr>
                     {% endfor %}
@@ -206,10 +191,11 @@
                     </div>
                     <div class="card-footer bg-transparent">
                         <div class="btn-group w-100">
-                            <a href="/super-admin/jobs/servicecategory/{{ category.id }}/change/" class="btn btn-sm btn-outline-primary">
+                            <!-- Edit Category Button -->
+                            <a href="{% url 'admin_dashboard:edit_service_category' category.id %}" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
-                            <a href="/super-admin/jobs/service/?category__id__exact={{ category.id }}" class="btn btn-sm btn-outline-info">
+                            <a href="{% url 'admin_dashboard:service_management' %}?category={{ category.id }}" class="btn btn-sm btn-outline-info">
                                 <i class="fas fa-eye"></i> View Services
                             </a>
                         </div>
@@ -221,27 +207,226 @@
                 <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
                 <h5>No Categories Found</h5>
                 <p class="text-muted">No service categories have been created yet.</p>
-                <a href="/super-admin/jobs/servicecategory/add/" class="btn btn-primary">
-                    <i class="fas fa-folder-plus me-1"></i> Create First Category
-                </a>
+                <!-- REMOVED: Create First Category button -->
             </div>
             {% endfor %}
         </div>
     </div>
 </div>
+
+<!-- Delete Service Modal -->
+<div class="modal fade" id="deleteServiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete service: <strong id="deleteServiceName"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone. All associated subtasks and pricing will also be deleted.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteService">
+                    <i class="fas fa-trash me-1"></i> Delete Service
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add service row highlighting
-        const serviceRows = document.querySelectorAll('tbody tr');
-        serviceRows.forEach(row => {
-            row.addEventListener('click', function() {
-                this.classList.toggle('table-active');
-            });
+$(document).ready(function() {
+    console.log('✅ Service Management JavaScript Loading...');
+    
+    // CSRF Token Function
+    function getCSRFToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Alert Function
+    function showAlert(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+        const alertId = 'alert-' + Date.now();
+        
+        const alertHtml = `
+            <div id="${alertId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="fas ${icon} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        $('#alertContainer').html(alertHtml);
+        
+        setTimeout(() => {
+            const alertElement = document.getElementById(alertId);
+            if (alertElement) {
+                $(alertElement).alert('close');
+            }
+        }, 5000);
+    }
+
+    // Delete Service Button Click
+    let serviceToDelete = null;
+
+    $(document).on('click', '.delete-service-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        serviceToDelete = $(this).data('service-id');
+        const serviceName = $(this).data('service-name');
+        
+        console.log('🗑️ Delete button clicked for service ID:', serviceToDelete);
+        
+        if (!serviceToDelete) {
+            showAlert('Invalid service ID', 'error');
+            return;
+        }
+        
+        $('#deleteServiceName').text(serviceName || 'this service');
+        $('#deleteServiceModal').modal('show');
+    });
+
+    // Confirm Delete Service
+    $('#confirmDeleteService').on('click', function() {
+        if (!serviceToDelete) {
+            showAlert('No service selected for deletion', 'error');
+            return;
+        }
+
+        console.log('✅ Confirming deletion of service:', serviceToDelete);
+
+        const $deleteBtn = $(this);
+        const originalBtnText = $deleteBtn.html();
+        
+        $deleteBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Deleting...');
+
+        // Use admin dashboard delete URL
+        const deleteUrl = "{% url 'admin_dashboard:delete_service' 0 %}".replace('0', serviceToDelete);
+
+        $.ajax({
+            url: deleteUrl,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                console.log('✅ Delete response:', response);
+                if (response.success) {
+                    $('#deleteServiceModal').modal('hide');
+                    showAlert(response.message || 'Service deleted successfully!', 'success');
+                    
+                    // Remove the row from table with animation
+                    const $serviceRow = $(`.delete-service-btn[data-service-id="${serviceToDelete}"]`).closest('tr');
+                    if ($serviceRow.length) {
+                        $serviceRow.fadeOut(400, function() {
+                            $(this).remove();
+                            // Reload if no rows left
+                            if ($('tbody tr').length === 0) {
+                                setTimeout(() => location.reload(), 1000);
+                            }
+                        });
+                    } else {
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                } else {
+                    showAlert('Error: ' + (response.error || 'Unknown error'), 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ Delete error:', error);
+                console.error('❌ Status:', xhr.status);
+                console.error('❌ Response:', xhr.responseText);
+                
+                let errorMsg = 'Error deleting service';
+                
+                // Handle different types of errors
+                if (xhr.status === 403) {
+                    errorMsg = 'Permission denied: You are not authorized to delete this service';
+                } else if (xhr.status === 404) {
+                    errorMsg = 'Service not found';
+                } else {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMsg += ': ' + (response.error || error);
+                    } catch (e) {
+                        errorMsg += ': ' + error;
+                    }
+                }
+                
+                showAlert(errorMsg, 'error');
+            },
+            complete: function() {
+                $deleteBtn.prop('disabled', false).html(originalBtnText);
+                serviceToDelete = null;
+            }
         });
     });
+
+    // Edit Service Button Click - Use admin dashboard URL
+    $(document).on('click', '.edit-service-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const serviceId = $(this).data('service-id');
+        console.log('🔧 Edit button clicked for service ID:', serviceId);
+        
+        if (!serviceId) {
+            showAlert('Invalid service ID', 'error');
+            return;
+        }
+
+        // Use admin dashboard edit URL
+        const editUrl = "{% url 'admin_dashboard:edit_service' 0 %}".replace('0', serviceId);
+        window.location.href = editUrl;
+    });
+
+    // Add visual feedback for buttons
+    $('.edit-service-btn, .delete-service-btn').hover(
+        function() {
+            $(this).css('opacity', '0.7');
+        },
+        function() {
+            $(this).css('opacity', '1');
+        }
+    );
+
+    // Row highlighting
+    $('.service-row').hover(
+        function() {
+            $(this).addClass('table-active');
+        },
+        function() {
+            $(this).removeClass('table-active');
+        }
+    );
+
+    // Modal cleanup
+    $('#deleteServiceModal').on('hidden.bs.modal', function() {
+        serviceToDelete = null;
+        $('#deleteServiceName').text('');
+    });
+
+    console.log('✅ Service Management JavaScript Loaded Successfully');
+});
 </script>
 
 <style>
@@ -267,6 +452,15 @@
     .category-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Button styles */
+    .btn-action {
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
     }
 </style>
 {% endblock %}

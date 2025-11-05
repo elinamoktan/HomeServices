@@ -249,11 +249,11 @@
                 <i class="fas fa-hard-hat text-3xl text-white"></i>
             </div>
             <h1 class="title text-4xl md:text-5xl font-bold mb-4">Create Your Worker Profile</h1>
-            <p class="text-lg text-gray-700 font-medium max-w-lg mx-auto">Showcase your skills and services to customers. Complete your profile to get started.</p>
+            {% comment %} <p class="text-lg text-gray-700 font-medium max-w-lg mx-auto">Showcase your skills and services to customers. Complete your profile to get started.</p> {% endcomment %}
         </div>
 
         <!-- Verification Required Notice -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        {% comment %} <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div class="flex items-center">
                 <i class="fas fa-info-circle text-blue-500 mr-3 text-xl"></i>
                 <div>
@@ -264,7 +264,7 @@
                     </p>
                 </div>
             </div>
-        </div>
+        </div> {% endcomment %}
 
         <!-- Form Errors Display -->
         {% if form.errors %}
@@ -418,14 +418,14 @@
 
     // VALIDATION FUNCTIONS
 
-    // Name validation function - allows ONLY letters (no spaces, numbers, special characters)
+    // Name validation function - allows letters and spaces in the middle but not at start
     function validateName(input, fieldName) {
         const value = input.value.trim();
         const errorElement = document.getElementById(`${input.id}-error`);
         const errorTextElement = document.getElementById(`${input.id}-error-text`);
         
-        // Regular expression to allow ONLY letters (no spaces, hyphens, apostrophes, numbers, or special characters)
-        const nameRegex = /^[A-Za-z]+$/;
+        // Regular expression to allow letters and spaces in the middle but not at start
+        const nameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
         
         if (value === '') {
             input.classList.add('error');
@@ -436,7 +436,7 @@
         
         if (!nameRegex.test(value)) {
             input.classList.add('error');
-            errorTextElement.textContent = `${fieldName} must contain only letters (no spaces, numbers, or special characters).`;
+            errorTextElement.textContent = `${fieldName} must start with a letter and can contain spaces only between words.`;
             errorElement.classList.remove('hidden');
             return false;
         } else {
@@ -531,13 +531,19 @@
         validatePhone(input);
     }
 
-    // Function to restrict name input to letters only
+    // Function to restrict name input to letters and spaces (but not at start)
     function restrictNameInput(event, fieldName) {
         const input = event.target;
         let value = input.value;
         
-        // Remove any non-letter characters (keep only A-Z, a-z)
-        value = value.replace(/[^A-Za-z]/g, '');
+        // Remove any characters that are not letters or spaces
+        value = value.replace(/[^A-Za-z\s]/g, '');
+        
+        // Remove spaces at the start of the string
+        value = value.replace(/^\s+/, '');
+        
+        // Remove consecutive spaces (replace multiple spaces with single space)
+        value = value.replace(/\s+/g, ' ');
         
         input.value = value;
         

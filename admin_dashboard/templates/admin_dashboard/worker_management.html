@@ -5,97 +5,449 @@
 
 {% block extra_css %}
 <style>
-    .modal-lg {
-        max-width: 900px;
-    }
-    .profile-pic-preview {
-        width: 120px;
-        height: 120px;
-        object-fit: cover;
-        border-radius: 10px;
-        border: 2px solid #dee2e6;
-    }
-    .status-badge {
-        font-size: 0.8rem;
-    }
-    .alert {
+    /* Alert positioning */
+    #alertContainer {
         position: fixed;
         top: 80px;
         right: 20px;
         z-index: 9999;
         min-width: 300px;
     }
-    .worker-name-link {
-        color: #0d6efd;
-        cursor: pointer;
-        text-decoration: none;
-        font-weight: 500;
+    
+    /* Table styling */
+    .table {
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
     }
-    .worker-name-link:hover {
-        text-decoration: underline;
-    }
-    .bulk-actions {
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 4px;
-        margin-bottom: 15px;
-        display: none;
-    }
-    .bulk-actions.show {
-        display: block;
-    }
-    .checkbox-cell {
-        width: 30px;
-    }
-    .worker-table-container {
-        background: white;
+    
+    .table-bordered {
+        border: 1px solid #e3e6f0;
         border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .table thead th {
+        background-color: #4e73df !important;
+        color: white !important;
+        border-color: #4e73df !important;
+        font-weight: 600;
+        padding: 12px 10px;
+        vertical-align: middle;
+        font-size: 0.9rem;
+        border-bottom: none;
+    }
+    
+    .table tbody td {
+        padding: 12px 10px;
+        vertical-align: middle;
+        border-color: #e3e6f0;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(78, 115, 223, 0.05) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Checkbox styling */
+    .form-check-input.worker-checkbox {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #dee2e6;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        background-color: white;
+    }
+    
+    .form-check-input.worker-checkbox:checked {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .form-check-input.worker-checkbox:focus {
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        border-color: #4e73df;
+    }
+    
+    /* Action buttons */
+    .btn-action {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+        margin: 0 2px;
+        border-radius: 6px;
+        border: none;
+        transition: all 0.3s ease;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer !important;
     }
-    .quick-verify-btn {
-        font-size: 0.75rem;
-        padding: 2px 8px;
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
+    
+    .btn-action:active {
+        transform: translateY(0);
+    }
+    
+    .btn-action.btn-success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+    }
+    
+    .btn-action.btn-warning {
+        background: linear-gradient(135deg, #ffc107, #fd7e14);
+    }
+    
+    .btn-action.btn-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+    }
+    
+    .btn-action.btn-danger {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+    }
+    
+    .btn-action.btn-info {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+    }
+    
+    .btn-action.btn-secondary {
+        background: linear-gradient(135deg, #6c757d, #495057);
+    }
+    
+    /* Action button group */
+    .action-buttons {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        flex-wrap: nowrap;
+    }
+    
+    /* Stats cards */
+    .stats-card {
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+    }
+    
+    .border-left-primary {
+        border-left: 4px solid #4e73df !important;
+    }
+    
+    .border-left-success {
+        border-left: 4px solid #1cc88a !important;
+    }
+    
+    .border-left-info {
+        border-left: 4px solid #36b9cc !important;
+    }
+    
+    .border-left-warning {
+        border-left: 4px solid #f6c23e !important;
+    }
+    
+    /* Text utilities */
+    .text-xs {
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+    
+    .text-gray-300 {
+        color: #dddfeb !important;
+    }
+    
+    .text-gray-800 {
+        color: #5a5c69 !important;
+    }
+    
+    /* Cards */
+    .card {
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+    }
+    
+    .card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+    }
+    
+    /* Badges */
+    .badge {
+        padding: 0.5em 0.75em;
+        font-weight: 600;
+        font-size: 0.75em;
+    }
+    
+    /* Worker info section */
+    .worker-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .worker-details {
+        flex: 1;
+    }
+    
+    /* Contact info */
+    .contact-info div {
+        margin-bottom: 4px;
+    }
+    
+    .contact-info i {
+        width: 16px;
+        display: inline-block;
+    }
+    
+    /* Stats display */
+    .stats-display {
+        text-align: center;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        padding: 3rem 1rem;
+        text-align: center;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+        color: #d1d3e2;
+    }
+    
+    /* Verification badges */
+    .verified-badge {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    
     .pending-badge {
-        background-color: #ffc107;
+        background: linear-gradient(135deg, #ffc107, #fd7e14);
         color: #000;
     }
-    .location-pin {
-        color: #dc3545;
-        margin-right: 4px;
-    }
-    .verified-icon {
-        color: #28a745;
-        font-size: 1.1rem;
-    }
-    .unverified-icon {
-        color: #dc3545;
-        font-size: 1.1rem;
-    }
+    
+    /* Search box */
     .search-box {
         border: 1px solid #ddd;
-        border-radius: 4px;
+        border-radius: 6px;
         padding: 8px 12px;
         width: 300px;
+        transition: all 0.3s ease;
+    }
+    
+    .search-box:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    
+    /* Modal improvements */
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    }
+    
+    .modal-header {
+        background: linear-gradient(135deg, #4e73df, #224abe);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        border-bottom: none;
+    }
+    
+    .modal-header .btn-close {
+        filter: invert(1);
+    }
+    
+    /* Table row animations */
+    .worker-row {
+        transition: all 0.3s ease;
+    }
+    
+    .worker-row:hover {
+        background-color: #f8f9fe !important;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .action-buttons {
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .btn-action {
+            width: 28px;
+            height: 28px;
+            padding: 0.3rem 0.5rem;
+        }
+        
+        .search-box {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+    }
+
+    /* Fix button clickability */
+    .btn-action {
+        pointer-events: auto !important;
+        position: relative;
+        z-index: 1;
+    }
+
+    .action-buttons {
+        pointer-events: auto !important;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Alert Container for Messages -->
+<!-- Alert Container -->
 <div id="alertContainer"></div>
 
-<!-- Quick Stats -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Total Workers
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Worker Management</h1>
+    {% comment %} <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-primary" id="addWorkerBtn">
+            <i class="fas fa-plus me-1"></i> Add Worker
+        </button>
+    </div> {% endcomment %}
+</div>
+
+<!-- Add Worker Modal -->
+<div class="modal fade" id="addWorkerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Worker</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addWorkerForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="addWorkerName" class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="addWorkerName" name="name" required>
+                            <div class="invalid-feedback">Please provide a valid name.</div>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_workers }}</div>
+                        <div class="col-md-6">
+                            <label for="addWorkerPhone" class="form-label">Phone Number *</label>
+                            <input type="text" class="form-control" id="addWorkerPhone" name="phone_number" required>
+                            <div class="invalid-feedback">Please provide a valid phone number.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="addWorkerEmail" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="addWorkerEmail" name="email" required>
+                            <div class="invalid-feedback">Please provide a valid email address.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="addWorkerUsername" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="addWorkerUsername" name="username" required>
+                            <div class="invalid-feedback">Please provide a username.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addWorkerTagline" class="form-label">Tagline</label>
+                        <input type="text" class="form-control" id="addWorkerTagline" name="tagline" placeholder="Professional tagline">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addWorkerBio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="addWorkerBio" name="bio" rows="4" placeholder="About the worker..."></textarea>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="addWorkerShift" class="form-label">Shift *</label>
+                            <select class="form-select" id="addWorkerShift" name="shift" required>
+                                <option value="">Select Shift</option>
+                                <option value="day">Day</option>
+                                <option value="night">Night</option>
+                                <option value="all">All</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a shift.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="addWorkerVerified" name="verified">
+                                <label class="form-check-label" for="addWorkerVerified">
+                                    Verified Worker
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="addWorkerAvailable" name="is_available" checked>
+                                <label class="form-check-label" for="addWorkerAvailable">
+                                    Available for Work
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addWorkerProfilePic" class="form-label">Profile Picture</label>
+                        <input type="file" class="form-control" id="addWorkerProfilePic" name="profile_pic" accept="image/*">
+                        <div class="form-text">Accepted formats: JPG, PNG, GIF. Max size: 5MB</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addWorkerPassword" class="form-label">Password *</label>
+                        <input type="password" class="form-control" id="addWorkerPassword" name="password" required minlength="8">
+                        <div class="invalid-feedback">Password must be at least 8 characters long.</div>
+                        <div class="form-text">Minimum 8 characters with letters and numbers</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="addWorkerConfirmPassword" class="form-label">Confirm Password *</label>
+                        <input type="password" class="form-control" id="addWorkerConfirmPassword" name="confirm_password" required>
+                        <div class="invalid-feedback">Passwords do not match.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="addWorkerSubmitBtn">
+                        <i class="fas fa-plus me-1"></i> Add Worker
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Row -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-primary shadow h-100 py-2 stats-card">
+            <div class="card-body">
+                <div class="row g-0 align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs text-primary text-uppercase mb-1">Total Workers</div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">{{ total_workers }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-briefcase fa-2x text-gray-300"></i>
@@ -105,15 +457,13 @@
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-success shadow h-100 py-2 stats-card">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Verified Workers
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ verified_workers }}</div>
+                <div class="row g-0 align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs text-success text-uppercase mb-1">Verified Workers</div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">{{ verified_workers }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-check-circle fa-2x text-gray-300"></i>
@@ -123,15 +473,13 @@
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-warning shadow h-100 py-2 stats-card">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            Pending Verification
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ unverified_workers }}</div>
+                <div class="row g-0 align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs text-warning text-uppercase mb-1">Pending Verification</div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">{{ unverified_workers }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-clock fa-2x text-gray-300"></i>
@@ -141,15 +489,13 @@
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-info shadow h-100 py-2 stats-card">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            Available Workers
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ available_workers }}</div>
+                <div class="row g-0 align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs text-info text-uppercase mb-1">Available Workers</div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">{{ available_workers }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-user-check fa-2x text-gray-300"></i>
@@ -160,192 +506,180 @@
     </div>
 </div>
 
-<!-- Search and Filters Section -->
-<div class="mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-            <input type="text" class="form-control search-box" id="searchWorkers" placeholder="Search workers..." value="{{ search_query }}">
-            <button class="btn btn-primary" id="searchBtn">
-                <i class="fas fa-search"></i>
-            </button>
-        </div>
-        <div class="filter-buttons">
-            <a href="{% url 'admin_dashboard:pending_verifications' %}" class="btn btn-warning">
-                <i class="fas fa-clock me-1"></i> Pending Verifications ({{ unverified_workers }})
-            </a>
-            <button class="btn btn-success" id="addWorkerBtn">
-                <i class="fas fa-plus me-1"></i> Add Worker
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Bulk Actions Bar -->
-<div class="bulk-actions" id="bulkActionsBar">
-    <div class="d-flex align-items-center gap-3">
-        <span><strong id="selectedCount">0</strong> workers selected</span>
-        <select class="form-select form-select-sm" style="width: 200px;" id="bulkActionSelect">
-            <option value="">Select Action</option>
-            <option value="verify">Verify Workers</option>
-            <option value="unverify">Unverify Workers</option>
-            <option value="delete">Delete Workers</option>
-        </select>
-        <button class="btn btn-sm btn-primary" id="bulkActionGo">Apply</button>
-        <button class="btn btn-sm btn-outline-secondary" id="clearSelection">Clear</button>
-    </div>
-</div>
-
 <!-- Workers Table -->
-<div class="worker-table-container">
-    <div class="p-3 border-bottom">
-        <h5 class="mb-0"><i class="fas fa-list me-2"></i>All Workers</h5>
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-list me-2"></i>All Workers</h6>
     </div>
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th class="checkbox-cell">
-                        <input type="checkbox" id="selectAll">
-                    </th>
-                    <th>WORKER DETAILS</th>
-                    <th>CONTACT INFO</th>
-                    <th>VERIFICATION</th>
-                    <th>RATING</th>
-                    <th>APPOINTMENTS</th>
-                    <th>LOCATION</th>
-                    <th>STATUS</th>
-                    <th>ACTIONS</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for worker in workers %}
-                <tr id="worker-{{ worker.id }}">
-                    <td class="checkbox-cell">
-                        <input type="checkbox" class="worker-checkbox" value="{{ worker.id }}">
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            {% if worker.profile_pic %}
-                                <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" class="rounded-circle me-3" width="50" height="50">
-                            {% else %}
-                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
-                                    <i class="fas fa-user text-white"></i>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">
+                            <input type="checkbox" class="form-check-input" id="selectAllWorkers">
+                        </th>
+                        <th style="width: 20%;">WORKER DETAILS</th>
+                        <th style="width: 15%;">CONTACT INFO</th>
+                        <th style="width: 8%;">VERIFICATION</th>
+                        <th style="width: 8%;">RATING</th>
+                        <th style="width: 8%;">APPOINTMENTS</th>
+                        <th style="width: 12%;">LOCATION</th>
+                        <th style="width: 10%;">STATUS</th>
+                        <th style="width: 8%;">JOINED</th>
+                        <th style="width: 15%;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for worker in workers %}
+                    <tr class="worker-row" id="worker-{{ worker.id }}">
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input worker-checkbox" 
+                                   value="{{ worker.id }}" data-worker-id="{{ worker.id }}">
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if worker.profile_pic %}
+                                <img src="{{ worker.profile_pic.url }}" alt="{{ worker.name }}" 
+                                     class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;">
+                                {% else %}
+                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 45px; height: 45px;">
+                                    <i class="fas fa-user"></i>
                                 </div>
-                            {% endif %}
-                            <div>
-                                <strong class="d-block">{{ worker.name }}</strong>
-                                <small class="text-muted">ID: {{ worker.id }}</small>
-                                {% if worker.tagline %}
-                                    <small class="d-block text-muted">{{ worker.tagline|truncatewords:5 }}</small>
                                 {% endif %}
+                                <div>
+                                    <div class="fw-bold text-dark">{{ worker.name }}</div>
+                                    <small class="text-muted">ID: {{ worker.id }}</small>
+                                    {% if worker.tagline %}
+                                    <small class="text-muted d-block">{{ worker.tagline|truncatewords:5 }}</small>
+                                    {% endif %}
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                    <td>
-                        <div>
-                            <strong><i class="fas fa-phone me-1"></i></strong> {{ worker.phone_number }}<br>
-                            <strong><i class="fas fa-envelope me-1"></i></strong> {{ worker.owner.email }}
-                        </div>
-                    </td>
-                    <td>
-                        {% if worker.verified %}
-                            <span class="badge bg-success">
+                        </td>
+                        <td>
+                            <div class="mb-1">
+                                <i class="fas fa-phone text-muted" style="width: 18px;"></i>
+                                <span>{{ worker.phone_number }}</span>
+                            </div>
+                            <div>
+                                <i class="fas fa-envelope text-muted" style="width: 18px;"></i>
+                                <span class="small">{{ worker.owner.email|truncatechars:30 }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            {% if worker.verified %}
+                            <span class="badge verified-badge rounded-pill px-3 py-2">
                                 <i class="fas fa-check-circle me-1"></i> Verified
                             </span>
-                        {% else %}
-                            <span class="badge pending-badge">
+                            {% else %}
+                            <span class="badge pending-badge rounded-pill px-3 py-2">
                                 <i class="fas fa-clock me-1"></i> Pending
                             </span>
-                            <br>
-                            <small class="text-muted">{{ worker.created_at|timesince }} ago</small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="text-center">
-                            <strong class="text-warning">⭐ {{ worker.avg_rating|default:"0.00"|floatformat:1 }}</strong>
-                            <small class="text-muted d-block">{{ worker.ratings.count }} ratings</small>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="text-center">
-                            <strong>{{ worker.appointment_count }}</strong>
-                            <small class="text-muted d-block">appointments</small>
-                        </div>
-                    </td>
-                    <td>
-                        {% if worker.location_address %}
-                            <small>{{ worker.location_address|truncatewords:3 }}</small>
-                        {% else %}
-                            <small class="text-muted">No location</small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if worker.is_available %}
-                            <span class="badge bg-success">Available</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Unavailable</span>
-                        {% endif %}
-                        <br>
-                        <small class="text-muted">{{ worker.shift|title }} shift</small>
-                    </td>
-                    <td>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-cog"></i>
-                            </button>
-                            <ul class="dropdown-menu">
-                                {% if not worker.verified %}
-                                <li>
-                                    <a class="dropdown-item verify-worker-btn" href="#" data-worker-id="{{ worker.id }}">
-                                        <i class="fas fa-check-circle me-1 text-success"></i> Verify Worker
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                {% endif %}
-                                <li>
-                                    <a class="dropdown-item edit-worker-btn" href="#" data-worker-id="{{ worker.id }}">
-                                        <i class="fas fa-edit me-1"></i> Edit Worker
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="/super-admin/jobs/appointment/?worker__id__exact={{ worker.id }}">
-                                        <i class="fas fa-calendar me-1"></i> View Appointments
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item text-danger delete-worker-btn" href="#" 
-                                       data-worker-id="{{ worker.id }}" 
-                                       data-worker-name="{{ worker.name }}">
-                                        <i class="fas fa-trash me-1"></i> Delete Worker
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="9" class="text-center py-4">
-                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                        <h5>No Workers Found</h5>
-                        <p class="text-muted">
-                            {% if search_query or current_filter %}
-                                Try adjusting your search criteria
-                            {% else %}
-                                No workers have registered yet.
                             {% endif %}
-                        </p>
-                        {% if not search_query and not current_filter %}
-                        <button class="btn btn-primary" id="addFirstWorkerBtn">
-                            <i class="fas fa-plus me-1"></i> Add First Worker
-                        </button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </td>
+                        <td class="text-center">
+                            <div class="fw-bold text-warning">⭐ {{ worker.avg_rating|default:"0.00"|floatformat:1 }}</div>
+                            <small class="text-muted">{{ worker.ratings.count }} ratings</small>
+                        </td>
+                        <td class="text-center">
+                            <div class="fw-bold text-dark">{{ worker.appointment_count }}</div>
+                            <small class="text-muted">appointments</small>
+                        </td>
+                        <td>
+                            {% if worker.location_address %}
+                            <span class="small">{{ worker.location_address|truncatewords:3 }}</span>
+                            {% else %}
+                            <span class="text-muted small">No location</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if worker.is_available %}
+                            <span class="badge rounded-pill bg-success px-3 py-2">Available</span>
+                            {% else %}
+                            <span class="badge rounded-pill bg-secondary px-3 py-2">Unavailable</span>
+                            {% endif %}
+                            
+                            {% if worker.is_suspended %}
+                            <span class="badge rounded-pill bg-danger px-3 py-2 mt-1 d-block">Suspended</span>
+                            {% endif %}
+                            
+                            <div class="small text-muted mt-1">{{ worker.shift|title }} shift</div>
+                        </td>
+                        <td class="text-center">
+                            <div class="small">{{ worker.created_at|date:"M d, Y" }}</div>
+                        </td>
+                        <td class="text-center">
+                            <div class="action-buttons">
+                                <!-- Verify/Unverify Button -->
+                                {% if not worker.verified %}
+                                <button class="btn btn-sm btn-success btn-action verify-worker-btn" 
+                                        data-worker-id="{{ worker.id }}"
+                                        title="Verify Worker">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                                {% else %}
+                                <button class="btn btn-sm btn-warning btn-action unverify-worker-btn" 
+                                        data-worker-id="{{ worker.id }}"
+                                        title="Unverify Worker">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                                {% endif %}
+                                
+                                <!-- Suspend/Unsuspend Button -->
+                                {% if not worker.is_suspended %}
+                                <button class="btn btn-sm btn-warning btn-action suspend-worker-btn" 
+                                        data-worker-id="{{ worker.id }}"
+                                        data-worker-name="{{ worker.name }}"
+                                        title="Suspend Worker">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                {% else %}
+                                <button class="btn btn-sm btn-info btn-action unsuspend-worker-btn" 
+                                        data-worker-id="{{ worker.id }}"
+                                        data-worker-name="{{ worker.name }}"
+                                        title="Unsuspend Worker">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                                
+                                <!-- Edit Button -->
+                                <button class="btn btn-sm btn-primary btn-action edit-worker-btn" 
+                                        data-worker-id="{{ worker.id }}"
+                                        title="Edit Worker">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <!-- Delete Button -->
+                                <button class="btn btn-sm btn-danger btn-action delete-worker-btn" 
+                                        data-worker-id="{{ worker.id }}"
+                                        data-worker-name="{{ worker.name }}"
+                                        title="Delete Worker">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                <h5>No Workers Found</h5>
+                                <p class="text-muted">
+                                    {% if request.GET.search or request.GET.status %}
+                                    Try adjusting your search criteria
+                                    {% else %}
+                                    No workers have registered yet.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -374,17 +708,19 @@
 </nav>
 {% endif %}
 
-<!-- Export Options -->
-<div class="card mt-4">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-download me-2"></i>Export Data</h5>
+<!-- Export Data -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-download me-2"></i>Export Data</h6>
     </div>
     <div class="card-body">
         <div class="btn-group">
-            <a href="{% url 'admin_dashboard:export_data' 'workers' %}?format=csv" class="btn btn-outline-success">
+            <a href="{% url 'admin_dashboard:export_data' 'workers' %}?format=csv" 
+               class="btn btn-outline-success">
                 <i class="fas fa-file-csv me-1"></i> Export as CSV
             </a>
-            <a href="{% url 'admin_dashboard:export_data' 'workers' %}?format=json" class="btn btn-outline-primary">
+            <a href="{% url 'admin_dashboard:export_data' 'workers' %}?format=json" 
+               class="btn btn-outline-primary">
                 <i class="fas fa-file-code me-1"></i> Export as JSON
             </a>
         </div>
@@ -393,24 +729,24 @@
 </div>
 
 <!-- Worker Edit Modal -->
-<div class="modal fade" id="editWorkerModal" tabindex="-1" aria-labelledby="editWorkerModalLabel" aria-hidden="true">
+<div class="modal fade" id="editWorkerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editWorkerModalLabel">Edit Worker</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Edit Worker</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="editWorkerForm" enctype="multipart/form-data">
                 <div class="modal-body">
                     {% csrf_token %}
                     <input type="hidden" id="editWorkerId" name="worker_id">
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
                             <label for="editWorkerName" class="form-label">Name *</label>
                             <input type="text" class="form-control" id="editWorkerName" name="name" required>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
                             <label for="editWorkerPhone" class="form-label">Phone Number *</label>
                             <input type="text" class="form-control" id="editWorkerPhone" name="phone_number" required>
                         </div>
@@ -432,8 +768,8 @@
                         <textarea class="form-control" id="editWorkerBio" name="bio" rows="4" placeholder="About the worker..."></textarea>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
                             <label for="editWorkerShift" class="form-label">Shift</label>
                             <select class="form-select" id="editWorkerShift" name="shift">
                                 <option value="day">Day</option>
@@ -441,7 +777,7 @@
                                 <option value="all">All</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
                             <label class="form-label">Status</label>
                             <div class="form-check mt-2">
                                 <input class="form-check-input" type="checkbox" id="editWorkerVerified" name="verified">
@@ -462,7 +798,8 @@
                         <label for="editWorkerProfilePic" class="form-label">Profile Picture</label>
                         <input type="file" class="form-control" id="editWorkerProfilePic" name="profile_pic" accept="image/*">
                         <div class="mt-2">
-                            <img id="currentWorkerProfilePic" src="" alt="Current profile pic" class="img-thumbnail" style="max-width: 150px; display: none;">
+                            <img id="currentWorkerProfilePic" src="" alt="Current profile" 
+                                 class="img-thumbnail" style="max-width: 150px; display: none;">
                         </div>
                     </div>
                     
@@ -470,7 +807,8 @@
                         <label for="editWorkerCitizenship" class="form-label">Citizenship Image</label>
                         <input type="file" class="form-control" id="editWorkerCitizenship" name="citizenship_image" accept="image/*">
                         <div class="mt-2">
-                            <img id="currentWorkerCitizenship" src="" alt="Current citizenship" class="img-thumbnail" style="max-width: 150px; display: none;">
+                            <img id="currentWorkerCitizenship" src="" alt="Current citizenship" 
+                                 class="img-thumbnail" style="max-width: 150px; display: none;">
                         </div>
                     </div>
                     
@@ -485,11 +823,11 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Average Rating</label>
-                            <div class="form-control" id="editWorkerRating" style="background-color: #f8f9fa;">0.00</div>
+                            <div class="form-control bg-light" id="editWorkerRating">0.00</div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Appointments</label>
-                            <div class="form-control" id="editWorkerAppointments" style="background-color: #f8f9fa;">0</div>
+                            <div class="form-control bg-light" id="editWorkerAppointments">0</div>
                         </div>
                     </div>
                 </div>
@@ -503,12 +841,12 @@
 </div>
 
 <!-- Worker Delete Confirmation Modal -->
-<div class="modal fade" id="deleteWorkerModal" tabindex="-1" aria-labelledby="deleteWorkerModalLabel" aria-hidden="true">
+<div class="modal fade" id="deleteWorkerModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteWorkerModalLabel">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to delete worker: <strong id="deleteWorkerName"></strong>?</p>
@@ -524,89 +862,43 @@
     </div>
 </div>
 
-<!-- Add Worker Modal -->
-<div class="modal fade" id="addWorkerModal" tabindex="-1" aria-labelledby="addWorkerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<!-- Suspend Worker Modal -->
+<div class="modal fade" id="suspendWorkerModal" tabindex="-1">
+    <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addWorkerModalLabel">Add New Worker</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">Suspend Worker</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="addWorkerForm" enctype="multipart/form-data">
+            <form id="suspendWorkerForm">
                 <div class="modal-body">
                     {% csrf_token %}
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="addWorkerName" class="form-label">Name *</label>
-                            <input type="text" class="form-control" id="addWorkerName" name="name" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="addWorkerPhone" class="form-label">Phone Number *</label>
-                            <input type="text" class="form-control" id="addWorkerPhone" name="phone_number" required>
-                        </div>
-                    </div>
+                    <input type="hidden" id="suspendWorkerId" name="worker_id">
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="addWorkerEmail" class="form-label">Email *</label>
-                            <input type="email" class="form-control" id="addWorkerEmail" name="email" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="addWorkerUsername" class="form-label">Username *</label>
-                            <input type="text" class="form-control" id="addWorkerUsername" name="username" required>
-                        </div>
+                    <p>You are about to suspend: <strong id="suspendWorkerName"></strong></p>
+                    
+                    <div class="mb-3">
+                        <label for="suspendReason" class="form-label">Suspension Reason *</label>
+                        <textarea class="form-control" id="suspendReason" name="reason" rows="4" 
+                                  placeholder="Provide a clear reason for suspension..." required></textarea>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="addWorkerTagline" class="form-label">Tagline</label>
-                        <input type="text" class="form-control" id="addWorkerTagline" name="tagline" placeholder="Professional tagline">
+                        <label for="suspendEndDate" class="form-label">Suspension End Date (Optional)</label>
+                        <input type="date" class="form-control" id="suspendEndDate" name="end_date">
+                        <small class="text-muted">Leave empty for indefinite suspension</small>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="addWorkerBio" class="form-label">Bio</label>
-                        <textarea class="form-control" id="addWorkerBio" name="bio" rows="4" placeholder="About the worker..."></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="addWorkerShift" class="form-label">Shift</label>
-                            <select class="form-select" id="addWorkerShift" name="shift">
-                                <option value="day">Day</option>
-                                <option value="night">Night</option>
-                                <option value="all">All</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Status</label>
-                            <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" id="addWorkerVerified" name="verified">
-                                <label class="form-check-label" for="addWorkerVerified">
-                                    Verified Worker
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="addWorkerAvailable" name="is_available" checked>
-                                <label class="form-check-label" for="addWorkerAvailable">
-                                    Available for Work
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="addWorkerProfilePic" class="form-label">Profile Picture</label>
-                        <input type="file" class="form-control" id="addWorkerProfilePic" name="profile_pic" accept="image/*">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="addWorkerPassword" class="form-label">Password *</label>
-                        <input type="password" class="form-control" id="addWorkerPassword" name="password" required>
-                        <small class="text-muted">Minimum 8 characters with letters and numbers</small>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> Suspended workers will not be able to receive appointments or appear in searches.
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Worker</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-ban me-1"></i> Suspend Worker
+                    </button>
                 </div>
             </form>
         </div>
@@ -614,11 +906,14 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block extra_scripts %}
 <script>
 $(document).ready(function() {
-    // CSRF token setup
-    function getCookie(name) {
+    console.log('Worker management script loaded');
+
+    // CSRF Token Function
+    function getCSRFToken() {
+        const name = 'csrftoken';
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
@@ -632,159 +927,427 @@ $(document).ready(function() {
         }
         return cookieValue;
     }
-    const csrftoken = getCookie('csrftoken');
 
-    // Alert function
+    // Alert Function
     function showAlert(message, type) {
         const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
         const alertId = 'alert-' + Date.now();
+        
         const alertHtml = `
             <div id="${alertId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <i class="fas ${icon} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
+        
         $('#alertContainer').html(alertHtml);
+        
         setTimeout(() => {
-            $('#' + alertId).alert('close');
+            const alertElement = document.getElementById(alertId);
+            if (alertElement) {
+                $(alertElement).alert('close');
+            }
         }, 5000);
     }
 
-    // Bulk selection functionality
-    $('#selectAll').change(function() {
-        $('.worker-checkbox').prop('checked', this.checked);
-        updateBulkActionsBar();
-    });
+    // VALIDATION FUNCTIONS
 
-    $('.worker-checkbox').change(function() {
-        updateBulkActionsBar();
-        $('#selectAll').prop('checked', $('.worker-checkbox:checked').length === $('.worker-checkbox').length);
-    });
-
-    $('#clearSelection').click(function() {
-        $('.worker-checkbox').prop('checked', false);
-        $('#selectAll').prop('checked', false);
-        updateBulkActionsBar();
-    });
-
-    function updateBulkActionsBar() {
-        const selectedCount = $('.worker-checkbox:checked').length;
-        $('#selectedCount').text(selectedCount);
-        if (selectedCount > 0) {
-            $('#bulkActionsBar').addClass('show');
+    // Name validation function - allows letters and spaces in the middle but not at start
+    function validateName(input, fieldName) {
+        const value = $(input).val().trim();
+        const errorElement = $(input).siblings('.error-message');
+        
+        // Regular expression to allow letters and spaces in the middle but not at start
+        const nameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
+        
+        if (value === '') {
+            $(input).addClass('error');
+            errorElement.html('<i class="fas fa-exclamation-circle"></i>' + fieldName + ' is required.').show();
+            return false;
+        }
+        
+        if (!nameRegex.test(value)) {
+            $(input).addClass('error');
+            errorElement.html('<i class="fas fa-exclamation-circle"></i>' + fieldName + ' must start with a letter and can contain spaces only between words.').show();
+            return false;
         } else {
-            $('#bulkActionsBar').removeClass('show');
+            $(input).removeClass('error');
+            errorElement.hide();
+            return true;
         }
     }
 
-    // Bulk actions
-    $('#bulkActionGo').click(function() {
-        const action = $('#bulkActionSelect').val();
-        const selectedIds = $('.worker-checkbox:checked').map(function() {
-            return $(this).val();
-        }).get();
-
-        if (!action) {
-            showAlert('Please select an action', 'error');
-            return;
-        }
-
-        if (selectedIds.length === 0) {
-            showAlert('Please select at least one worker', 'error');
-            return;
-        }
-
-        if (confirm(`Are you sure you want to ${action} ${selectedIds.length} worker(s)?`)) {
-            // Map action values to match your view
-            let actionMap = {
-                'verify': 'verify_workers',
-                'unverify': 'unverify_workers',
-                'delete': 'delete_workers'
-            };
-            
-            // Perform bulk action
-            $.ajax({
-                url: "{% url 'admin_dashboard:bulk_actions' %}",
-                type: 'POST',
-                data: {
-                    action: actionMap[action],
-                    selected_ids: selectedIds
-                },
-                headers: {
-                    'X-CSRFToken': csrftoken
-                },
-                success: function(response) {
-                    showAlert('Bulk action completed successfully', 'success');
-                    setTimeout(() => location.reload(), 1500);
-                },
-                error: function(xhr, status, error) {
-                    showAlert('Error performing bulk action', 'error');
-                }
-            });
-        }
-    });
-
-    // Search functionality
-    $('#searchBtn').click(function() {
-        const query = $('#searchWorkers').val();
-        const currentUrl = new URL(window.location.href);
+    // Tagline validation function - allows ONLY letters, max 150 characters
+    function validateTagline(input) {
+        const value = $(input).val().trim();
+        const errorElement = $(input).siblings('.error-message');
         
-        if (query) {
-            currentUrl.searchParams.set('search', query);
+        // Regular expression to allow ONLY letters (no spaces, numbers, or special characters)
+        const taglineRegex = /^[A-Za-z]+$/;
+        
+        if (value === '') {
+            $(input).addClass('error');
+            errorElement.html('<i class="fas fa-exclamation-circle"></i>Tagline is required.').show();
+            return false;
+        }
+        
+        if (!taglineRegex.test(value)) {
+            $(input).addClass('error');
+            errorElement.html('<i class="fas fa-exclamation-circle"></i>Tagline must contain only letters (no spaces, numbers, or special characters).').show();
+            return false;
+        } else if (value.length > 150) {
+            $(input).addClass('error');
+            errorElement.html('<i class="fas fa-exclamation-circle"></i>Tagline must be maximum 150 characters.').show();
+            return false;
         } else {
-            currentUrl.searchParams.delete('search');
+            $(input).removeClass('error');
+            errorElement.hide();
+            return true;
+        }
+    }
+
+    // Phone number validation function - allows ONLY numbers and exactly 10 digits starting with 98
+    function validatePhone(input) {
+        const value = $(input).val().trim();
+        const errorElement = $(input).siblings('.error-message');
+        
+        // Regular expression to allow ONLY numbers starting with 98
+        const phoneRegex = /^98\d{8}$/;
+        
+        if (value === '') {
+            $(input).addClass('error');
+            errorElement.html('<i class="fas fa-exclamation-circle"></i>Phone number is required.').show();
+            return false;
         }
         
-        currentUrl.searchParams.delete('page');
-        window.location.href = currentUrl.toString();
-    });
-
-    $('#searchWorkers').keypress(function(e) {
-        if (e.which === 13) {
-            $('#searchBtn').click();
+        if (!phoneRegex.test(value)) {
+            $(input).addClass('error');
+            errorElement.html('<i class="fas fa-exclamation-circle"></i>Phone number must be 10 digits starting with 98.').show();
+            return false;
+        } else {
+            $(input).removeClass('error');
+            errorElement.hide();
+            return true;
         }
+    }
+
+    // Function to restrict phone input to numbers only and limit to 10 digits
+    function restrictPhoneInput(event) {
+        const input = event.target;
+        let value = $(input).val();
+        
+        // Remove any non-digit characters
+        value = value.replace(/\D/g, '');
+        
+        // Limit to 10 digits
+        if (value.length > 10) {
+            value = value.substring(0, 10);
+        }
+        
+        $(input).val(value);
+        
+        // Validate the phone number
+        validatePhone(input);
+    }
+
+    // Function to restrict name input to letters and spaces (but not at start)
+    function restrictNameInput(event, fieldName) {
+        const input = event.target;
+        let value = $(input).val();
+        
+        // Remove any characters that are not letters or spaces
+        value = value.replace(/[^A-Za-z\s]/g, '');
+        
+        // Remove spaces at the start of the string
+        value = value.replace(/^\s+/, '');
+        
+        // Remove consecutive spaces (replace multiple spaces with single space)
+        value = value.replace(/\s+/g, ' ');
+        
+        $(input).val(value);
+        
+        // Validate the name
+        validateName(input, fieldName);
+    }
+
+    // Function to restrict tagline input to letters only and limit to 150 chars
+    function restrictTaglineInput(event) {
+        const input = event.target;
+        let value = $(input).val();
+        
+        // Remove any non-letter characters (keep only A-Z, a-z)
+        value = value.replace(/[^A-Za-z]/g, '');
+        
+        // Limit to 150 characters
+        if (value.length > 150) {
+            value = value.substring(0, 150);
+        }
+        
+        $(input).val(value);
+        
+        // Validate the tagline
+        validateTagline(input);
+    }
+
+    // Setup validation for form fields
+    function setupFormValidation() {
+        console.log('Setting up form validation...');
+
+        // Name validation for add worker form
+        $('#addWorkerName').on('input', function(event) {
+            restrictNameInput(event, 'Name');
+        }).on('blur', function() {
+            validateName(this, 'Name');
+        }).on('paste', function(event) {
+            setTimeout(() => {
+                restrictNameInput({target: this}, 'Name');
+            }, 0);
+        });
+
+        // Name validation for edit worker form
+        $('#editWorkerName').on('input', function(event) {
+            restrictNameInput(event, 'Name');
+        }).on('blur', function() {
+            validateName(this, 'Name');
+        }).on('paste', function(event) {
+            setTimeout(() => {
+                restrictNameInput({target: this}, 'Name');
+            }, 0);
+        });
+
+        // Phone validation for add worker form
+        $('#addWorkerPhone').on('input', function(event) {
+            restrictPhoneInput(event);
+        }).on('blur', function() {
+            validatePhone(this);
+        }).on('paste', function(event) {
+            setTimeout(() => {
+                restrictPhoneInput({target: this});
+            }, 0);
+        }).on('keydown', function(event) {
+            // Allow: backspace, delete, tab, escape, enter
+            if ([46, 8, 9, 27, 13].includes(event.keyCode) ||
+                // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                (event.keyCode === 65 && event.ctrlKey === true) ||
+                (event.keyCode === 67 && event.ctrlKey === true) ||
+                (event.keyCode === 86 && event.ctrlKey === true) ||
+                (event.keyCode === 88 && event.ctrlKey === true) ||
+                // Allow: home, end, left, right
+                (event.keyCode >= 35 && event.keyCode <= 39)) {
+                return;
+            }
+            
+            // Ensure that it is a number and stop the keypress if not
+            if ((event.shiftKey || (event.keyCode < 48 || event.keyCode > 57)) && 
+                (event.keyCode < 96 || event.keyCode > 105)) {
+                event.preventDefault();
+            }
+        });
+
+        // Phone validation for edit worker form
+        $('#editWorkerPhone').on('input', function(event) {
+            restrictPhoneInput(event);
+        }).on('blur', function() {
+            validatePhone(this);
+        }).on('paste', function(event) {
+            setTimeout(() => {
+                restrictPhoneInput({target: this});
+            }, 0);
+        }).on('keydown', function(event) {
+            // Allow: backspace, delete, tab, escape, enter
+            if ([46, 8, 9, 27, 13].includes(event.keyCode) ||
+                // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                (event.keyCode === 65 && event.ctrlKey === true) ||
+                (event.keyCode === 67 && event.ctrlKey === true) ||
+                (event.keyCode === 86 && event.ctrlKey === true) ||
+                (event.keyCode === 88 && event.ctrlKey === true) ||
+                // Allow: home, end, left, right
+                (event.keyCode >= 35 && event.keyCode <= 39)) {
+                return;
+            }
+            
+            // Ensure that it is a number and stop the keypress if not
+            if ((event.shiftKey || (event.keyCode < 48 || event.keyCode > 57)) && 
+                (event.keyCode < 96 || event.keyCode > 105)) {
+                event.preventDefault();
+            }
+        });
+
+        // Tagline validation for add worker form
+        $('#addWorkerTagline').on('input', function(event) {
+            restrictTaglineInput(event);
+        }).on('blur', function() {
+            validateTagline(this);
+        }).on('paste', function(event) {
+            setTimeout(() => {
+                restrictTaglineInput({target: this});
+            }, 0);
+        });
+
+        // Tagline validation for edit worker form
+        $('#editWorkerTagline').on('input', function(event) {
+            restrictTaglineInput(event);
+        }).on('blur', function() {
+            validateTagline(this);
+        }).on('paste', function(event) {
+            setTimeout(() => {
+                restrictTaglineInput({target: this});
+            }, 0);
+        });
+    }
+
+    // Form validation before submission
+    function validateAddWorkerForm() {
+        let isValid = true;
+
+        // Validate Name
+        if (!validateName($('#addWorkerName')[0], 'Name')) {
+            isValid = false;
+        }
+
+        // Validate Phone
+        if (!validatePhone($('#addWorkerPhone')[0])) {
+            isValid = false;
+        }
+
+        // Validate Tagline (if present)
+        if ($('#addWorkerTagline').val().trim() && !validateTagline($('#addWorkerTagline')[0])) {
+            isValid = false;
+        }
+
+        // Validate required fields
+        const email = $('#addWorkerEmail').val().trim();
+        const username = $('#addWorkerUsername').val().trim();
+        const password = $('#addWorkerPassword').val();
+        const confirmPassword = $('#addWorkerConfirmPassword').val();
+        const shift = $('#addWorkerShift').val();
+
+        if (!email) {
+            $('#addWorkerEmail').addClass('is-invalid');
+            isValid = false;
+        }
+        if (!username) {
+            $('#addWorkerUsername').addClass('is-invalid');
+            isValid = false;
+        }
+        if (!password) {
+            $('#addWorkerPassword').addClass('is-invalid');
+            isValid = false;
+        }
+        if (!confirmPassword) {
+            $('#addWorkerConfirmPassword').addClass('is-invalid');
+            isValid = false;
+        }
+        if (!shift) {
+            $('#addWorkerShift').addClass('is-invalid');
+            isValid = false;
+        }
+        if (password !== confirmPassword) {
+            $('#addWorkerConfirmPassword').addClass('is-invalid');
+            $('#addWorkerConfirmPassword').siblings('.invalid-feedback').text('Passwords do not match').show();
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    function validateEditWorkerForm() {
+        let isValid = true;
+
+        // Validate Name
+        if (!validateName($('#editWorkerName')[0], 'Name')) {
+            isValid = false;
+        }
+
+        // Validate Phone
+        if (!validatePhone($('#editWorkerPhone')[0])) {
+            isValid = false;
+        }
+
+        // Validate Tagline (if present)
+        if ($('#editWorkerTagline').val().trim() && !validateTagline($('#editWorkerTagline')[0])) {
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    // Initialize form validation
+    setupFormValidation();
+
+    // Select All Checkbox Functionality
+    $('#selectAllWorkers').on('change', function() {
+        const isChecked = $(this).prop('checked');
+        $('.worker-checkbox').prop('checked', isChecked);
     });
 
-    // Edit Worker
-    $('.edit-worker-btn').click(function(e) {
+    // Add Worker Button Click
+    $('#addWorkerBtn').on('click', function() {
+        $('#addWorkerForm')[0].reset();
+        $('.error-message').hide();
+        $('.error').removeClass('error');
+        $('.is-invalid').removeClass('is-invalid');
+        $('#addWorkerModal').modal('show');
+    });
+
+    // Edit Worker Button Click - FIXED with better event delegation
+    $(document).on('click', '.edit-worker-btn', function(e) {
         e.preventDefault();
-        const workerId = $(this).data('worker-id');
-        loadWorkerData(workerId);
-    });
+        e.stopPropagation();
+        
+        console.log('Edit button clicked');
+        
+        const $btn = $(this);
+        const workerId = $btn.data('worker-id');
+        
+        if (!workerId) {
+            showAlert('Invalid worker ID', 'error');
+            return;
+        }
 
-    function loadWorkerData(workerId) {
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        const editUrl = "{% url 'admin_dashboard:edit_worker' 0 %}".replace('0', workerId);
+        console.log('Edit URL:', editUrl);
+
         $.ajax({
-            url: "{% url 'admin_dashboard:edit_worker' 0 %}".replace('0', workerId),
+            url: editUrl,
             type: 'GET',
+            dataType: 'json',
             success: function(response) {
+                console.log('Edit response:', response);
                 $('#editWorkerId').val(response.id);
                 $('#editWorkerName').val(response.name);
                 $('#editWorkerPhone').val(response.phone_number);
                 $('#editWorkerEmail').val(response.email);
-                $('#editWorkerTagline').val(response.tagline);
-                $('#editWorkerBio').val(response.bio);
+                $('#editWorkerTagline').val(response.tagline || '');
+                $('#editWorkerBio').val(response.bio || '');
                 $('#editWorkerShift').val(response.shift);
                 $('#editWorkerVerified').prop('checked', response.verified);
                 $('#editWorkerAvailable').prop('checked', response.is_available);
-                $('#editWorkerRating').text(response.average_rating);
-                $('#editWorkerAppointments').text(response.appointment_count);
+                $('#editWorkerRating').text(response.average_rating || '0.00');
+                $('#editWorkerAppointments').text(response.appointment_count || 0);
                 
-                // Show current profile picture if exists
+                // Clear validation errors
+                $('.error-message').hide();
+                $('.error').removeClass('error');
+                
+                // Handle profile picture
                 if (response.profile_pic_url) {
                     $('#currentWorkerProfilePic').attr('src', response.profile_pic_url).show();
                 } else {
                     $('#currentWorkerProfilePic').hide();
                 }
                 
-                // Show citizenship image if exists
+                // Handle citizenship image
                 if (response.citizenship_image_url) {
                     $('#currentWorkerCitizenship').attr('src', response.citizenship_image_url).show();
                 } else {
                     $('#currentWorkerCitizenship').hide();
                 }
                 
-                // Show certificate file if exists
+                // Handle certificate file
                 if (response.certificate_file_url) {
                     $('#currentWorkerCertificate').text('Current file: ' + response.certificate_file_url.split('/').pop()).show();
                 } else {
@@ -794,169 +1357,489 @@ $(document).ready(function() {
                 $('#editWorkerModal').modal('show');
             },
             error: function(xhr, status, error) {
-                showAlert('Error loading worker data: ' + error, 'error');
+                console.log('Edit error:', error);
+                let errorMsg = 'Error loading worker data';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg += ': ' + (response.error || error);
+                } catch (e) {
+                    errorMsg += ': ' + error;
+                }
+                showAlert(errorMsg, 'error');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="fas fa-edit"></i>');
             }
         });
-    }
+    });
 
-    // Save Worker Edit
-    $('#editWorkerForm').submit(function(e) {
+    // Save Edited Worker
+    $('#editWorkerForm').on('submit', function(e) {
         e.preventDefault();
-        const workerId = $('#editWorkerId').val();
-        const formData = new FormData(this);
         
+        // Validate form before submission
+        if (!validateEditWorkerForm()) {
+            showAlert('Please fix the validation errors before saving.', 'error');
+            return;
+        }
+
+        const workerId = $('#editWorkerId').val();
+        if (!workerId) {
+            showAlert('No worker selected', 'error');
+            return;
+        }
+
+        const formData = new FormData(this);
+        const $submitBtn = $(this).find('button[type="submit"]');
+        const originalBtnText = $submitBtn.html();
+        
+        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
+
+        const editUrl = "{% url 'admin_dashboard:edit_worker' 0 %}".replace('0', workerId);
+
         $.ajax({
-            url: "{% url 'admin_dashboard:edit_worker' 0 %}".replace('0', workerId),
+            url: editUrl,
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             headers: {
-                'X-CSRFToken': csrftoken
+                'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
                 if (response.success) {
                     $('#editWorkerModal').modal('hide');
-                    showAlert(response.message, 'success');
+                    showAlert(response.message || 'Worker updated successfully!', 'success');
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    showAlert('Error: ' + response.error, 'error');
+                    showAlert('Error: ' + (response.error || 'Unknown error'), 'error');
                 }
             },
             error: function(xhr, status, error) {
-                let errorMessage = 'Error updating worker';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage += ': ' + xhr.responseJSON.error;
+                let errorMsg = 'Error updating worker';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg += ': ' + (response.error || error);
+                } catch (e) {
+                    errorMsg += ': ' + error;
                 }
-                showAlert(errorMessage, 'error');
+                showAlert(errorMsg, 'error');
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html(originalBtnText);
             }
         });
     });
 
-    // Verify Worker
-    $('.verify-worker-btn').click(function(e) {
+    // Add Worker Form Submit
+    $('#addWorkerForm').on('submit', function(e) {
         e.preventDefault();
-        const workerId = $(this).data('worker-id');
         
+        console.log('Add worker form submitted');
+
+        // Clear previous validation
+        $('.is-invalid').removeClass('is-invalid');
+        $('.invalid-feedback').hide();
+        
+        // Validate form
+        if (!validateAddWorkerForm()) {
+            showAlert('Please fix the validation errors before submitting.', 'error');
+            return;
+        }
+
+        const formData = new FormData(this);
+        
+        // Handle checkbox values
+        const isAvailable = $('#addWorkerAvailable').is(':checked');
+        const isVerified = $('#addWorkerVerified').is(':checked');
+        
+        formData.set('is_available', isAvailable.toString());
+        formData.set('verified', isVerified.toString());
+
+        const $submitBtn = $('#addWorkerSubmitBtn');
+        const originalBtnText = $submitBtn.html();
+        
+        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Adding...');
+
+        const createUrl = "{% url 'admin_dashboard:create_worker' %}";
+        console.log('Create URL:', createUrl);
+
+        $.ajax({
+            url: createUrl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            },
+            success: function(response) {
+                console.log('Success response:', response);
+                if (response.success) {
+                    $('#addWorkerModal').modal('hide');
+                    showAlert(response.message || 'Worker created successfully!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('Error: ' + (response.error || 'Unknown error'), 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('Error response:', xhr.responseText);
+                let errorMsg = 'Error creating worker';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg += ': ' + (response.error || error);
+                } catch (e) {
+                    errorMsg += ': ' + error;
+                }
+                showAlert(errorMsg, 'error');
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html(originalBtnText);
+            }
+        });
+    });
+
+    // Verify Worker Button Click - FIXED
+    $(document).on('click', '.verify-worker-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Verify button clicked');
+        
+        const $btn = $(this);
+        const workerId = $btn.data('worker-id');
+        
+        if (!workerId) {
+            showAlert('Invalid worker ID', 'error');
+            return;
+        }
+
         if (confirm('Are you sure you want to verify this worker?')) {
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            const verifyUrl = "{% url 'admin_dashboard:verify_worker' 0 %}".replace('0', workerId);
+            console.log('Verify URL:', verifyUrl);
+
             $.ajax({
-                url: "{% url 'admin_dashboard:verify_worker' 0 %}".replace('0', workerId),
+                url: verifyUrl,
                 type: 'POST',
                 data: {
                     action: 'verify'
                 },
                 headers: {
-                    'X-CSRFToken': csrftoken
+                    'X-CSRFToken': getCSRFToken()
                 },
                 success: function(response) {
                     if (response.success) {
-                        showAlert(response.message, 'success');
+                        showAlert(response.message || 'Worker verified successfully!', 'success');
                         setTimeout(() => location.reload(), 1500);
                     } else {
-                        showAlert('Error: ' + response.error, 'error');
+                        showAlert('Error: ' + (response.error || 'Unknown error'), 'error');
                     }
                 },
                 error: function(xhr, status, error) {
-                    showAlert('Error verifying worker', 'error');
+                    let errorMsg = 'Error verifying worker';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMsg += ': ' + (response.error || error);
+                    } catch (e) {
+                        errorMsg += ': ' + error;
+                    }
+                    showAlert(errorMsg, 'error');
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-check-circle"></i>');
                 }
             });
         }
     });
 
-    // Delete Worker
-    let workerToDelete = null;
-    $('.delete-worker-btn').click(function(e) {
+    // Unverify Worker Button Click - FIXED
+    $(document).on('click', '.unverify-worker-btn', function(e) {
         e.preventDefault();
-        workerToDelete = $(this).data('worker-id');
+        e.stopPropagation();
+        
+        console.log('Unverify button clicked');
+        
+        const $btn = $(this);
+        const workerId = $btn.data('worker-id');
+        
+        if (!workerId) {
+            showAlert('Invalid worker ID', 'error');
+            return;
+        }
+
+        if (confirm('Are you sure you want to unverify this worker?')) {
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            const verifyUrl = "{% url 'admin_dashboard:verify_worker' 0 %}".replace('0', workerId);
+            console.log('Unverify URL:', verifyUrl);
+
+            $.ajax({
+                url: verifyUrl,
+                type: 'POST',
+                data: {
+                    action: 'unverify'
+                },
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message || 'Worker unverified successfully!', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('Error: ' + (response.error || 'Unknown error'), 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMsg = 'Error unverifying worker';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMsg += ': ' + (response.error || error);
+                    } catch (e) {
+                        errorMsg += ': ' + error;
+                    }
+                    showAlert(errorMsg, 'error');
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-times-circle"></i>');
+                }
+            });
+        }
+    });
+
+    // Suspend Worker Button Click - FIXED
+    let workerToSuspend = null;
+
+    $(document).on('click', '.suspend-worker-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Suspend button clicked');
+        
+        workerToSuspend = $(this).data('worker-id');
         const workerName = $(this).data('worker-name');
-        $('#deleteWorkerName').text(workerName);
-        $('#deleteWorkerModal').modal('show');
-    });
-
-    $('#confirmDeleteWorker').click(function() {
-        if (!workerToDelete) return;
         
-        const deleteBtn = $(this);
-        deleteBtn.prop('disabled', true).html('<div class="spinner-border spinner-border-sm me-1" role="status"></div> Deleting...');
+        if (!workerToSuspend) {
+            showAlert('Invalid worker ID', 'error');
+            return;
+        }
         
-        $.ajax({
-            url: "{% url 'admin_dashboard:delete_worker' 0 %}".replace('0', workerToDelete),
-            type: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken
-            },
-            success: function(response) {
-                if (response.success) {
-                    $('#deleteWorkerModal').modal('hide');
-                    showAlert(response.message, 'success');
-                    $(`#worker-${workerToDelete}`).fadeOut(300, function() {
-                        $(this).remove();
-                        if ($('tbody tr').length === 0) {
-                            setTimeout(() => location.reload(), 1000);
-                        }
-                    });
-                } else {
-                    showAlert('Error: ' + response.error, 'error');
-                }
-            },
-            error: function(xhr, status, error) {
-                let errorMessage = 'Error deleting worker';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage += ': ' + xhr.responseJSON.error;
-                }
-                showAlert(errorMessage, 'error');
-            },
-            complete: function() {
-                deleteBtn.prop('disabled', false).html('<i class="fas fa-trash me-1"></i> Delete Worker');
-                workerToDelete = null;
-            }
-        });
+        $('#suspendWorkerName').text(workerName || 'this worker');
+        $('#suspendWorkerId').val(workerToSuspend);
+        $('#suspendWorkerForm')[0].reset();
+        $('#suspendWorkerModal').modal('show');
     });
 
-    // Add Worker
-    $('#addWorkerBtn, #addFirstWorkerBtn').click(function() {
-        $('#addWorkerForm')[0].reset();
-        $('#addWorkerModal').modal('show');
-    });
-
-    $('#addWorkerForm').submit(function(e) {
+    // Unsuspend Worker Button Click - FIXED
+    $(document).on('click', '.unsuspend-worker-btn', function(e) {
         e.preventDefault();
-        const formData = new FormData(this);
+        e.stopPropagation();
         
+        console.log('Unsuspend button clicked');
+        
+        const workerId = $(this).data('worker-id');
+        const workerName = $(this).data('worker-name');
+        
+        if (!workerId) {
+            showAlert('Invalid worker ID', 'error');
+            return;
+        }
+
+        if (confirm(`Are you sure you want to unsuspend worker: ${workerName}?`)) {
+            const $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            const unsuspendUrl = "{% url 'admin_dashboard:unsuspend_worker' 0 %}".replace('0', workerId);
+            console.log('Unsuspend URL:', unsuspendUrl);
+
+            $.ajax({
+                url: unsuspendUrl,
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message || 'Worker unsuspended successfully!', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('Error: ' + (response.error || 'Unknown error'), 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMsg = 'Error unsuspending worker';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMsg += ': ' + (response.error || error);
+                    } catch (e) {
+                        errorMsg += ': ' + error;
+                    }
+                    showAlert(errorMsg, 'error');
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-check"></i>');
+                }
+            });
+        }
+    });
+
+    // Suspend Worker Form Submit
+    $('#suspendWorkerForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const workerId = $('#suspendWorkerId').val();
+        if (!workerId) {
+            showAlert('No worker selected for suspension', 'error');
+            return;
+        }
+
+        const $submitBtn = $(this).find('button[type="submit"]');
+        const originalBtnText = $submitBtn.html();
+        
+        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Suspending...');
+
+        const formData = new FormData(this);
+
+        const suspendUrl = "{% url 'admin_dashboard:suspend_worker' 0 %}".replace('0', workerId);
+        console.log('Suspend URL:', suspendUrl);
+
         $.ajax({
-            url: "{% url 'admin_dashboard:create_worker' %}",
+            url: suspendUrl,
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             headers: {
-                'X-CSRFToken': csrftoken
+                'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
                 if (response.success) {
-                    $('#addWorkerModal').modal('hide');
-                    showAlert(response.message, 'success');
+                    $('#suspendWorkerModal').modal('hide');
+                    showAlert(response.message || 'Worker suspended successfully!', 'success');
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    showAlert('Error: ' + response.error, 'error');
+                    showAlert('Error: ' + (response.error || 'Unknown error'), 'error');
                 }
             },
             error: function(xhr, status, error) {
-                let errorMessage = 'Error creating worker';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage += ': ' + xhr.responseJSON.error;
+                let errorMsg = 'Error suspending worker';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg += ': ' + (response.error || error);
+                } catch (e) {
+                    errorMsg += ': ' + error;
                 }
-                showAlert(errorMessage, 'error');
+                showAlert(errorMsg, 'error');
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html(originalBtnText);
+                workerToSuspend = null;
             }
         });
     });
 
-    // Auto-generate username from phone number
-    $('#addWorkerPhone').on('blur', function() {
-        const phone = $(this).val();
-        if (phone && !$('#addWorkerUsername').val()) {
-            $('#addWorkerUsername').val('worker_' + phone.replace(/\D/g, ''));
+    // Delete Worker Button Click - FIXED
+    let workerToDelete = null;
+
+    $(document).on('click', '.delete-worker-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Delete button clicked');
+        
+        workerToDelete = $(this).data('worker-id');
+        const workerName = $(this).data('worker-name');
+        
+        if (!workerToDelete) {
+            showAlert('Invalid worker ID', 'error');
+            return;
         }
+        
+        $('#deleteWorkerName').text(workerName || 'this worker');
+        $('#deleteWorkerModal').modal('show');
+    });
+
+    // Confirm Delete Worker - FIXED
+    $('#confirmDeleteWorker').on('click', function() {
+        if (!workerToDelete) {
+            showAlert('No worker selected for deletion', 'error');
+            return;
+        }
+
+        const $deleteBtn = $(this);
+        const originalBtnText = $deleteBtn.html();
+        
+        $deleteBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Deleting...');
+
+        const deleteUrl = "{% url 'admin_dashboard:delete_worker' 0 %}".replace('0', workerToDelete);
+        console.log('Delete URL:', deleteUrl);
+
+        $.ajax({
+            url: deleteUrl,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#deleteWorkerModal').modal('hide');
+                    showAlert(response.message || 'Worker deleted successfully!', 'success');
+                    
+                    const $workerRow = $(`.delete-worker-btn[data-worker-id="${workerToDelete}"]`).closest('tr');
+                    if ($workerRow.length) {
+                        $workerRow.fadeOut(400, function() {
+                            $(this).remove();
+                            if ($('tbody tr').length === 0) {
+                                setTimeout(() => location.reload(), 1000);
+                            }
+                        });
+                    } else {
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                } else {
+                    showAlert('Error: ' + (response.error || 'Unknown error'), 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                let errorMsg = 'Error deleting worker';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg += ': ' + (response.error || error);
+                } catch (e) {
+                    errorMsg += ': ' + error;
+                }
+                showAlert(errorMsg, 'error');
+            },
+            complete: function() {
+                $deleteBtn.prop('disabled', false).html(originalBtnText);
+                workerToDelete = null;
+            }
+        });
+    });
+
+    // Form validation cleanup
+    $('input, textarea').on('input', function() {
+        $(this).removeClass('is-invalid');
+    });
+
+    // Modal cleanup
+    $('.modal').on('hidden.bs.modal', function() {
+        $(this).find('form')[0].reset();
+        $(this).find('.is-invalid').removeClass('is-invalid');
+        $(this).find('.error').removeClass('error');
+        $(this).find('.error-message').hide();
+        $(this).find('button[type="submit"]').prop('disabled', false);
+        workerToDelete = null;
+        workerToSuspend = null;
+    });
+
+    // Debug: Check if buttons are clickable
+    console.log('Button count:', $('.btn-action').length);
+    $('.btn-action').each(function(index) {
+        console.log('Button', index, ':', $(this).attr('class'));
     });
 });
 </script>

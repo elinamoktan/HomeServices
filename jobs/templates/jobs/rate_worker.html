@@ -227,7 +227,7 @@
                             </a>
                         </div>
 
-                        <!-- Enhanced Bayesian Rating Info -->
+                        {% comment %} <!-- Enhanced Bayesian Rating Info -->
                         <div class="bayesian-info rounded-lg p-4 mt-6">
                             <div class="flex items-start gap-3">
                                 <i class="fas fa-robot text-white text-xl mt-1"></i>
@@ -252,7 +252,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> {% endcomment %}
 
                         <!-- Rating Distribution (if available) -->
                         {% with rating_breakdown=appointment.worker.get_rating_breakdown %}

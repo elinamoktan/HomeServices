@@ -1,3 +1,4 @@
+
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -15,7 +16,6 @@ import csv
 import logging
 from django.utils import timezone
 from datetime import timedelta
-from django.contrib.auth import logout
 
 from jobs.models import (
     Worker, Customer, Appointment, WorkerRating, Service, 
@@ -456,7 +456,7 @@ def worker_management(request):
 @login_required
 @user_passes_test(admin_required)
 def edit_worker(request, worker_id):
-    """Edit worker directly in the template"""
+    """Edit worker directly in the template - FIXED VERSION"""
     worker = get_object_or_404(Worker, id=worker_id)
     
     if request.method == 'POST':
@@ -500,7 +500,7 @@ def edit_worker(request, worker_id):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
-    # For GET request, return worker data
+    # For GET request, return worker data - FIXED VERSION
     elif request.method == 'GET':
         try:
             # Calculate appointment count and average rating
@@ -510,16 +510,43 @@ def edit_worker(request, worker_id):
             # Format location updated at
             location_updated_at = worker.location_updated_at.strftime('%b. %d, %Y, %I:%M %p') if worker.location_updated_at else None
             
+            # Handle profile picture URL safely
+            profile_pic_url = ''
+            if worker.profile_pic:
+                try:
+                    profile_pic_url = worker.profile_pic.url
+                except Exception as e:
+                    logger.warning(f"Could not get profile pic URL for worker {worker_id}: {e}")
+                    profile_pic_url = ''
+            
+            # Handle citizenship image URL safely
+            citizenship_image_url = ''
+            if worker.citizenship_image:
+                try:
+                    citizenship_image_url = worker.citizenship_image.url
+                except Exception as e:
+                    logger.warning(f"Could not get citizenship image URL for worker {worker_id}: {e}")
+                    citizenship_image_url = ''
+            
+            # Handle certificate file URL safely
+            certificate_file_url = ''
+            if worker.certificate_file:
+                try:
+                    certificate_file_url = worker.certificate_file.url
+                except Exception as e:
+                    logger.warning(f"Could not get certificate file URL for worker {worker_id}: {e}")
+                    certificate_file_url = ''
+            
             worker_data = {
                 'id': worker.id,
                 'name': worker.name,
-                'phone_number': worker.phone_number,
+                'phone_number': str(worker.phone_number),  # ✅ FIXED: Convert PhoneNumber to string
                 'tagline': worker.tagline or '',
                 'bio': worker.bio or '',
                 'verified': worker.verified,
                 'is_available': worker.is_available,
                 'shift': worker.shift,
-                'profile_pic_url': worker.profile_pic.url if worker.profile_pic else '',
+                'profile_pic_url': profile_pic_url,
                 'average_rating': round(float(avg_rating), 2),
                 'total_ratings': worker.ratings.count(),
                 'appointment_count': appointment_count,
@@ -536,12 +563,21 @@ def edit_worker(request, worker_id):
                 'location_source': 'Browser Geolocation',
                 
                 # Documents
-                'citizenship_image_url': worker.citizenship_image.url if worker.citizenship_image else None,
-                'certificate_file_url': worker.certificate_file.url if worker.certificate_file else None,
+                'citizenship_image_url': citizenship_image_url,
+                'certificate_file_url': certificate_file_url,
             }
+            
+            logger.info(f"Successfully fetched worker data for ID: {worker_id}")
             return JsonResponse(worker_data)
+            
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+            logger.error(f"Error fetching worker data for ID {worker_id}: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return JsonResponse({
+                'success': False, 
+                'error': f'Error loading worker data: {str(e)}'
+            }, status=400)
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
@@ -573,75 +609,146 @@ def delete_worker(request, worker_id):
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
 @login_required
-@user_passes_test(admin_required)
+@require_http_methods(["POST"])
 def create_worker(request):
-    """Create new worker directly in the template"""
-    if request.method == 'POST':
-        try:
-            # Create user first
-            username = request.POST.get('phone_number')
-            email = request.POST.get('email')
-            password = request.POST.get('password', 'Temp123!')
-            
-            # Check if user already exists
-            if User.objects.filter(username=username).exists():
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'A user with this phone number already exists'
-                }, status=400)
-            
-            if User.objects.filter(email=email).exists():
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'A user with this email already exists'
-                }, status=400)
-            
+    """Create a new worker"""
+    try:
+        # Get form data
+        name = request.POST.get('name', '').strip()
+        phone_number = request.POST.get('phone_number', '').strip()
+        email = request.POST.get('email', '').strip()
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        tagline = request.POST.get('tagline', '').strip()
+        bio = request.POST.get('bio', '').strip()
+        shift = request.POST.get('shift', '')
+        
+        # Handle boolean fields
+        verified = request.POST.get('verified', 'false').lower() == 'true'
+        is_available = request.POST.get('is_available', 'true').lower() == 'true'
+        
+        # Handle file uploads
+        profile_pic = request.FILES.get('profile_pic')
+        
+        # Validation
+        if not all([name, phone_number, email, username, password, shift]):
+            return JsonResponse({
+                'success': False,
+                'error': 'All required fields must be filled'
+            }, status=400)
+        
+        if password != confirm_password:
+            return JsonResponse({
+                'success': False,
+                'error': 'Passwords do not match'
+            }, status=400)
+        
+        if len(password) < 8:
+            return JsonResponse({
+                'success': False,
+                'error': 'Password must be at least 8 characters long'
+            }, status=400)
+        
+        # Check if username or email already exists
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'Username already exists'
+            }, status=400)
+        
+        if User.objects.filter(email=email).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'Email already exists'
+            }, status=400)
+        
+        # Check if phone number already exists
+        if Worker.objects.filter(phone_number=phone_number).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'Phone number already exists'
+            }, status=400)
+        
+        # Create user and worker in a transaction
+        with transaction.atomic():
+            # Create user account
             user = User.objects.create_user(
                 username=username,
                 email=email,
-                password=password
+                password=password,
+                first_name=name
             )
             
-            # Create worker
+            # Create worker profile
             worker = Worker.objects.create(
                 owner=user,
-                name=request.POST.get('name'),
-                phone_number=request.POST.get('phone_number'),
-                tagline=request.POST.get('tagline', ''),
-                bio=request.POST.get('bio', ''),
-                verified=request.POST.get('verified') == 'true',
-                is_available=request.POST.get('is_available') == 'true',
-                shift=request.POST.get('shift', 'day')
-            )
-            
-            # Handle profile picture
-            if 'profile_pic' in request.FILES:
-                worker.profile_pic = request.FILES['profile_pic']
-                worker.save()
-            
-            # Log admin activity
-            AdminActivityLog.objects.create(
-                admin_user=request.user,
-                action='CREATE',
-                model_name='Worker',
-                object_id=worker.id,
-                description=f'Created new worker {worker.name}'
+                name=name,
+                phone_number=phone_number,
+                tagline=tagline,
+                bio=bio,
+                shift=shift,
+                verified=verified,
+                is_available=is_available,
+                profile_pic=profile_pic
             )
             
             return JsonResponse({
-                'success': True, 
-                'message': 'Worker created successfully', 
+                'success': True,
+                'message': f'Worker {name} created successfully!',
                 'worker_id': worker.id
             })
-            
-        except Exception as e:
-            # Clean up user if worker creation fails
-            if 'user' in locals():
-                user.delete()
-                
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
-    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'An error occurred: {str(e)}'
+        }, status=500)
+
+
+@login_required
+@user_passes_test(admin_required)
+def get_worker_documents(request, worker_id):
+    """API endpoint to get worker document URLs"""
+    try:
+        worker = get_object_or_404(Worker, id=worker_id)
+        
+        documents = {
+            'citizenship_image': None,
+            'certificate_file': None,
+            'profile_pic': None
+        }
+        
+        # Safely get document URLs
+        try:
+            if worker.citizenship_image and hasattr(worker.citizenship_image, 'url'):
+                documents['citizenship_image'] = worker.citizenship_image.url
+        except Exception as e:
+            logger.warning(f"Could not get citizenship image URL: {e}")
+            
+        try:
+            if worker.certificate_file and hasattr(worker.certificate_file, 'url'):
+                documents['certificate_file'] = worker.certificate_file.url
+        except Exception as e:
+            logger.warning(f"Could not get certificate file URL: {e}")
+            
+        try:
+            if worker.profile_pic and hasattr(worker.profile_pic, 'url'):
+                documents['profile_pic'] = worker.profile_pic.url
+        except Exception as e:
+            logger.warning(f"Could not get profile pic URL: {e}")
+        
+        return JsonResponse({
+            'success': True,
+            'documents': documents
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting worker documents: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 @login_required
 @user_passes_test(admin_required)
@@ -732,27 +839,43 @@ def edit_customer(request, customer_id):
             return JsonResponse({'success': True, 'message': 'Customer updated successfully'})
             
         except Exception as e:
+            logger.error(f"Error updating customer {customer_id}: {str(e)}")
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
-    # For GET request, return customer data
+    # For GET request, return customer data - FIXED VERSION
     elif request.method == 'GET':
         try:
+            # Calculate appointment count and total spent safely
+            appointment_count = customer.customer_appointments.count()
+            
+            total_spent_result = customer.customer_appointments.aggregate(
+                total=Sum('total_price')
+            )
+            total_spent = float(total_spent_result['total'] or 0)
+            
             customer_data = {
                 'id': customer.id,
                 'name': customer.name,
-                'phone_number': customer.phone_number,
+                'phone_number': str(customer.phone_number),  # Ensure string conversion
                 'email': customer.owner.email if customer.owner else '',
                 'location_address': customer.location_address or '',
                 'profile_pic_url': customer.profile_pic.url if customer.profile_pic else '',
-                'appointment_count': customer.customer_appointments.count(),
-                'total_spent': float(customer.customer_appointments.aggregate(
-                    total=Sum('total_price')
-                )['total'] or 0),
+                'appointment_count': appointment_count,
+                'total_spent': total_spent,
                 'created_at': customer.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             }
+            
+            logger.info(f"Successfully fetched customer data for ID: {customer_id}")
             return JsonResponse(customer_data)
+            
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+            logger.error(f"Error fetching customer data for ID {customer_id}: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return JsonResponse({
+                'success': False, 
+                'error': f'Error loading customer data: {str(e)}'
+            }, status=400)
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
@@ -849,6 +972,99 @@ def create_customer(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+@user_passes_test(admin_required)
+def service_management(request):
+    """Service management view for admin dashboard"""
+    services = Service.objects.all().select_related('category').order_by('-created_at')
+    categories = ServiceCategory.objects.all()
+    
+    # Calculate stats
+    total_services = services.count()
+    active_services = services.filter(is_active=True).count()
+    inactive_services = services.filter(is_active=False).count()
+    
+    # Add subtask count to each service
+    for service in services:
+        service.subtask_count = service.subtasks.count()
+    
+    context = {
+        'services': services,
+        'categories': categories,
+        'total_services': total_services,
+        'active_services': active_services,
+        'inactive_services': inactive_services,
+    }
+    return render(request, 'admin_dashboard/service_management.html', context)
+
+@login_required
+@user_passes_test(admin_required)
+def edit_service(request, service_id):
+    """Edit service view"""
+    service = get_object_or_404(Service, id=service_id)
+    
+    if request.method == 'POST':
+        try:
+            service.name = request.POST.get('name')
+            service.description = request.POST.get('description')
+            category_id = request.POST.get('category')
+            service.base_pricing_type = request.POST.get('base_pricing_type')
+            service.is_active = request.POST.get('is_active') == 'on'
+            
+            category = ServiceCategory.objects.get(id=category_id)
+            service.category = category
+            
+            # Handle image upload
+            if 'image' in request.FILES:
+                service.image = request.FILES['image']
+            
+            service.save()
+            messages.success(request, f'Service "{service.name}" updated successfully!')
+            return redirect('admin_dashboard:service_management')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating service: {str(e)}')
+    
+    categories = ServiceCategory.objects.all()
+    return render(request, 'admin_dashboard/edit_service.html', {
+        'service': service,
+        'categories': categories
+    })
+
+@login_required
+@user_passes_test(admin_required)
+def delete_service(request, service_id):
+    """Delete service via AJAX"""
+    if request.method == 'POST':
+        try:
+            service = get_object_or_404(Service, id=service_id)
+            service_name = service.name
+            service.delete()
+            
+            # Log admin activity
+            AdminActivityLog.objects.create(
+                admin_user=request.user,
+                action='DELETE',
+                model_name='Service',
+                object_id=service_id,
+                description=f'Deleted service {service_name}'
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Service "{service_name}" deleted successfully!'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
 @login_required
 @user_passes_test(admin_required)
@@ -1269,7 +1485,7 @@ def get_next_pending_worker(request):
             worker_data = {
                 'id': pending_worker.id,
                 'name': pending_worker.name,
-                'phone_number': str(pending_worker.phone_number),
+                'phone_number': str(pending_worker.phone_number),  # ✅ FIXED: Convert to string
                 'email': pending_worker.owner.email,
                 'tagline': pending_worker.tagline or 'No tagline',
                 'bio': pending_worker.bio or 'No bio',
@@ -1284,7 +1500,6 @@ def get_next_pending_worker(request):
             return JsonResponse({'worker': None})
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
-
 def send_worker_verification_email(worker, approved, rejection_reason=None):
     """Send email notification to worker about verification status"""
     try:
@@ -1371,26 +1586,203 @@ def send_worker_verification_email(worker, approved, rejection_reason=None):
     except Exception as e:
         logger.error(f"Failed to send email: {str(e)}")
         return False
-    
+        
 @login_required
 @user_passes_test(admin_required)
-@require_http_methods(["GET", "POST"])
-def admin_logout(request):
-    """Admin logout view that accepts both GET and POST requests"""
-    # Log admin activity before logout
+def suspend_worker(request, worker_id):
+    """Suspend a worker"""
+    if request.method == 'POST':
+        try:
+            worker = get_object_or_404(Worker, id=worker_id)
+            reason = request.POST.get('reason', 'Violation of platform policies')
+            end_date_str = request.POST.get('end_date')
+            
+            end_date = None
+            if end_date_str:
+                try:
+                    end_date = timezone.make_aware(datetime.strptime(end_date_str, '%Y-%m-%d'))
+                except ValueError:
+                    pass
+            
+            # Suspend the worker
+            success = worker.suspend_worker(reason, request.user, end_date)
+            
+            if success:
+                # Send suspension email notification
+                try:
+                    send_worker_suspension_email(worker, reason, end_date)
+                except Exception as e:
+                    logger.error(f"Failed to send suspension email: {e}")
+                
+                return JsonResponse({
+                    'success': True, 
+                    'message': f'Worker {worker.name} suspended successfully'
+                })
+            else:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Failed to suspend worker'
+                })
+                
+        except Exception as e:
+            logger.error(f"Error suspending worker {worker_id}: {str(e)}")
+            return JsonResponse({
+                'success': False, 
+                'error': f'Server error: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+@login_required
+@user_passes_test(admin_required)
+def unsuspend_worker(request, worker_id):
+    """Unsuspend a worker"""
+    if request.method == 'POST':
+        try:
+            worker = get_object_or_404(Worker, id=worker_id)
+            
+            # Unsuspend the worker
+            success = worker.unsuspend_worker(request.user)
+            
+            if success:
+                # Send unsuspension email notification
+                try:
+                    send_worker_unsuspension_email(worker)
+                except Exception as e:
+                    logger.error(f"Failed to send unsuspension email: {e}")
+                
+                return JsonResponse({
+                    'success': True, 
+                    'message': f'Worker {worker.name} unsuspended successfully'
+                })
+            else:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Failed to unsuspend worker'
+                })
+                
+        except Exception as e:
+            logger.error(f"Error unsuspending worker {worker_id}: {str(e)}")
+            return JsonResponse({
+                'success': False, 
+                'error': f'Server error: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+def send_worker_suspension_email(worker, reason, end_date=None):
+    """Send suspension email to worker"""
     try:
-        AdminActivityLog.objects.create(
-            admin_user=request.user,
-            action='LOGOUT',
-            model_name='System',
-            object_id=0,
-            description=f'Admin {request.user.username} logged out'
+        subject = "Account Suspension - BlueCollar"
+        site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        
+        end_date_text = end_date.strftime('%B %d, %Y') if end_date else "until further notice"
+        
+        html_message = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #dc3545;">Account Suspension Notice</h2>
+                
+                <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin: 0;">Your account has been suspended</h3>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <p><strong>Reason:</strong> {reason}</p>
+                    <p><strong>Suspension Period:</strong> {end_date_text}</p>
+                    <p>During this suspension period, you will not be able to:</p>
+                    <ul>
+                        <li>Receive new appointment requests</li>
+                        <li>Appear in customer searches</li>
+                        <li>Access your worker dashboard</li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{site_url}/contact/" 
+                       style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        Contact Support
+                    </a>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        plain_message = strip_tags(html_message)
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecollar.com')
+        recipients = [worker.owner.email]
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=from_email,
+            recipient_list=recipients,
+            html_message=html_message,
+            fail_silently=True
         )
+        
+        logger.info(f"Suspension email sent to {worker.owner.email}")
+        return True
+        
     except Exception as e:
-        logger.error(f"Failed to log admin logout activity: {e}")
-    
-    logout(request)
-    messages.success(request, "You have been successfully logged out.")
-    
-    # ✅ FIX: Redirect to existing login URL
-    return redirect('account_login')  # This uses your existing allauth login
+        logger.error(f"Failed to send suspension email: {str(e)}")
+        return False
+
+def send_worker_unsuspension_email(worker):
+    """Send unsuspension email to worker"""
+    try:
+        subject = "Account Access Restored - BlueCollar"
+        site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        
+        html_message = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #28a745;">Account Access Restored! 🎉</h2>
+                
+                <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin: 0;">Your account suspension has been lifted</h3>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <p>Your BlueCollar worker account has been restored and you can now:</p>
+                    <ul>
+                        <li>✅ Receive new appointment requests</li>
+                        <li>✅ Appear in customer searches</li>
+                        <li>✅ Access your worker dashboard</li>
+                        <li>✅ Continue providing services</li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{site_url}/worker/dashboard/" 
+                       style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        Go to Dashboard
+                    </a>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        plain_message = strip_tags(html_message)
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bluecollar.com')
+        recipients = [worker.owner.email]
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=from_email,
+            recipient_list=recipients,
+            html_message=html_message,
+            fail_silently=True
+        )
+        
+        logger.info(f"Unsuspension email sent to {worker.owner.email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send unsuspension email: {str(e)}")
+        return False

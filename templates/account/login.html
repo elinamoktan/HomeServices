@@ -146,6 +146,13 @@
                             <span>{{ form.non_field_errors.0 }}</span>
                         </div>
                     {% endif %}
+
+                    <!-- Forgot Password Link -->
+                    <div class="text-right">
+                        <a href="{% url 'account_reset_password' %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors duration-200">
+                            Forgot your password?
+                        </a>
+                    </div>
                     
                     <div class="relative group mt-8">
                         <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-xl blur opacity-90 group-hover:opacity-100 transition duration-500 animate-pulse-fast"></div>

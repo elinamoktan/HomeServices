@@ -42,6 +42,7 @@ from django.db.models import Q
 from django.views.decorators.http import require_http_methods 
 from django.utils import timezone 
 from jobs.models import WorkerRating
+from jobs.models import SHIFT_CHOICES
 # ✅ FIXED: Import CustomUser instead of User
 try:
     from accounts.models import CustomUser
@@ -639,7 +640,6 @@ def calculate_recommendation_score(worker, bayesian_rating):
         logger.error(f"Error calculating recommendation score: {e}")
         return 0.0
     
-    
 class WorkerListView(ListView):
     model = Worker
     template_name = 'jobs/worker_list.html'
@@ -647,52 +647,82 @@ class WorkerListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        query = self.request.GET.get('q')
+        # Get search query and filters for ALL users
+        query = self.request.GET.get('q', '').strip()
         filter_param = self.request.GET.get('filter')
         service_filter = self.request.GET.get('service')
         max_distance = self.request.GET.get('max_distance')
 
-        # ✅ FIXED: Only show verified and available workers
+        # Base queryset - show verified and available workers to ALL users
         queryset = Worker.objects.filter(
             is_available=True,
             verified=True,
             verification_status='approved'
         ).select_related('owner').prefetch_related('ratings')
 
+        # ✅ FIXED: Apply search filter for ALL users (authenticated or not)
         if query:
             queryset = queryset.filter(
                 Q(tagline__icontains=query) | 
                 Q(name__icontains=query) |
-                Q(bio__icontains=query)
-            )
-            
-        if service_filter:
-            queryset = queryset.filter(services__service__id=service_filter)
+                Q(bio__icontains=query) |
+                Q(worker_services__service__name__icontains=query) |  # ✅ CORRECTED: worker_services
+                Q(worker_services__pricing__subtask__name__icontains=query)  # ✅ CORRECTED: worker_services
+            ).distinct()
+            logger.info(f"🔍 Search query '{query}' applied - Found {queryset.count()} workers")
 
-        # ✅ FIX: Get customer location with session consistency
+        # Apply service filter if provided
+        if service_filter:
+            queryset = queryset.filter(worker_services__service__id=service_filter)  # ✅ CORRECTED: worker_services
+
+        # ✅ FIXED: Handle location-based sorting for both authenticated and non-authenticated users
         customer_location = None
-        if hasattr(self.request.user, 'customer'):
+        
+        # For authenticated customers
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'customer'):
             customer = self.request.user.customer
-            
-            # Use cached session location for consistency across page refreshes
             session_lat = self.request.session.get('current_latitude')
             session_lon = self.request.session.get('current_longitude')
             
             if session_lat and session_lon:
-                # Use session location (doesn't change during browsing session)
                 customer_location = {
                     'latitude': float(session_lat),
                     'longitude': float(session_lon),
                     'source': 'session'
                 }
             else:
-                # Fallback to database location only if no session location
                 customer_location = customer.get_current_location()
-                
-                # Cache it in session for future requests
                 if customer_location:
                     self.request.session['current_latitude'] = customer_location['latitude']
                     self.request.session['current_longitude'] = customer_location['longitude']
+        
+        # For non-authenticated users, check for URL parameters or session data
+        elif not self.request.user.is_authenticated:
+            # Check for location in URL parameters (from map selection)
+            lat_param = self.request.GET.get('lat')
+            lon_param = self.request.GET.get('lng')
+            
+            if lat_param and lon_param:
+                try:
+                    customer_location = {
+                        'latitude': float(lat_param),
+                        'longitude': float(lon_param),
+                        'source': 'url'
+                    }
+                    # Store in session for consistency
+                    self.request.session['current_latitude'] = float(lat_param)
+                    self.request.session['current_longitude'] = float(lon_param)
+                except (ValueError, TypeError):
+                    pass
+            else:
+                # Check for landing page location in session
+                landing_location = self.request.session.get('landing_location')
+                if landing_location:
+                    customer_location = {
+                        'latitude': landing_location['latitude'],
+                        'longitude': landing_location['longitude'],
+                        'source': 'landing_page'
+                    }
 
         # ✅ FIXED: Calculate ratings and add to each worker WITH DISTANCE SORTING
         workers_with_ratings_and_distance = []
@@ -739,9 +769,12 @@ class WorkerListView(ListView):
             # Add worker and distance to list for sorting
             workers_with_ratings_and_distance.append((worker, distance_km))
 
-        # ✅ CRITICAL FIX: Sort workers by distance (closest first)
-        # Workers with no distance (infinity) will be at the end
-        workers_with_ratings_and_distance.sort(key=lambda x: x[1])
+        # ✅ CRITICAL FIX: Sort workers by distance (closest first) if location is available
+        # Otherwise, sort by rating (highest first)
+        if customer_location:
+            workers_with_ratings_and_distance.sort(key=lambda x: x[1])
+        else:
+            workers_with_ratings_and_distance.sort(key=lambda x: x[0].bayesian_average_rating(), reverse=True)
         
         # ✅ FIX: Extract just the worker objects in sorted order AND maintain distance property
         sorted_workers = []
@@ -754,16 +787,17 @@ class WorkerListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # ✅ FIXED: Add recommended workers (highest rated)
         recommended_workers = get_recommended_workers(self.request, limit=8)
         context['recommended_workers'] = recommended_workers
         
-        # Add search query
-        context['q'] = self.request.GET.get('q', '')
+        # ✅ FIX: Add search query to context for ALL users
+        context['q'] = self.request.GET.get('q', '').strip()
         context['max_distance'] = self.request.GET.get('max_distance', 50)
         
-        # ✅ FIX: Add customer location info with session indicator
-        if hasattr(self.request.user, 'customer'):
+        # Add customer location info for both authenticated and non-authenticated users
+        customer_location = None
+        
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'customer'):
             customer = self.request.user.customer
             session_lat = self.request.session.get('current_latitude')
             session_lon = self.request.session.get('current_longitude')
@@ -776,8 +810,25 @@ class WorkerListView(ListView):
                 }
             else:
                 customer_location = customer.get_current_location()
+        else:
+            # For non-authenticated users
+            lat_param = self.request.GET.get('lat')
+            lon_param = self.request.GET.get('lng')
             
-            context['customer_location'] = customer_location
+            if lat_param and lon_param:
+                try:
+                    customer_location = {
+                        'latitude': float(lat_param),
+                        'longitude': float(lon_param),
+                        'source': 'url'
+                    }
+                except (ValueError, TypeError):
+                    pass
+        
+        context['customer_location'] = customer_location
+        
+        # Add service categories for filtering (optional)
+        context['service_categories'] = ServiceCategory.objects.all()[:10]
         
         return context
 
@@ -2881,11 +2932,14 @@ def customer_reviews(request):
     }
     
     return render(request, 'jobs/customer_reviews.html', context)
-
 @login_required
 def customer_profile(request):
-    """View for customers to edit their profile"""
+    """Enhanced customer profile view with location and preferences"""
     customer = get_object_or_404(Customer, owner=request.user)
+    
+    # Get statistics
+    completed_appointments_count = customer.customer_appointments.filter(status='completed').count()
+    total_appointments = customer.customer_appointments.count()
     
     if request.method == 'POST':
         # Handle profile updates
@@ -2899,24 +2953,32 @@ def customer_profile(request):
             try:
                 customer.latitude = float(latitude)
                 customer.longitude = float(longitude)
+                customer.location_updated_at = timezone.now()
+                customer.location_source = 'manual'
             except (ValueError, TypeError):
-                pass
+                messages.warning(request, 'Invalid latitude or longitude format.')
         
         # Handle profile picture upload
         if 'profile_pic' in request.FILES:
             customer.profile_pic = request.FILES['profile_pic']
         
+        # Handle preferences
+        customer.gender = request.POST.get('gender', customer.gender)
+        
         customer.save()
         messages.success(request, "Profile updated successfully!")
         return redirect('customer_profile')
     
-    # Count completed appointments
-    completed_appointments_count = customer.customer_appointments.filter(status='completed').count()
-    
     context = {
         'customer': customer,
         'completed_appointments_count': completed_appointments_count,
-        'current_page': 'profile'
+        'total_appointments': total_appointments,
+        'GENDER_CHOICES': [
+            ('male', 'Male'),
+            ('female', 'Female'),
+            ('other', 'Other'),
+            ('prefer_not_to_say', 'Prefer not to say'),
+        ]
     }
     
     return render(request, 'jobs/customer_profile.html', context)
@@ -3545,6 +3607,18 @@ def worker_service_details(request, worker_id):
                     features.append(f"Night shift available (+Rs{night_shift_extra:.2f})")
                     
                 features.append("Customer support included")
+
+                # ✅ MODIFIED: Use subtask image if available, otherwise fall back to service image
+                image_url = None
+                if subtask.image:  # Check if subtask has its own image
+                    try:
+                        image_url = str(subtask.image.url)
+                        logger.info(f"📸 Using subtask image for {subtask.name}")
+                    except Exception as e:
+                        logger.warning(f"⚠️ Error loading subtask image: {e}")
+                        image_url = str(service.image.url) if service.image else None
+                elif service.image:  # Fallback to service image
+                    image_url = str(service.image.url)
                 
                 # ✅ FIXED: Convert all values to JSON-serializable types
                 service_data = {
@@ -3566,7 +3640,8 @@ def worker_service_details(request, worker_id):
                     'special_offer': bool(getattr(subtask, 'special_offer', False)),
                     'offer_price': float(subtask.offer_price) if getattr(subtask, 'offer_price', None) else None,
                     'original_price': float(subtask.original_price) if getattr(subtask, 'original_price', None) else None,
-                    'image': str(service.image.url) if service.image else None,
+                    'image': image_url,
+                    'is_custom': getattr(subtask, 'is_custom', False),
                 }
                 
                 categories_dict[category.id]['services'].append(service_data)
@@ -3677,6 +3752,7 @@ def worker_service_details(request, worker_id):
     return render(request, 'jobs/worker_service_details.html', context)
 
 
+
 @login_required
 def worker_profile(request):
     try:
@@ -3693,11 +3769,13 @@ def worker_profile(request):
         # Handle profile updates
         worker.name = request.POST.get('name', worker.name)
         worker.phone_number = request.POST.get('phone_number', worker.phone_number)
+        worker.shift = request.POST.get('shift', worker.shift)
+        worker.tagline = request.POST.get('tagline', worker.tagline)
+        worker.bio = request.POST.get('bio', worker.bio)
         
-        # ✅ ADD THIS: Handle latitude and longitude
-        latitude = request.POST.get('latitude', '').strip()
-        longitude = request.POST.get('longitude', '').strip()
-        
+        # Handle location updates
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
         if latitude and longitude:
             try:
                 worker.latitude = float(latitude)
@@ -3709,6 +3787,13 @@ def worker_profile(request):
         if 'profile_pic' in request.FILES:
             worker.profile_pic = request.FILES['profile_pic']
         
+        # Handle document uploads
+        if 'citizenship_image' in request.FILES:
+            worker.citizenship_image = request.FILES['citizenship_image']
+        
+        if 'certificate_file' in request.FILES:
+            worker.certificate_file = request.FILES['certificate_file']
+        
         worker.save()
         messages.success(request, 'Profile updated successfully!')
         return redirect('worker_profile')
@@ -3716,6 +3801,8 @@ def worker_profile(request):
     context = {
         'worker': worker,
         'completed_appointments_count': completed_appointments,
+        'total_appointments': total_appointments,
+        'SHIFT_CHOICES': SHIFT_CHOICES,  # Add shift choices to context
     }
     
     return render(request, 'jobs/worker_profile.html', context)
@@ -3783,6 +3870,14 @@ def filter_services_ajax(worker, search_query, price_filter, category_filter):
                     matches_search = search_query in searchable_text
                 
                 if matches_price and matches_search:
+                     image_url = None
+                if subtask.image:
+                    try:
+                        image_url = str(subtask.image.url)
+                    except:
+                        image_url = str(worker_service.service.image.url) if worker_service.service.image else None
+                elif worker_service.service.image:
+                    image_url = str(worker_service.service.image.url)
                     # Build service data (similar to main function)
                     service_data = {
                         'id': str(pricing.id),
@@ -3790,7 +3885,7 @@ def filter_services_ajax(worker, search_query, price_filter, category_filter):
                         'description': str(getattr(subtask, 'description', 'Professional service')),
                         'price_display': f"Rs{base_price:.2f}" if base_price > 0 else "Contact for pricing",
                         'base_price': base_price,
-                        'image': str(worker_service.service.image.url) if worker_service.service.image else None,
+                        'image': image_url,
                     }
                     categories_dict[category.id]['services'].append(service_data)
         
@@ -5651,3 +5746,107 @@ def get_cached_ip_location(ip_address):
     """Get cached IP location"""
     cache_key = get_location_cache_key(None, ip_address)
     return cache.get(cache_key)
+@login_required
+@require_POST
+def add_custom_service(request, worker_id):
+    """Add a custom service/subtask for a worker with image upload"""
+    try:
+        logger.info(f"📥 Received custom service request for worker {worker_id}")
+        
+        # Verify worker ownership
+        worker = get_object_or_404(Worker, id=worker_id)
+        if worker.owner != request.user:
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        
+        # Log received data for debugging
+        logger.info(f"📋 POST data keys: {list(request.POST.keys())}")
+        logger.info(f"📁 FILES data keys: {list(request.FILES.keys())}")
+        
+        # Get the service category
+        category_id = request.POST.get('service_category')
+        if not category_id:
+            return JsonResponse({'success': False, 'error': 'Service category is required'}, status=400)
+            
+        category = get_object_or_404(ServiceCategory, id=category_id)
+        
+        # Get required fields
+        required_fields = ['name', 'description', 'pricing_type', 'price']
+        for field in required_fields:
+            if not request.POST.get(field):
+                return JsonResponse({'success': False, 'error': f'{field} is required'}, status=400)
+        
+        # Parse features (optional)
+        features = []
+        features_json = request.POST.get('features', '[]')
+        try:
+            features = json.loads(features_json)
+        except json.JSONDecodeError:
+            features = []
+        
+        # Check if worker already has this service category
+        service, created = Service.objects.get_or_create(
+            category=category,
+            defaults={
+                'name': category.name, 
+                'description': category.description
+            }
+        )
+        
+        # Get or create WorkerService
+        worker_service, ws_created = WorkerService.objects.get_or_create(
+            worker=worker,
+            service=service,
+            defaults={'is_available': True}
+        )
+        
+        # Create the custom subtask
+        subtask_data = {
+            'service': service,
+            'name': request.POST.get('name'),
+            'description': request.POST.get('description'),
+            'detailed_description': request.POST.get('description'),
+            'default_pricing_type': request.POST.get('pricing_type', 'fixed'),
+            'duration': request.POST.get('duration', ''),
+            'materials_included': request.POST.get('materials_included') == 'true',
+            'requirements': request.POST.get('requirements', ''),
+            'special_offer': False,
+            'is_custom': True
+        }
+        
+        # Handle image upload for subtask if provided
+        if 'service_image' in request.FILES:
+            subtask_data['image'] = request.FILES['service_image']
+            logger.info(f"📸 Image uploaded for subtask: {request.FILES['service_image'].name}")
+        
+        subtask = SubTask.objects.create(**subtask_data)
+        
+        # Create pricing for this subtask
+        pricing = WorkerSubTaskPricing.objects.create(
+            worker_service=worker_service,
+            subtask=subtask,
+            pricing_type=request.POST.get('pricing_type', 'fixed'),
+            price=float(request.POST.get('price', 0)),
+            experience_level=request.POST.get('experience_level', 'intermediate'),
+            night_shift_extra=float(request.POST.get('night_shift_extra', 0)),
+            min_hours=int(request.POST.get('min_hours', 1))
+        )
+        
+        logger.info(f"✅ Custom service '{subtask.name}' added for worker {worker.name}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Service added successfully',
+            'subtask_id': subtask.id,
+            'pricing_id': pricing.id,
+            'has_image': 'service_image' in request.FILES,
+            'image_url': subtask.image.url if subtask.image else None
+        })
+        
+    except ServiceCategory.DoesNotExist:
+        logger.error("❌ Service category not found")
+        return JsonResponse({'success': False, 'error': 'Service category not found'}, status=404)
+    except Exception as e:
+        logger.error(f"❌ Error adding custom service: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

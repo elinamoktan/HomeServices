@@ -339,8 +339,8 @@
 <script>
     // Validation Functions
     function validateName(name) {
-        // Must contain only letters (A-Z, a-z), no spaces, numbers, or special characters
-        const nameRegex = /^[A-Za-z]+$/;
+        // Must start with a letter and can contain spaces only between words
+        const nameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
         return nameRegex.test(name) && name.trim() !== '';
     }
 
@@ -390,6 +390,33 @@
         }
     }
 
+    // Function to restrict name input to letters and spaces (but not at start)
+    function restrictNameInput(event) {
+        const input = event.target;
+        let value = input.value;
+        
+        // Remove any characters that are not letters or spaces
+        value = value.replace(/[^A-Za-z\s]/g, '');
+        
+        // Remove spaces at the start of the string
+        value = value.replace(/^\s+/, '');
+        
+        // Remove consecutive spaces (replace multiple spaces with single space)
+        value = value.replace(/\s+/g, ' ');
+        
+        input.value = value;
+        
+        // Validate the name
+        const nameValue = value.trim();
+        if (!nameValue) {
+            showFieldError(input, 'Name is required');
+        } else if (!validateName(nameValue)) {
+            showFieldError(input, 'Name must start with a letter and can contain spaces only between words');
+        } else {
+            clearFieldError(input);
+        }
+    }
+
     function validateForm() {
         let isValid = true;
 
@@ -406,7 +433,7 @@
                 showFieldError(nameField, 'Name is required');
                 isValid = false;
             } else if (!validateName(nameValue)) {
-                showFieldError(nameField, 'Name must contain only letters (no spaces, numbers, or special characters)');
+                showFieldError(nameField, 'Name must start with a letter and can contain spaces only between words');
                 isValid = false;
             } else {
                 clearFieldError(nameField);
@@ -467,15 +494,24 @@
         const genderField = document.getElementById('id_gender');
 
         if (nameField) {
-            nameField.addEventListener('input', function() {
+            nameField.addEventListener('input', restrictNameInput);
+            
+            nameField.addEventListener('blur', function() {
                 const value = this.value.trim();
                 if (!value) {
                     showFieldError(this, 'Name is required');
                 } else if (!validateName(value)) {
-                    showFieldError(this, 'Name must contain only letters');
+                    showFieldError(this, 'Name must start with a letter and can contain spaces only between words');
                 } else {
                     clearFieldError(this);
                 }
+            });
+            
+            // Add paste event to handle pasted content
+            nameField.addEventListener('paste', function(event) {
+                setTimeout(() => {
+                    restrictNameInput({target: this});
+                }, 0);
             });
         }
 

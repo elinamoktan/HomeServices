@@ -75,6 +75,7 @@ class SubTask(models.Model):
     description = models.TextField()
     detailed_description = models.TextField(blank=True, null=True)
     default_pricing_type = models.CharField(max_length=20, choices=PRICING_TYPES, default='fixed')
+    image = models.ImageField(upload_to='subtask_images/', blank=True, null=True)
     duration = models.CharField(max_length=100, blank=True)
     materials_included = models.BooleanField(default=False)
     special_offer = models.BooleanField(default=False)
@@ -148,6 +149,13 @@ class Worker(models.Model):
     rejection_reason = models.TextField(blank=True, null=True)
     last_rejection_date = models.DateTimeField(blank=True, null=True)  
     verification_submitted_at = models.DateTimeField(blank=True, null=True) 
+     # Suspension fields
+    is_suspended = models.BooleanField(default=False)
+    suspension_reason = models.TextField(blank=True, null=True)
+    suspended_at = models.DateTimeField(blank=True, null=True)
+    suspended_by = models.ForeignKey(User, on_delete=models.SET_NULL, 
+                                   blank=True, null=True, related_name='suspended_workers')
+    suspension_end_date = models.DateTimeField(blank=True, null=True)
     
     # Documents
     citizenship_image = models.ImageField(upload_to='citizenship/', blank=True, null=True)
@@ -206,6 +214,49 @@ class Worker(models.Model):
         
         super().save(*args, **kwargs)
 
+    def suspend_worker(self, reason, suspended_by, end_date=None):
+        """Suspend a worker"""
+        self.is_suspended = True
+        self.suspension_reason = reason
+        self.suspended_at = timezone.now()
+        self.suspended_by = suspended_by
+        self.suspension_end_date = end_date
+        self.is_available = False  # Also mark as unavailable
+        self.save()
+        
+        # Log the suspension
+        from admin_dashboard.models import AdminActivityLog
+        AdminActivityLog.objects.create(
+            admin_user=suspended_by,
+            action='UPDATE',
+            model_name='Worker',
+            object_id=self.id,
+            description=f'Suspended worker {self.name}. Reason: {reason}'
+        )
+        
+        return True
+    
+    def unsuspend_worker(self, unsuspended_by):
+        """Unsuspend a worker"""
+        self.is_suspended = False
+        self.suspension_reason = None
+        self.suspended_at = None
+        self.suspended_by = None
+        self.suspension_end_date = None
+        self.is_available = True  # Make available again
+        self.save()
+        
+        # Log the unsuspension
+        from admin_dashboard.models import AdminActivityLog
+        AdminActivityLog.objects.create(
+            admin_user=unsuspended_by,
+            action='UPDATE',
+            model_name='Worker',
+            object_id=self.id,
+            description=f'Unsuspended worker {self.name}'
+        )
+        
+        return True
 
     def get_current_location(self):
         """Get current location with fallback"""

@@ -1,0 +1,80 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Edit Service - BlueCollar Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Edit Service: {{ service.name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:service_management' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Services
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Service Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ service.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ service.description }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category *</label>
+                        <select class="form-control" id="category" name="category" required>
+                            <option value="">Select Category</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category.id == service.category.id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="base_pricing_type" class="form-label">Pricing Type *</label>
+                        <select class="form-control" id="base_pricing_type" name="base_pricing_type" required>
+                            <option value="fixed" {% if service.base_pricing_type == 'fixed' %}selected{% endif %}>Fixed Price</option>
+                            <option value="hourly" {% if service.base_pricing_type == 'hourly' %}selected{% endif %}>Hourly Rate</option>
+                            <option value="sqft" {% if service.base_pricing_type == 'sqft' %}selected{% endif %}>Per Square Foot</option>
+                            <option value="unit" {% if service.base_pricing_type == 'unit' %}selected{% endif %}>Per Unit</option>
+                            <option value="shift" {% if service.base_pricing_type == 'shift' %}selected{% endif %}>Per Shift</option>
+                            <option value="inspection" {% if service.base_pricing_type == 'inspection' %}selected{% endif %}>Inspection Based</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Service Image</label>
+                        {% if service.image %}
+                        <div class="mb-2">
+                            <img src="{{ service.image.url }}" alt="{{ service.name }}" style="max-width: 200px; max-height: 200px;" class="img-thumbnail">
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if service.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="is_active">Active Service</label>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'admin_dashboard:service_management' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Update Service</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

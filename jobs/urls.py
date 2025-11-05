@@ -141,5 +141,8 @@ urlpatterns = [
     path('get-pricing-config/<int:service_id>/', views.get_pricing_config, name='get_pricing_config'),
     path('customer/appointment/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
     path('worker/create-profile/', views.create_worker_profile, name='create-worker-profile'),
+    path('jobs/add-custom-service/<int:worker_id>/', views.add_custom_service, name='add_custom_service'),
+
+    
     
 ]
