@@ -44,6 +44,7 @@ class ServiceCategory(models.Model):
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=50, blank=True)
     image = models.ImageField(upload_to='category_images/', blank=True, null=True)
+    # is_custom = models.BooleanField(default=False)  # Add this field
     
     class Meta:
         verbose_name_plural = "Service Categories"
@@ -53,6 +54,7 @@ class ServiceCategory(models.Model):
         return self.name
 
 class Service(models.Model):
+    # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     category = models.ForeignKey(ServiceCategory, on_delete=models.CASCADE, related_name='services')
     name = models.CharField(max_length=100)
     description = models.TextField()

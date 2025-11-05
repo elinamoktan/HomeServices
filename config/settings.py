@@ -205,3 +205,14 @@ KHALTI_BASE_URL = "https://dev.khalti.com/api/v2"
 KHALTI_LIVE_MODE = False
 
 INITIAL_PAYMENT_AMOUNT = 50.00
+
+# File upload settings
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Maximum file upload size (10MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# Allowed file types
+ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']

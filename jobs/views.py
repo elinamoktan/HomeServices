@@ -5746,51 +5746,118 @@ def get_cached_ip_location(ip_address):
     """Get cached IP location"""
     cache_key = get_location_cache_key(None, ip_address)
     return cache.get(cache_key)
+
 @login_required
 @require_POST
 def add_custom_service(request, worker_id):
-    """Add a custom service/subtask for a worker with image upload"""
+    """Add a custom service/subtask for a worker with image upload - FIXED VERSION"""
     try:
         logger.info(f"📥 Received custom service request for worker {worker_id}")
+        
+        # ✅ DEBUG: Log all POST data
+        logger.info(f"📋 POST data: {dict(request.POST)}")
+        logger.info(f"📋 FILES data: {dict(request.FILES)}")
         
         # Verify worker ownership
         worker = get_object_or_404(Worker, id=worker_id)
         if worker.owner != request.user:
             return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
         
-        # Log received data for debugging
-        logger.info(f"📋 POST data keys: {list(request.POST.keys())}")
-        logger.info(f"📁 FILES data keys: {list(request.FILES.keys())}")
+        # Get the service category - HANDLE BOTH ID AND NEW CATEGORY NAMES
+        category_input = request.POST.get('service_category', '').strip()
+        logger.info(f"🔍 Category input received: '{category_input}'")
         
-        # Get the service category
-        category_id = request.POST.get('service_category')
-        if not category_id:
+        if not category_input:
             return JsonResponse({'success': False, 'error': 'Service category is required'}, status=400)
-            
-        category = get_object_or_404(ServiceCategory, id=category_id)
         
-        # Get required fields
+        # ✅ FIXED: Handle both numeric ID, existing category name, and new category name
+        category = None
+        is_new_category = False
+        
+        # Case 1: It's a numeric ID (from dropdown selection)
+        if category_input.isdigit():
+            try:
+                category = ServiceCategory.objects.get(id=int(category_input))
+                logger.info(f"✅ Found existing category by ID: {category.name}")
+            except ServiceCategory.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Selected category not found'}, status=400)
+        
+        # Case 2: It's a string - could be existing category name or new category
+        else:
+            category_name = category_input.title().strip()  # Normalize the name
+            
+            # Try to find existing category by name (case-insensitive)
+            existing_categories = ServiceCategory.objects.filter(name__iexact=category_name)
+            
+            if existing_categories.exists():
+                category = existing_categories.first()
+                logger.info(f"✅ Found existing category by name: {category.name}")
+            else:
+                # Create a new category - REMOVED 'is_custom' field
+                try:
+                    category = ServiceCategory.objects.create(
+                        name=category_name,
+                        description=f"Services related to {category_name}",
+                        icon=get_category_icon(category_name),
+                            # Use your icon function
+                        # REMOVED: is_custom=True - this field doesn't exist in your model
+                    )
+                    is_new_category = True
+                    logger.info(f"✅ Created new category: {category.name}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to create new category: {str(e)}")
+                    return JsonResponse({
+                        'success': False, 
+                        'error': f'Could not create new category "{category_name}". Please try a different name. Error: {str(e)}'
+                    }, status=400)
+        
+        if not category:
+            return JsonResponse({'success': False, 'error': 'Could not process category'}, status=400)
+            
+        # Validate required fields
         required_fields = ['name', 'description', 'pricing_type', 'price']
         for field in required_fields:
             if not request.POST.get(field):
                 return JsonResponse({'success': False, 'error': f'{field} is required'}, status=400)
         
-        # Parse features (optional)
-        features = []
-        features_json = request.POST.get('features', '[]')
+        # Parse numeric fields safely
         try:
-            features = json.loads(features_json)
-        except json.JSONDecodeError:
-            features = []
+            price = float(request.POST.get('price', 0))
+            night_shift_extra = float(request.POST.get('night_shift_extra', 0))
+            min_hours = int(request.POST.get('min_hours', 1))
+            
+            if price < 0:
+                raise ValueError("Price cannot be negative")
+                
+        except (ValueError, TypeError) as e:
+            logger.error(f"❌ Numeric field error: {str(e)}")
+            return JsonResponse({'success': False, 'error': 'Invalid numeric values'}, status=400)
         
-        # Check if worker already has this service category
-        service, created = Service.objects.get_or_create(
-            category=category,
-            defaults={
-                'name': category.name, 
-                'description': category.description
-            }
-        )
+        # Handle image upload
+        image_file = None
+        if 'service_image' in request.FILES:
+            image_file = request.FILES['service_image']
+            if image_file.size > 10 * 1024 * 1024:  # 10MB limit
+                return JsonResponse({'success': False, 'error': 'Image file too large (max 10MB)'}, status=400)
+        
+        # Create or get service
+        try:
+            service_name = request.POST.get('name')
+            unique_service_name = f"{service_name} - {worker.name}"
+            
+            service, created = Service.objects.get_or_create(
+                category=category,
+                name=unique_service_name,
+                defaults={
+                    'description': request.POST.get('description'),
+                    'base_pricing_type': request.POST.get('pricing_type', 'fixed')
+                }
+            )
+            logger.info(f"✅ Service: {service.name} (created: {created})")
+            
+        except Exception as e:
+            logger.error(f"❌ Error creating service: {str(e)}")
+            return JsonResponse({'success': False, 'error': 'Could not create service. Please try again.'}, status=500)
         
         # Get or create WorkerService
         worker_service, ws_created = WorkerService.objects.get_or_create(
@@ -5804,19 +5871,19 @@ def add_custom_service(request, worker_id):
             'service': service,
             'name': request.POST.get('name'),
             'description': request.POST.get('description'),
-            'detailed_description': request.POST.get('description'),
+            'detailed_description': request.POST.get('description', ''),
             'default_pricing_type': request.POST.get('pricing_type', 'fixed'),
             'duration': request.POST.get('duration', ''),
             'materials_included': request.POST.get('materials_included') == 'true',
             'requirements': request.POST.get('requirements', ''),
             'special_offer': False,
-            'is_custom': True
+            'is_custom': True,
+            'created_by': worker.owner
         }
         
         # Handle image upload for subtask if provided
-        if 'service_image' in request.FILES:
-            subtask_data['image'] = request.FILES['service_image']
-            logger.info(f"📸 Image uploaded for subtask: {request.FILES['service_image'].name}")
+        if image_file:
+            subtask_data['image'] = image_file
         
         subtask = SubTask.objects.create(**subtask_data)
         
@@ -5825,28 +5892,73 @@ def add_custom_service(request, worker_id):
             worker_service=worker_service,
             subtask=subtask,
             pricing_type=request.POST.get('pricing_type', 'fixed'),
-            price=float(request.POST.get('price', 0)),
+            price=price,
             experience_level=request.POST.get('experience_level', 'intermediate'),
-            night_shift_extra=float(request.POST.get('night_shift_extra', 0)),
-            min_hours=int(request.POST.get('min_hours', 1))
+            night_shift_extra=night_shift_extra,
+            min_hours=min_hours
         )
         
-        logger.info(f"✅ Custom service '{subtask.name}' added for worker {worker.name}")
-        
-        return JsonResponse({
+        # Build response
+        response_data = {
             'success': True,
             'message': 'Service added successfully',
             'subtask_id': subtask.id,
             'pricing_id': pricing.id,
-            'has_image': 'service_image' in request.FILES,
-            'image_url': subtask.image.url if subtask.image else None
-        })
+            'category_id': category.id,
+            'category_name': category.name,
+            'has_image': image_file is not None,
+            'is_new_category': is_new_category
+        }
         
-    except ServiceCategory.DoesNotExist:
-        logger.error("❌ Service category not found")
-        return JsonResponse({'success': False, 'error': 'Service category not found'}, status=404)
+        if subtask.image:
+            try:
+                response_data['image_url'] = subtask.image.url
+            except:
+                pass
+        
+        logger.info(f"✅ Custom service added successfully: {subtask.name} under category: {category.name}")
+        return JsonResponse(response_data)
+        
     except Exception as e:
         logger.error(f"❌ Error adding custom service: {str(e)}")
         import traceback
-        logger.error(traceback.format_exc())
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        logger.error(f"🔍 Full traceback:\n{traceback.format_exc()}")
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
+def get_category_icon(category_name):
+    """Helper function to get appropriate icon based on category name"""
+    category_icons = {
+        'plumber': '🔧',
+        'plumbing': '🔧',
+        'electrician': '⚡',
+        'electrical': '⚡',
+        'painter': '🎨',
+        'painting': '🎨',
+        'cleaning': '🧹',
+        'cleaner': '🧹',
+        'carpenter': '🔨',
+        'carpentry': '🔨',
+        'construction': '🏗️',
+        'repair': '🔧',
+        'maintenance': '⚙️',
+        'installation': '🔧',
+        'design': '📐',
+        'consultant': '💼',
+        'consultation': '💬',
+        'mechanic': '🔧',
+        'technician': '🔧',
+        'gardener': '🌿',
+        'gardening': '🌿',
+    }
+    
+    category_lower = category_name.lower()
+    
+    # Exact match first
+    if category_lower in category_icons:
+        return category_icons[category_lower]
+    
+    # Partial match
+    for key, icon in category_icons.items():
+        if key in category_lower:
+            return icon
+    
+    return '🔧'  # Default icon for unknown categories

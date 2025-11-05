@@ -1529,43 +1529,73 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
         </div>
         
         <div id="customServiceForm" style="display: none; background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-top: 1rem;">
-            <form id="addSubtaskForm" enctype="multipart/form-data"> 
-                <!-- Service Category Selection -->
+            <form id="addSubtaskForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Service Category Selection with Free Text Input -->
                 <div class="form-group">
                     <label for="serviceCategory" class="form-label">Service Category *</label>
-                    <select id="serviceCategory" class="form-control" required>
-                        <option value="">Select a service category</option>
+                    
+                    <!-- Combobox: Input with datalist for suggestions -->
+                    <input type="text" 
+                           id="serviceCategory" 
+                           class="form-control" 
+                           list="categoryOptions"
+                           placeholder="Select from list or type a new category (e.g., Carpenter, Plumber, Electrician)"
+                           required
+                           autocomplete="off">
+                    
+                    <datalist id="categoryOptions">
                         {% for category in categories_data %}
-                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            <option value="{{ category.name }}">{{ category.name }}</option>
                         {% endfor %}
-                    </select>
-                    <small class="form-text">Choose the main category for your service (e.g., Painter, Carpenter, Plumber)</small>
+                        <!-- Common service categories -->
+                        <option value="Carpenter">Carpenter</option>
+                        <option value="Plumber">Plumber</option>
+                        <option value="Electrician">Electrician</option>
+                        <option value="Painter">Painter</option>
+                        <option value="Cleaner">Cleaner</option>
+                        <option value="Mechanic">Mechanic</option>
+                        <option value="Technician">Technician</option>
+                        <option value="Consultant">Consultant</option>
+                        <option value="Repair">Repair</option>
+                        <option value="Installation">Installation</option>
+                        <option value="Gardener">Gardener</option>
+                        <option value="Driver">Driver</option>
+                        <option value="Tutor">Tutor</option>
+                        <option value="Beautician">Beautician</option>
+                        <option value="Cook">Cook</option>
+                        <option value="Photographer">Photographer</option>
+                        <option value="Tailor">Tailor</option>
+                    </datalist>
+                    
+                    <small class="form-text">
+                        Select from common categories or type a new one. Examples: Carpenter, Plumber, Electrician, Painter, etc.
+                    </small>
                 </div>
-                
-                <!-- Service Image Upload -->
-        <div class="form-group">
-            <label for="serviceImage" class="form-label">Service Image</label>
-            <input type="file" id="serviceImage" class="form-control" accept="image/*">
-            <small class="form-text">Upload an image for your service (optional)</small>
-            
-            <!-- Image Preview -->
-            <div id="imagePreview" style="display: none; margin-top: 1rem;">
-                <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 2px solid #e2e8f0;">
-            </div>
-        </div>
 
+                <!-- Service Image Upload -->
+                <div class="form-group">
+                    <label for="serviceImage" class="form-label">Service Image</label>
+                    <input type="file" id="serviceImage" class="form-control" accept="image/*">
+                    <small class="form-text">Upload an image for your service (optional, max 10MB)</small>
+                    
+                    <div id="imagePreview" style="display: none; margin-top: 1rem;">
+                        <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 2px solid #e2e8f0;">
+                    </div>
+                </div>
 
                 <!-- Service Name -->
                 <div class="form-group">
                     <label for="serviceName" class="form-label">Service Name *</label>
-                    <input type="text" id="serviceName" class="form-control" required placeholder="e.g., Deep Cleaning, Emergency Repair">
+                    <input type="text" id="serviceName" class="form-control" required placeholder="e.g., Deep Cleaning, Emergency Repair, Furniture Assembly">
                     <small class="form-text">Give your service a clear and descriptive name</small>
                 </div>
                 
                 <!-- Service Description -->
                 <div class="form-group">
                     <label for="serviceDescription" class="form-label">Service Description *</label>
-                    <textarea id="serviceDescription" class="form-control" required rows="3" placeholder="Describe what this service includes..."></textarea>
+                    <textarea id="serviceDescription" class="form-control" required rows="3" placeholder="Describe what this service includes, what problems it solves, etc."></textarea>
                     <small class="form-text">Provide detailed information about what the service includes</small>
                 </div>
                 
@@ -1594,7 +1624,7 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                 <!-- Duration -->
                 <div class="form-group">
                     <label for="serviceDuration" class="form-label">Duration</label>
-                    <input type="text" id="serviceDuration" class="form-control" placeholder="e.g., 2 hours, 1 day">
+                    <input type="text" id="serviceDuration" class="form-control" placeholder="e.g., 2 hours, 1 day, 30 minutes">
                     <small class="form-text">Estimated time to complete this service</small>
                 </div>
                 
@@ -1606,13 +1636,14 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                         <option value="intermediate" selected>Intermediate</option>
                         <option value="expert">Expert</option>
                     </select>
+                    <small class="form-text">Select your expertise level for this service</small>
                 </div>
                 
                 <!-- Night Shift Extra -->
                 <div class="form-group">
                     <label for="nightShiftExtra" class="form-label">Night Shift Extra (Rs)</label>
                     <input type="number" id="nightShiftExtra" class="form-control" step="0.01" min="0" value="0" placeholder="0.00">
-                    <small class="form-text">Additional charge for night shift work</small>
+                    <small class="form-text">Additional charge for night shift work (6 PM - 6 AM)</small>
                 </div>
                 
                 <!-- Minimum Hours (for hourly services) -->
@@ -1628,26 +1659,19 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
                         <input type="checkbox" id="materialsIncluded">
                         <span style="font-weight: 600; color: #374151;">Materials Included</span>
                     </label>
-                    
-                    {% comment %} <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="specialOffer">
-                        <span style="font-weight: 600; color: #374151;">Special Offer</span>
-                    </label> {% endcomment %}
                 </div>
                 
                 <!-- Requirements -->
                 <div class="form-group">
-                    <label for="serviceRequirements" class="form-label">Requirements</label>
-                    <textarea id="serviceRequirements" class="form-control" rows="2" placeholder="Any specific requirements or notes..."></textarea>
+                    <label for="serviceRequirements" class="form-label">Requirements & Notes</label>
+                    <textarea id="serviceRequirements" class="form-control" rows="2" placeholder="Any specific requirements, tools needed, or notes for customers..."></textarea>
                     <small class="form-text">Special requirements or notes for customers</small>
                 </div>
-            
 
-
-                
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <!-- Form Actions -->
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
                     <button type="button" id="cancelSubtask" class="btn-secondary">
-                        Cancel
+                        <i class="fas fa-times mr-2"></i>Cancel
                     </button>
                     <button type="submit" class="btn-primary" style="background: #059669;">
                         <i class="fas fa-save mr-2"></i>Save Service
@@ -2218,15 +2242,17 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// ================== CUSTOM SERVICE FUNCTIONS ==================
+// Enhanced JavaScript for the complete custom service form
 function initializeCustomServiceForm() {
     const toggleBtn = document.getElementById('toggleCustomServiceForm');
     const form = document.getElementById('customServiceForm');
     const cancelBtn = document.getElementById('cancelSubtask');
     const addSubtaskForm = document.getElementById('addSubtaskForm');
-    const serviceCategorySelect = document.getElementById('serviceCategory');
     const serviceTypeSelect = document.getElementById('serviceType');
-    const messageDiv = document.getElementById('customServiceMessage');
+    const categoryInput = document.getElementById('serviceCategory');
+    const imageInput = document.getElementById('serviceImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
     
     if (toggleBtn && form) {
         toggleBtn.addEventListener('click', function() {
@@ -2242,6 +2268,11 @@ function initializeCustomServiceForm() {
                 toggleBtn.innerHTML = '<i class="fas fa-plus mr-2"></i>Add New Service';
                 addSubtaskForm.reset();
                 hideMessage();
+                // Hide image preview
+                imagePreview.style.display = 'none';
+                previewImg.src = '';
+                // Reset min hours group
+                document.getElementById('minHoursGroup').style.display = 'none';
             });
         }
         
@@ -2257,6 +2288,42 @@ function initializeCustomServiceForm() {
             });
         }
         
+        // Category input validation
+        if (categoryInput) {
+            categoryInput.addEventListener('input', function(e) {
+                validateCategoryInput(e.target.value);
+            });
+            
+            categoryInput.addEventListener('blur', function(e) {
+                if (e.target.value.trim()) {
+                    // Capitalize first letter of each word
+                    const normalized = e.target.value
+                        .split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                        .join(' ');
+                    e.target.value = normalized;
+                }
+            });
+        }
+        
+        // Image preview
+        if (imageInput && imagePreview && previewImg) {
+            imageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImg.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+            });
+        }
+        
+        // Form submission
         if (addSubtaskForm) {
             addSubtaskForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -2264,44 +2331,57 @@ function initializeCustomServiceForm() {
             });
         }
     }
-    // Add image preview functionality
-const imageInput = document.getElementById('serviceImage');
-const imagePreview = document.getElementById('imagePreview');
-const previewImg = document.getElementById('previewImg');
+}
 
-if (imageInput && imagePreview && previewImg) {
-    imageInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                imagePreview.style.display = 'block';
-            }
-            reader.readAsDataURL(file);
-        } else {
-            imagePreview.style.display = 'none';
-        }
-    });
+function validateCategoryInput(value) {
+    const messageDiv = document.getElementById('customServiceMessage');
+    
+    if (!value.trim()) {
+        hideMessage();
+        return;
+    }
+    
+    // Basic validation
+    const invalidChars = /[0-9@#$%^&*()_+=[\]{};':"\\|,.<>?]/;
+    if (invalidChars.test(value)) {
+        showMessage('Category name should not contain numbers or special characters', 'warning');
+    } else if (value.length > 50) {
+        showMessage('Category name is too long (max 50 characters)', 'warning');
+    } else if (value.length < 2) {
+        showMessage('Category name is too short', 'warning');
+    } else {
+        hideMessage();
+    }
 }
 
 function addCustomService() {
-    const serviceCategory = document.getElementById('serviceCategory').value;
-    const serviceName = document.getElementById('serviceName').value;
-    const serviceDescription = document.getElementById('serviceDescription').value;
+    const serviceCategory = document.getElementById('serviceCategory').value.trim();
+    const serviceName = document.getElementById('serviceName').value.trim();
+    const serviceDescription = document.getElementById('serviceDescription').value.trim();
     const serviceType = document.getElementById('serviceType').value;
     const servicePrice = document.getElementById('servicePrice').value;
-    const serviceDuration = document.getElementById('serviceDuration').value;
-    const experienceLevel = document.getElementById('experienceLevel').value;
-    const nightShiftExtra = document.getElementById('nightShiftExtra').value;
-    const minHours = document.getElementById('minHours').value || 1;
-    const materialsIncluded = document.getElementById('materialsIncluded').checked;
-    const requirements = document.getElementById('serviceRequirements').value;
-    const imageInput = document.getElementById('serviceImage');
     
-    // Basic validation
+    console.log('🔍 Form validation:');
+    console.log('Category:', serviceCategory);
+    console.log('Name:', serviceName);
+    console.log('Description:', serviceDescription);
+    console.log('Type:', serviceType);
+    console.log('Price:', servicePrice);
+    
+    // Enhanced validation
     if (!serviceCategory || !serviceName || !serviceDescription || !serviceType || !servicePrice) {
         showMessage('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    if (serviceCategory.length < 2) {
+        showMessage('Category name is too short', 'error');
+        return;
+    }
+    
+    // Validate price
+    if (parseFloat(servicePrice) <= 0) {
+        showMessage('Price must be greater than 0', 'error');
         return;
     }
     
@@ -2319,22 +2399,27 @@ function addCustomService() {
     formData.append('description', serviceDescription);
     formData.append('pricing_type', serviceType);
     formData.append('price', parseFloat(servicePrice));
-    formData.append('duration', serviceDuration);
-    formData.append('experience_level', experienceLevel);
-    formData.append('night_shift_extra', parseFloat(nightShiftExtra) || 0);
-    formData.append('min_hours', parseInt(minHours));
-    formData.append('materials_included', materialsIncluded);
-    formData.append('requirements', requirements);
-    formData.append('features', JSON.stringify([])); // Empty features array for now
+    formData.append('duration', document.getElementById('serviceDuration').value);
+    formData.append('experience_level', document.getElementById('experienceLevel').value);
+    formData.append('night_shift_extra', parseFloat(document.getElementById('nightShiftExtra').value) || 0);
+    formData.append('min_hours', parseInt(document.getElementById('minHours').value) || 1);
+    formData.append('materials_included', document.getElementById('materialsIncluded').checked);
+    formData.append('requirements', document.getElementById('serviceRequirements').value);
+    formData.append('features', JSON.stringify([]));
     
     // Add image if selected
+    const imageInput = document.getElementById('serviceImage');
     if (imageInput.files && imageInput.files[0]) {
-        formData.append('service_image', imageInput.files[0]);
-        console.log('📸 Image file added:', imageInput.files[0].name);
+        const imageFile = imageInput.files[0];
+        
+        // Validate image size
+        if (imageFile.size > 10 * 1024 * 1024) {
+            showMessage('Image file is too large (max 10MB)', 'error');
+            return;
+        }
+        
+        formData.append('service_image', imageFile);
     }
-    
-    console.log('📤 Sending service data...');
-    console.log('🔐 CSRF Token:', csrfToken ? 'Found' : 'NOT FOUND');
     
     // Show loading state
     const submitBtn = document.querySelector('#addSubtaskForm button[type="submit"]');
@@ -2347,31 +2432,38 @@ function addCustomService() {
         method: 'POST',
         headers: {
             'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-            // Don't set Content-Type - let browser set it with boundary
         },
         body: formData
     })
     .then(response => {
-        console.log('📥 Response status:', response.status, response.statusText);
-        
         if (!response.ok) {
             return response.text().then(text => {
-                console.error('❌ Server error response:', text);
-                throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+                let errorMessage = `Server error: ${response.status}`;
+                try {
+                    const errorData = JSON.parse(text);
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    }
+                } catch (e) {
+                    if (text.includes('CSRF')) {
+                        errorMessage = 'Security token expired. Please refresh the page.';
+                    }
+                }
+                throw new Error(errorMessage);
             });
         }
         return response.json();
     })
     .then(data => {
-        console.log('✅ Success response:', data);
-        
         if (data.success) {
-            showMessage('Custom service added successfully! The page will refresh...', 'success');
+            const message = data.is_new_category 
+                ? `New category "${data.category_name}" created and service added successfully!` 
+                : 'Service added successfully!';
+            
+            showMessage(message + ' The page will refresh...', 'success');
             document.getElementById('addSubtaskForm').reset();
-            // Reset image preview
             document.getElementById('imagePreview').style.display = 'none';
-            document.getElementById('previewImg').src = '';
+            document.getElementById('minHoursGroup').style.display = 'none';
             
             setTimeout(() => {
                 window.location.reload();
@@ -2385,36 +2477,38 @@ function addCustomService() {
         showMessage('Error adding service: ' + error.message, 'error');
     })
     .finally(() => {
-        // Restore button state
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     });
 }
-    function showMessage(message, type) {
-        const messageDiv = document.getElementById('customServiceMessage');
-        messageDiv.textContent = message;
-        messageDiv.style.display = 'block';
-        messageDiv.style.padding = '1rem';
-        messageDiv.style.borderRadius = '8px';
-        messageDiv.style.marginTop = '1rem';
-        
-        if (type === 'success') {
-            messageDiv.style.background = '#d1fae5';
-            messageDiv.style.color = '#065f46';
-            messageDiv.style.border = '1px solid #a7f3d0';
-        } else {
-            messageDiv.style.background = '#fee2e2';
-            messageDiv.style.color = '#991b1b';
-            messageDiv.style.border = '1px solid #fecaca';
-        }
-    }
+
+function showMessage(message, type) {
+    const messageDiv = document.getElementById('customServiceMessage');
+    messageDiv.textContent = message;
+    messageDiv.style.display = 'block';
+    messageDiv.style.padding = '1rem';
+    messageDiv.style.borderRadius = '8px';
+    messageDiv.style.marginTop = '1rem';
     
-    function hideMessage() {
-        const messageDiv = document.getElementById('customServiceMessage');
-        messageDiv.style.display = 'none';
+    if (type === 'success') {
+        messageDiv.style.background = '#d1fae5';
+        messageDiv.style.color = '#065f46';
+        messageDiv.style.border = '1px solid #a7f3d0';
+    } else if (type === 'warning') {
+        messageDiv.style.background = '#fef3c7';
+        messageDiv.style.color = '#92400e';
+        messageDiv.style.border = '1px solid #fcd34d';
+    } else {
+        messageDiv.style.background = '#fee2e2';
+        messageDiv.style.color = '#991b1b';
+        messageDiv.style.border = '1px solid #fecaca';
     }
 }
 
+function hideMessage() {
+    const messageDiv = document.getElementById('customServiceMessage');
+    messageDiv.style.display = 'none';
+}
 // ================== MAP FUNCTIONS ==================
 function initializeMap() {
     // Default coordinates (center of India)
