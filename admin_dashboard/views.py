@@ -1796,4 +1796,4 @@ from django.views.decorators.csrf import csrf_protect
 def admin_logout(request):
     """Admin logout view"""
     logout(request)
-    return redirect('admin:login')
+    return redirect('/accounts/login/')
