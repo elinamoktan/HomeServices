@@ -5398,11 +5398,11 @@ BlueCaller Team
 @login_required
 @require_http_methods(["POST"])
 def resubmit_verification(request):
-    """Allow worker to resubmit for verification after rejection"""
+    """Allow worker to resubmit for verification after rejection WITH DOCUMENT UPLOAD"""
     try:
         worker = get_object_or_404(Worker, owner=request.user)
         
-        # Check if worker can resubmit (15-minute waiting period)
+        # Check if worker can resubmit
         if not worker.can_resubmit_verification():
             minutes_left = worker.get_resubmission_wait_time()
             return JsonResponse({
@@ -5410,18 +5410,37 @@ def resubmit_verification(request):
                 'error': f'Please wait {minutes_left} minutes before resubmitting'
             })
         
-        # Reset verification status to pending
+        # ✅ NEW: Handle document uploads for resubmission
+        citizenship_image = request.FILES.get('citizenship_image')
+        certificate_file = request.FILES.get('certificate_file')
+        
+        # At least one document should be provided for resubmission
+        if not citizenship_image and not certificate_file:
+            return JsonResponse({
+                'success': False,
+                'error': 'Please upload at least one document (citizenship or certificate) for resubmission'
+            })
+        
+        # Update documents if new ones are provided
+        if citizenship_image:
+            worker.citizenship_image = citizenship_image
+            logger.info(f"Updated citizenship image for worker {worker.name}")
+        
+        if certificate_file:
+            worker.certificate_file = certificate_file
+            logger.info(f"Updated certificate file for worker {worker.name}")
+        
+        # Reset verification status
         worker.verification_status = 'pending'
         worker.verification_submitted_at = timezone.now()
-        # Keep rejection reason for admin reference, but worker can't see it after resubmission
+        worker.rejection_reason = None  # Clear previous rejection reason
         worker.save()
         
-        # Create notification for admin
+        # Log admin activity
         try:
             from admin_dashboard.models import AdminActivityLog
             from django.contrib.auth.models import User
             
-            # Get first available admin user for logging
             admin_user = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True)).first()
             if admin_user:
                 AdminActivityLog.objects.create(
@@ -5429,14 +5448,13 @@ def resubmit_verification(request):
                     action='UPDATE',
                     model_name='Worker',
                     object_id=worker.id,
-                    description=f'Worker {worker.name} resubmitted for verification after rejection'
+                    description=f'Worker {worker.name} resubmitted for verification with updated documents'
                 )
         except Exception as e:
             logger.error(f"Failed to log admin activity: {e}")
         
-        # Send email to admin about resubmission
+        # Send email to admin about resubmission with documents
         try:
-            from admin_dashboard.views import send_verification_resubmission_email
             send_verification_resubmission_email(worker)
         except Exception as e:
             logger.error(f"Failed to send resubmission email: {e}")
@@ -5447,7 +5465,7 @@ def resubmit_verification(request):
                 worker=worker,
                 notification_type='verification_resubmitted',
                 title='Verification Resubmitted',
-                message='Your profile has been resubmitted for verification. Admin will review it again shortly.',
+                message='Your profile and documents have been resubmitted for verification. Admin will review them again shortly.',
                 appointment=None
             )
         except Exception as e:
@@ -5455,7 +5473,7 @@ def resubmit_verification(request):
         
         return JsonResponse({
             'success': True,
-            'message': 'Verification resubmitted successfully! Admin will review your profile again.'
+            'message': 'Verification resubmitted successfully with updated documents! Admin will review your profile again.'
         })
         
     except Worker.DoesNotExist:
@@ -5470,6 +5488,53 @@ def resubmit_verification(request):
             'error': 'An error occurred while processing your request'
         }, status=500)
 
+
+def send_verification_resubmission_email(worker):
+    """Send email notification to admin about worker resubmission"""
+    try:
+        admin_email = 'rubythapa506@gmail.com'  # Your admin email
+        
+        subject = f"Worker Resubmitted for Verification - {worker.name}"
+        
+        # Generate secure tokens
+        import hashlib
+        approve_token = hashlib.md5(f"verify_{worker.id}_{worker.verification_submitted_at}".encode()).hexdigest()
+        reject_token = hashlib.md5(f"reject_{worker.id}_{worker.verification_submitted_at}".encode()).hexdigest()
+        
+        base_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        approve_url = f"{base_url}/public-verify-worker/{worker.id}/?action=approve&token={approve_token}"
+        reject_url = f"{base_url}/public-verify-worker/{worker.id}/?action=reject&token={reject_token}"
+        
+        context = {
+            'worker_name': worker.name,
+            'worker_email': worker.owner.email,
+            'worker_phone': str(worker.phone_number),
+            'worker_id': worker.id,
+            'resubmission_date': worker.verification_submitted_at.strftime('%B %d, %Y at %I:%M %p'),
+            'has_new_documents': worker.citizenship_image or worker.certificate_file,
+            'approve_url': approve_url,
+            'reject_url': reject_url,
+            'admin_dashboard_url': f"{base_url}/admin-dashboard/",
+        }
+        
+        html_message = render_to_string('emails/worker_resubmission_request.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[admin_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+        logger.info(f"Resubmission email sent to admin for worker {worker.name}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send resubmission email: {str(e)}")
+        return False
 # NEW: Add API endpoint to check resubmission status
 @login_required
 @require_http_methods(["GET"])

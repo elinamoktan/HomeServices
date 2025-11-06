@@ -54,7 +54,7 @@ class ServiceCategory(models.Model):
         return self.name
 
 class Service(models.Model):
-    # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     category = models.ForeignKey(ServiceCategory, on_delete=models.CASCADE, related_name='services')
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -281,23 +281,24 @@ class Worker(models.Model):
         return _haversine_km(self.latitude, self.longitude, other_lat, other_lon)
 
     def can_resubmit_verification(self):
-        """Check if worker can resubmit for verification after 15 minutes"""
+        """Check if worker can resubmit for verification after 5 minutes"""
         if not self.last_rejection_date:
             return True
-        # Allow resubmission after 15 minutes
-        return timezone.now() >= self.last_rejection_date + timedelta(minutes=15)
+        # Allow resubmission after 5 minutes
+        return timezone.now() >= self.last_rejection_date + timedelta(minutes=5)
     
     def get_resubmission_wait_time(self):
-        """Get remaining wait time in minutes for resubmission"""
+        """Get remaining wait time in minutes for resubmission - REDUCED"""
         if not self.last_rejection_date or self.can_resubmit_verification():
             return 0
         
-        wait_until = self.last_rejection_date + timedelta(minutes=15)
+        # ✅ REDUCED: 5 minutes total wait time (was 15)
+        wait_until = self.last_rejection_date + timedelta(minutes=5)
         time_left = wait_until - timezone.now()
         minutes_left = max(0, int(time_left.total_seconds() // 60))
         return minutes_left
     
-    def get_resubmission_wait_time_display(self):  #for displaying wait time to user
+    def get_resubmission_wait_time_display(self):
         """Get formatted wait time for display"""
         minutes = self.get_resubmission_wait_time()
         if minutes == 0:

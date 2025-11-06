@@ -2197,7 +2197,6 @@ input[type="tel"]:invalid:not(:focus):not(:placeholder-shown) {
         </button>
     </div>
 </div>
-
 <script>
 // Service data from Django template
 const categoriesData = {{ categories_data_json|safe }};
@@ -2225,7 +2224,7 @@ let map = null;
 let marker = null;
 let selectedLocation = null;
 
-// ✅ ADD getCookie FUNCTION HERE (at the top with other utility functions)
+// ================== UTILITY FUNCTIONS ==================
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -2242,7 +2241,7 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Enhanced JavaScript for the complete custom service form
+// ================== CUSTOM SERVICE FORM ==================
 function initializeCustomServiceForm() {
     const toggleBtn = document.getElementById('toggleCustomServiceForm');
     const form = document.getElementById('customServiceForm');
@@ -2268,15 +2267,12 @@ function initializeCustomServiceForm() {
                 toggleBtn.innerHTML = '<i class="fas fa-plus mr-2"></i>Add New Service';
                 addSubtaskForm.reset();
                 hideMessage();
-                // Hide image preview
                 imagePreview.style.display = 'none';
                 previewImg.src = '';
-                // Reset min hours group
                 document.getElementById('minHoursGroup').style.display = 'none';
             });
         }
         
-        // Show/hide minimum hours based on service type
         if (serviceTypeSelect) {
             serviceTypeSelect.addEventListener('change', function() {
                 const minHoursGroup = document.getElementById('minHoursGroup');
@@ -2288,7 +2284,6 @@ function initializeCustomServiceForm() {
             });
         }
         
-        // Category input validation
         if (categoryInput) {
             categoryInput.addEventListener('input', function(e) {
                 validateCategoryInput(e.target.value);
@@ -2296,7 +2291,6 @@ function initializeCustomServiceForm() {
             
             categoryInput.addEventListener('blur', function(e) {
                 if (e.target.value.trim()) {
-                    // Capitalize first letter of each word
                     const normalized = e.target.value
                         .split(' ')
                         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -2306,7 +2300,6 @@ function initializeCustomServiceForm() {
             });
         }
         
-        // Image preview
         if (imageInput && imagePreview && previewImg) {
             imageInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -2323,7 +2316,6 @@ function initializeCustomServiceForm() {
             });
         }
         
-        // Form submission
         if (addSubtaskForm) {
             addSubtaskForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -2341,7 +2333,6 @@ function validateCategoryInput(value) {
         return;
     }
     
-    // Basic validation
     const invalidChars = /[0-9@#$%^&*()_+=[\]{};':"\\|,.<>?]/;
     if (invalidChars.test(value)) {
         showMessage('Category name should not contain numbers or special characters', 'warning');
@@ -2361,14 +2352,6 @@ function addCustomService() {
     const serviceType = document.getElementById('serviceType').value;
     const servicePrice = document.getElementById('servicePrice').value;
     
-    console.log('🔍 Form validation:');
-    console.log('Category:', serviceCategory);
-    console.log('Name:', serviceName);
-    console.log('Description:', serviceDescription);
-    console.log('Type:', serviceType);
-    console.log('Price:', servicePrice);
-    
-    // Enhanced validation
     if (!serviceCategory || !serviceName || !serviceDescription || !serviceType || !servicePrice) {
         showMessage('Please fill in all required fields', 'error');
         return;
@@ -2379,20 +2362,17 @@ function addCustomService() {
         return;
     }
     
-    // Validate price
     if (parseFloat(servicePrice) <= 0) {
         showMessage('Price must be greater than 0', 'error');
         return;
     }
     
-    // Get CSRF token
     const csrfToken = getCookie('csrftoken');
     if (!csrfToken) {
         showMessage('Security token missing. Please refresh the page.', 'error');
         return;
     }
     
-    // Create FormData
     const formData = new FormData();
     formData.append('service_category', serviceCategory);
     formData.append('name', serviceName);
@@ -2407,27 +2387,21 @@ function addCustomService() {
     formData.append('requirements', document.getElementById('serviceRequirements').value);
     formData.append('features', JSON.stringify([]));
     
-    // Add image if selected
     const imageInput = document.getElementById('serviceImage');
     if (imageInput.files && imageInput.files[0]) {
         const imageFile = imageInput.files[0];
-        
-        // Validate image size
         if (imageFile.size > 10 * 1024 * 1024) {
             showMessage('Image file is too large (max 10MB)', 'error');
             return;
         }
-        
         formData.append('service_image', imageFile);
     }
     
-    // Show loading state
     const submitBtn = document.querySelector('#addSubtaskForm button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
     submitBtn.disabled = true;
     
-    // Send request
     fetch(`/jobs/add-custom-service/{{ worker.id }}/`, {
         method: 'POST',
         headers: {
@@ -2509,26 +2483,22 @@ function hideMessage() {
     const messageDiv = document.getElementById('customServiceMessage');
     messageDiv.style.display = 'none';
 }
+
 // ================== MAP FUNCTIONS ==================
 function initializeMap() {
-    // Default coordinates (center of India)
     const defaultLat = 20.5937;
     const defaultLng = 78.9629;
     
-    // Initialize the map
     map = L.map('locationMap').setView([defaultLat, defaultLng], 5);
     
-     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
     
-    // Add click event to map
     map.on('click', function(e) {
         setMarkerLocation(e.latlng.lat, e.latlng.lng);
     });
     
-    // Try to get user's current location
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             function(position) {
@@ -2539,57 +2509,35 @@ function initializeMap() {
             },
             function(error) {
                 console.log('Geolocation error:', error);
-                // Use default location
                 setMarkerLocation(defaultLat, defaultLng);
             }
         );
     } else {
-        // Browser doesn't support geolocation
         setMarkerLocation(defaultLat, defaultLng);
     }
 }
-function debugFormData() {
-    const formData = new FormData(document.getElementById('addSubtaskForm'));
-    let debugContent = '<strong>Form Data:</strong><br>';
-    for (let [key, value] of formData.entries()) {
-        debugContent += `${key}: ${value}<br>`;
-    }
-    document.getElementById('debugContent').innerHTML = debugContent;
-    document.getElementById('debugInfo').style.display = 'block';
-}
-
-// Call this when form is shown
-document.getElementById('toggleCustomServiceForm').addEventListener('click', function() {
-    setTimeout(debugFormData, 100);
-}); 
 
 function setMarkerLocation(lat, lng) {
-    // Remove existing marker
     if (marker) {
         map.removeLayer(marker);
     }
     
-    // Add new marker
     marker = L.marker([lat, lng]).addTo(map)
         .bindPopup('Selected Location')
         .openPopup();
     
-    // Store selected location
     selectedLocation = {
         latitude: lat,
         longitude: lng
     };
     
-    // Update hidden fields
     document.getElementById('selectedLatitude').value = lat;
     document.getElementById('selectedLongitude').value = lng;
     
-    // Reverse geocode to get address
     reverseGeocode(lat, lng);
 }
 
 function reverseGeocode(lat, lng) {
-    // Use OpenStreetMap Nominatim for reverse geocoding
     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
         .then(response => response.json())
         .then(data => {
@@ -2630,7 +2578,6 @@ function useCurrentLocation() {
 function searchLocation() {
     const query = prompt('Enter location to search:');
     if (query) {
-        // Use OpenStreetMap Nominatim for forward geocoding
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
@@ -2651,13 +2598,12 @@ function searchLocation() {
     }
 }
 
-// ================== SEARCH AND FILTER FUNCTIONS ==================
+// ================== SEARCH AND FILTER ==================
 function initializeSearchAndFilter() {
     const searchInput = document.getElementById('serviceSearch');
     const priceFilter = document.getElementById('priceFilter');
     const resetButton = document.getElementById('resetFilters');
 
-    // Search input event
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
             currentSearchTerm = e.target.value.toLowerCase().trim();
@@ -2665,7 +2611,6 @@ function initializeSearchAndFilter() {
         });
     }
 
-    // Price filter event
     if (priceFilter) {
         priceFilter.addEventListener('change', function(e) {
             currentPriceFilter = e.target.value;
@@ -2673,7 +2618,6 @@ function initializeSearchAndFilter() {
         });
     }
 
-    // Reset filters event
     if (resetButton) {
         resetButton.addEventListener('click', function() {
             resetFilters();
@@ -2691,13 +2635,11 @@ function filterServices() {
         const serviceFeatures = card.getAttribute('data-service-features') || '';
         const servicePrice = parseFloat(card.getAttribute('data-service-price')) || 0;
 
-        // Search filter
         const matchesSearch = !currentSearchTerm || 
             serviceName.includes(currentSearchTerm) ||
             serviceDescription.includes(currentSearchTerm) ||
             serviceFeatures.includes(currentSearchTerm);
 
-        // Price filter
         let matchesPrice = true;
         if (currentPriceFilter !== 'all') {
             switch (currentPriceFilter) {
@@ -2716,7 +2658,6 @@ function filterServices() {
             }
         }
 
-        // Show/hide card based on all filters
         if (matchesSearch && matchesPrice) {
             card.classList.remove('hidden');
             card.classList.add('filtered');
@@ -2758,21 +2699,17 @@ function updateNoResultsMessage(visibleCount) {
 }
 
 function resetFilters() {
-    // Reset form elements
     const searchInput = document.getElementById('serviceSearch');
     const priceFilter = document.getElementById('priceFilter');
     
     if (searchInput) searchInput.value = '';
     if (priceFilter) priceFilter.value = 'all';
     
-    // Reset state
     currentSearchTerm = '';
     currentPriceFilter = 'all';
     
-    // Reset UI
     filterServices();
     
-    // Hide results info
     const resultsInfo = document.getElementById('resultsInfo');
     const noResults = document.getElementById('noResults');
     
@@ -2780,16 +2717,14 @@ function resetFilters() {
     if (noResults) noResults.classList.remove('show');
 }
 
-// ================== PHONE NUMBER VALIDATION ==================
+// ================== PHONE VALIDATION ==================
 function initializePhoneValidation() {
     const phoneInput = document.getElementById('customerPhone');
     
     if (phoneInput) {
-        // Remove any non-digit characters on input
         phoneInput.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
             
-            // Limit to 10 digits
             if (value.length > 10) {
                 value = value.substring(0, 10);
             }
@@ -2799,7 +2734,7 @@ function initializePhoneValidation() {
     }
 }
 
-// ================== FORM SUBMISSION HANDLER ==================
+// ================== FORM SUBMISSION ==================
 function initializeFormSubmission() {
     const bookingForm = document.getElementById('bookingForm');
     
@@ -2815,18 +2750,12 @@ function submitBookingForm() {
     const form = document.getElementById('bookingForm');
     const submitButton = form.querySelector('.submit-booking');
     
-    // Enhanced validation
     const serviceDate = document.getElementById('serviceDate').value;
     const selectedTimeSlot = document.getElementById('selectedTimeSlot').value;
     const address = document.getElementById('address').value;
     const customerName = document.getElementById('customerName').value;
     const customerPhone = document.getElementById('customerPhone').value;
     
-    console.log('📅 Date value:', serviceDate);
-    console.log('⏰ Time slot value:', selectedTimeSlot);
-    console.log('📍 Address:', address);
-    
-    // Enhanced validation
     if (!serviceDate) {
         alert('Please select an appointment date.');
         return;
@@ -2852,7 +2781,6 @@ function submitBookingForm() {
         return;
     }
     
-    // Client-side date validation
     const selectedDate = new Date(serviceDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -2862,20 +2790,14 @@ function submitBookingForm() {
         return;
     }
     
-    // If same day, check if time is at least 1 hour in the future
     if (selectedDate.getTime() === today.getTime()) {
         const now = new Date();
-        const selectedTime = selectedTimeSlot.split('-')[0].trim(); // Get start time like "06:00"
+        const selectedTime = selectedTimeSlot.split('-')[0].trim();
         const [hours, minutes] = selectedTime.split(':').map(Number);
         
         const selectedDateTime = new Date();
         selectedDateTime.setHours(hours, minutes, 0, 0);
         
-        console.log('🕒 Current time:', now.toLocaleString());
-        console.log('🕒 Selected time:', selectedDateTime.toLocaleString());
-        console.log('🕒 Time difference (minutes):', (selectedDateTime - now) / (1000 * 60));
-        
-        // Check if selected time is at least 1 hour from now
         const timeDifferenceMs = selectedDateTime - now;
         const timeDifferenceHours = timeDifferenceMs / (1000 * 60 * 60);
         
@@ -2885,18 +2807,15 @@ function submitBookingForm() {
         }
     }
     
-    // Phone number validation
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(customerPhone)) {
         alert('Please enter a valid 10-digit phone number.');
         return;
     }
     
-    // Disable submit button
     submitButton.disabled = true;
     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
     
-    // ✅ FIXED: Remove non-existent fields
     const bookingData = {
         'service_id': document.getElementById('selectedServiceId')?.value || 'consultation',
         'preferred_date': serviceDate,
@@ -2910,9 +2829,6 @@ function submitBookingForm() {
         'service_name': document.getElementById('selectedServiceName')?.value || 'Service'
     };
     
-    console.log('📤 Booking data:', bookingData);
-    
-    // Send AJAX request
     fetch(`/worker/{{ worker.id }}/appointment-request/`, {
         method: 'POST',
         headers: {
@@ -2923,20 +2839,14 @@ function submitBookingForm() {
         body: JSON.stringify(bookingData)
     })
     .then(response => {
-        console.log('📥 Response status:', response.status);
-        
         if (!response.ok) {
             return response.text().then(text => {
-                console.error('❌ Error response:', text);
                 throw new Error(`Server error: ${response.status}`);
             });
         }
-        
         return response.json();
     })
     .then(data => {
-        console.log('✅ Success response:', data);
-        
         if (data.success) {
             showBookingSuccess(data.message || 'Appointment request sent successfully!');
         } else {
@@ -2954,7 +2864,6 @@ function submitBookingForm() {
 }
 
 function showBookingSuccess(message) {
-    // Create success modal
     const successModal = document.createElement('div');
     successModal.className = 'booking-modal active';
     successModal.innerHTML = `
@@ -2988,7 +2897,6 @@ function showBookingSuccess(message) {
 }
 
 function showBookingError(message) {
-    // Create error modal instead of alert for better UX
     const errorModal = document.createElement('div');
     errorModal.className = 'booking-modal active';
     errorModal.innerHTML = `
@@ -3033,21 +2941,23 @@ function closeSuccessModal() {
         modal.remove();
         document.body.style.overflow = 'auto';
         
-        // Also close the booking modal
         const bookingModal = document.getElementById('bookingModal');
         if (bookingModal) {
             bookingModal.classList.remove('active');
         }
     }
 }
+
 // ================== MODAL FUNCTIONS ==================
 function initializeModal() {
     const modal = document.getElementById('bookingModal');
     const closeModal = document.getElementById('closeModal');
     
-    if (!modal) return;
+    if (!modal) {
+        console.error('❌ Booking modal not found');
+        return;
+    }
     
-    // Close modal when clicking X
     if (closeModal) {
         closeModal.addEventListener('click', function() {
             modal.classList.remove('active');
@@ -3055,7 +2965,6 @@ function initializeModal() {
         });
     }
     
-    // Close modal when clicking outside
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             modal.classList.remove('active');
@@ -3064,110 +2973,15 @@ function initializeModal() {
     });
 }
 
-function initializeEventListeners() {
-    // Event delegation for booking buttons
-    document.addEventListener('click', function(e) {
-        const bookButton = e.target.closest('.book-service-btn');
-        if (bookButton && !bookButton.classList.contains('login-required')) {
-            handleBookingButtonClick(bookButton);
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    });
-}
-
-function initializeFormElements() {
-    // Initialize date picker
-    const dateInput = document.getElementById('serviceDate');
-    if (dateInput) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
-        dateInput.min = today;
-    }
-    
-    // Initialize time slots
-    const timeSlots = document.querySelectorAll('.time-slot');
-    const timeSlotInput = document.getElementById('selectedTimeSlot');
-    
-    timeSlots.forEach(slot => {
-        slot.addEventListener('click', function() {
-            // Remove selected class from all slots
-            timeSlots.forEach(s => s.classList.remove('selected'));
-            // Add selected class to clicked slot
-            this.classList.add('selected');
-            // Update hidden input value
-            const selectedTime = this.getAttribute('data-time');
-            if (timeSlotInput) {
-                timeSlotInput.value = selectedTime;
-            }
-        });
-    });
-    
-    // Initialize phone validation
-    initializePhoneValidation();
-    
-    // Initialize map location buttons
-    const useCurrentLocationBtn = document.getElementById('useCurrentLocation');
-    const searchLocationBtn = document.getElementById('searchLocation');
-    
-    if (useCurrentLocationBtn) {
-        useCurrentLocationBtn.addEventListener('click', useCurrentLocation);
-    }
-    
-    if (searchLocationBtn) {
-        searchLocationBtn.addEventListener('click', searchLocation);
-    }
-}
-
-// NEW: Login required modal functions
-function showLoginRequired() {
-    const modal = document.getElementById('loginRequiredModal');
-    if (!modal) return;
-    
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeLoginRequiredModal() {
-    const modal = document.getElementById('loginRequiredModal');
-    if (!modal) return;
-    
-    modal.classList.remove('active');
-    document.body.style.overflow = 'auto';
-}
-
-function handleBookingButtonClick(button) {
-    {% if user.is_authenticated and user.customer %}
-        // User is logged in - proceed with booking
-        const serviceId = button.getAttribute('data-service-id');
-        const serviceName = button.getAttribute('data-service-name');
-        const servicePrice = button.getAttribute('data-service-price');
-        const serviceDuration = button.getAttribute('data-service-duration');
-        
-        if (!serviceId) {
-            alert('Error: Service information not found. Please try again.');
-            return;
-        }
-        
-        // Store booking data
-        currentBookingData = {
-            serviceId: serviceId,
-            serviceName: serviceName || 'Service',
-            servicePrice: servicePrice || 'Contact for pricing',
-            serviceDuration: serviceDuration || 'Varies'
-        };
-        
-        // Open modal
-        openBookingModal(serviceName, servicePrice, serviceId);
-    {% else %}
-        // User is not logged in - show login required
-        showLoginRequired();
-    {% endif %}
-}
-
-function openBookingModal(serviceTitle, servicePrice, serviceId = null) {
+// ✅ THIS IS THE MISSING FUNCTION - THE KEY FIX!
+function openBookingModal(serviceTitle, servicePrice, serviceId = null, isConsultation = false) {
     const modal = document.getElementById('bookingModal');
-    if (!modal) return;
+    if (!modal) {
+        console.error('❌ Booking modal element not found');
+        return;
+    }
+    
+    console.log('🎯 Opening modal for service:', serviceTitle, 'ID:', serviceId);
     
     // Update modal title
     const modalTitle = document.getElementById('modalTitle');
@@ -3201,6 +3015,8 @@ function openBookingModal(serviceTitle, servicePrice, serviceId = null) {
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
     
+    console.log('✅ Modal opened successfully');
+    
     // Initialize map if not already done
     if (!map) {
         setTimeout(() => {
@@ -3209,125 +3025,141 @@ function openBookingModal(serviceTitle, servicePrice, serviceId = null) {
     }
 }
 
+function updateServiceSummary(name, price, duration) {
+    const nameElement = document.getElementById('summaryServiceName');
+    const priceElement = document.getElementById('summaryServicePrice');
+    const durationElement = document.getElementById('summaryServiceDuration');
+    
+    if (nameElement) nameElement.textContent = name || 'Not specified';
+    if (priceElement) priceElement.textContent = price || 'Contact for pricing';
+    if (durationElement) durationElement.textContent = duration || 'Varies';
+}
 
-// ================== MODAL DYNAMIC PRICING ==================
-function initializeModalDynamicPricing() {
-    // Event delegation for dynamic pricing buttons in service cards
+function initializeEventListeners() {
+    // SINGLE event delegation for ALL booking buttons
     document.addEventListener('click', function(e) {
-        const bookButton = e.target.closest('.dynamic-price-btn');
+        const bookButton = e.target.closest('.book-service-btn');
+        
         if (bookButton) {
-            const serviceId = bookButton.getAttribute('data-service-id');
-            const pricingType = bookButton.getAttribute('data-pricing-type');
+            console.log('🔍 Book button clicked:', bookButton);
             
-            // For dynamic pricing services, open modal with calculator
-            openBookingModalWithPricing(bookButton);
+            // Check if it's a login-required button
+            if (bookButton.classList.contains('login-required')) {
+                showLoginRequired();
+                return;
+            }
+            
+            handleBookingButtonClick(bookButton);
+            e.preventDefault();
+            e.stopPropagation();
         }
     });
+}
+
+function handleBookingButtonClick(button) {
+    console.log('🔍 Handling booking button click');
     
-    // Quantity input changes in modal
+    const serviceId = button.getAttribute('data-service-id');
+    const serviceName = button.getAttribute('data-service-name');
+    const servicePrice = button.getAttribute('data-service-price');
+    const serviceDuration = button.getAttribute('data-service-duration');
+    const pricingType = button.getAttribute('data-pricing-type');
+    
+    console.log('📋 Service data:', { 
+        serviceId, 
+        serviceName, 
+        servicePrice, 
+        serviceDuration, 
+        pricingType
+    });
+    
+    if (!serviceId) {
+        console.error('❌ No service ID found');
+        alert('Error: Service information not found. Please try again.');
+        return;
+    }
+    
+    // Store booking data
+    currentBookingData = {
+        serviceId: serviceId,
+        serviceName: serviceName || 'Service',
+        servicePrice: servicePrice || 'Contact for pricing',
+        serviceDuration: serviceDuration || 'Varies',
+        pricingType: pricingType || 'fixed'
+    };
+    
+    // Open modal
+    openBookingModal(serviceName, servicePrice, serviceId);
+}
+
+function initializeFormElements() {
+    // Initialize date picker
+    const dateInput = document.getElementById('serviceDate');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+        dateInput.min = today;
+    }
+    
+    // Initialize time slots
+    const timeSlots = document.querySelectorAll('.time-slot');
+    const timeSlotInput = document.getElementById('selectedTimeSlot');
+    
+    timeSlots.forEach(slot => {
+        slot.addEventListener('click', function() {
+            timeSlots.forEach(s => s.classList.remove('selected'));
+            this.classList.add('selected');
+            const selectedTime = this.getAttribute('data-time');
+            if (timeSlotInput) {
+                timeSlotInput.value = selectedTime;
+            }
+        });
+    });
+    
+    initializePhoneValidation();
+    
+    const useCurrentLocationBtn = document.getElementById('useCurrentLocation');
+    const searchLocationBtn = document.getElementById('searchLocation');
+    
+    if (useCurrentLocationBtn) {
+        useCurrentLocationBtn.addEventListener('click', useCurrentLocation);
+    }
+    
+    if (searchLocationBtn) {
+        searchLocationBtn.addEventListener('click', searchLocation);
+    }
+}
+
+// ================== LOGIN REQUIRED MODAL ==================
+function showLoginRequired() {
+    const modal = document.getElementById('loginRequiredModal');
+    if (!modal) return;
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLoginRequiredModal() {
+    const modal = document.getElementById('loginRequiredModal');
+    if (!modal) return;
+    
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+// ================== DYNAMIC PRICING (if needed) ==================
+function initializeModalDynamicPricing() {
     document.addEventListener('input', function(e) {
         if (e.target.id === 'modalQuantity') {
             calculateModalPrice();
         }
     });
     
-    // Night shift toggle in modal
     document.addEventListener('change', function(e) {
         if (e.target.id === 'modalNightShift') {
             calculateModalPrice();
         }
     });
-}
-
-function openBookingModalWithPricing(button) {
-    const serviceId = button.getAttribute('data-service-id');
-    const serviceName = button.getAttribute('data-service-name');
-    const basePrice = button.getAttribute('data-base-price');
-    const serviceDuration = button.getAttribute('data-service-duration');
-    const pricingType = button.getAttribute('data-pricing-type');
-    
-    // Store booking data
-    currentBookingData = {
-        serviceId: serviceId,
-        serviceName: serviceName,
-        servicePrice: 'Calculate price',
-        serviceDuration: serviceDuration,
-        pricingType: pricingType,
-        basePrice: basePrice
-    };
-    
-    // Open modal
-    openBookingModal(serviceName, 'Calculate price', serviceId);
-    
-    // Initialize pricing calculator in modal
-    setTimeout(() => {
-        initializeModalPricing(serviceId, pricingType);
-    }, 100);
-}
-
-function initializeModalPricing(serviceId, pricingType) {
-    const modalPricingSection = document.getElementById('modalPricingSection');
-    const modalNightShiftSection = document.getElementById('modalNightShiftSection');
-    
-    if (pricingType === 'fixed' || pricingType === 'inspection') {
-        // Hide pricing section for fixed price services
-        modalPricingSection.style.display = 'none';
-    } else {
-        // Show pricing section for dynamic pricing services
-        modalPricingSection.style.display = 'block';
-        
-        // Load pricing configuration
-        loadModalPricingConfig(serviceId);
-        
-        // Show/hide night shift based on service
-        fetch(`/get-pricing-config/${serviceId}/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && parseFloat(data.night_shift_extra) > 0) {
-                    modalNightShiftSection.style.display = 'block';
-                    document.getElementById('modalNightShiftLabel').textContent = 
-                        `Night Shift (+Rs${parseFloat(data.night_shift_extra).toFixed(2)})`;
-                } else {
-                    modalNightShiftSection.style.display = 'none';
-                }
-            });
-        
-        // Calculate initial price
-        calculateModalPrice();
-    }
-}
-
-function loadModalPricingConfig(serviceId) {
-    fetch(`/get-pricing-config/${serviceId}/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateModalPricingUI(serviceId, data);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading pricing config:', error);
-        });
-}
-
-function updateModalPricingUI(serviceId, config) {
-    const quantityInput = document.getElementById('modalQuantity');
-    const quantityLabel = document.getElementById('modalQuantityLabel');
-    const quantityHelp = document.getElementById('modalQuantityHelp');
-    
-    if (quantityInput && config.pricing_config) {
-        const pc = config.pricing_config;
-        
-        // Update input properties
-        quantityInput.min = pc.min_value || 1;
-        quantityInput.max = pc.max_value || 100;
-        quantityInput.step = pc.step || 1;
-        quantityInput.value = pc.min_value || 1;
-        
-        // Update labels
-        quantityLabel.textContent = pc.label || 'Quantity';
-        quantityHelp.textContent = pc.help_text || 'Enter the required quantity';
-    }
 }
 
 function calculateModalPrice() {
@@ -3337,16 +3169,12 @@ function calculateModalPrice() {
     const dynamicPriceSpan = document.getElementById('modalDynamicPrice');
     const priceBreakdownDiv = document.getElementById('modalPriceBreakdown');
     const summaryPrice = document.getElementById('summaryServicePrice');
-    const summaryQuantity = document.getElementById('summaryQuantity');
-    const summaryShift = document.getElementById('summaryShift');
-    const dynamicPricingDetails = document.getElementById('dynamicPricingDetails');
     
     if (!serviceId || !quantityInput) return;
     
     const quantity = parseFloat(quantityInput.value) || 1;
     const isNightShift = nightShiftToggle ? nightShiftToggle.checked : false;
     
-    // Update hidden fields
     document.getElementById('bookingQuantity').value = quantity;
     document.getElementById('isNightShift').value = isNightShift;
     
@@ -3366,20 +3194,12 @@ function calculateModalPrice() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update price display
             const totalPrice = `Rs${data.total_price.toFixed(2)}`;
             dynamicPriceSpan.textContent = totalPrice;
-            
-            // Update service summary
             summaryPrice.textContent = totalPrice;
-            summaryQuantity.textContent = quantity;
-            summaryShift.textContent = isNightShift ? 'Night Shift' : 'Day Shift';
-            dynamicPricingDetails.style.display = 'block';
             
-            // Update hidden field for calculated price
             document.getElementById('calculatedTotalPrice').value = data.total_price;
             
-            // Update price breakdown
             const breakdown = data.price_breakdown;
             let breakdownHtml = `
                 <div style="border-bottom: 1px solid #d1d5db; padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
@@ -3408,107 +3228,20 @@ function calculateModalPrice() {
             `;
             
             priceBreakdownDiv.innerHTML = breakdownHtml;
-            
-        } else {
-            throw new Error(data.error || 'Calculation failed');
         }
     })
     .catch(error => {
         console.error('Error calculating price:', error);
-        dynamicPriceSpan.textContent = 'Error calculating price';
-        priceBreakdownDiv.textContent = 'Please try again';
     });
 }
 
-// Update the regular booking modal opening for fixed price services
-function openBookingModal(serviceTitle, servicePrice, serviceId = null) {
-    const modal = document.getElementById('bookingModal');
-    if (!modal) return;
-    
-    // Reset pricing section
-    const modalPricingSection = document.getElementById('modalPricingSection');
-    const dynamicPricingDetails = document.getElementById('dynamicPricingDetails');
-    
-    modalPricingSection.style.display = 'none';
-    dynamicPricingDetails.style.display = 'none';
-    
-    // Update modal content
-    const modalTitle = document.getElementById('modalTitle');
-    if (modalTitle) {
-        modalTitle.textContent = `Book ${serviceTitle}`;
-    }
-    
-    // Update hidden inputs
-    const selectedServiceId = document.getElementById('selectedServiceId');
-    const selectedServiceName = document.getElementById('selectedServiceName');
-    const selectedServicePrice = document.getElementById('selectedServicePrice');
-    
-    if (selectedServiceId && serviceId) {
-        selectedServiceId.value = serviceId;
-    }
-    if (selectedServiceName) {
-        selectedServiceName.value = serviceTitle || 'Service';
-    }
-    if (selectedServicePrice) {
-        selectedServicePrice.value = servicePrice || 'Contact for pricing';
-    }
-    
-    // Update service summary
-    updateServiceSummary(
-        serviceTitle || 'Service', 
-        servicePrice || 'Contact for pricing', 
-        currentBookingData.serviceDuration || 'Varies'
-    );
-    
-    // Show modal
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    
-    // Initialize map if not already done
-    if (!map) {
-        setTimeout(() => {
-            initializeMap();
-        }, 100);
-    }
-}
-
-
-function updateServiceSummary(name, price, duration) {
-    const nameElement = document.getElementById('summaryServiceName');
-    const priceElement = document.getElementById('summaryServicePrice');
-    const durationElement = document.getElementById('summaryServiceDuration');
-    
-    if (nameElement) nameElement.textContent = name || 'Not specified';
-    if (priceElement) priceElement.textContent = price || 'Contact for pricing';
-    if (durationElement) durationElement.textContent = duration || 'Varies';
-}
-
-// ================== UTILITY FUNCTIONS ==================
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-
-// ================== SCROLL HANDLER FOR HEADER ==================
+// ================== SCROLL HANDLER ==================
 function initializeScrollHandler() {
     const serviceHeader = document.querySelector('.service-header');
-    const headerContent = document.querySelector('.header-content');
     
     if (!serviceHeader) return;
     
-    let lastScrollTop = 0;
-    const scrollThreshold = 100; // Scroll distance before compacting header
+    const scrollThreshold = 100;
     
     window.addEventListener('scroll', function() {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -3518,22 +3251,33 @@ function initializeScrollHandler() {
         } else {
             serviceHeader.classList.remove('scrolled');
         }
-        
-        lastScrollTop = scrollTop;
     }, { passive: true });
+}
+
+// ================== SERVICE CATEGORY NAVIGATION ==================
+function filterServicesByCategory(categoryId) {
+    const serviceCards = document.querySelectorAll('.service-card');
+    serviceCards.forEach(card => {
+        const cardCategory = card.getAttribute('data-category');
+        if (cardCategory === categoryId) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
 }
 
 // ================== INITIALIZATION ==================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - initializing...');
+    console.log('✅ DOM loaded - initializing...');
     
-    // Initialize everything
+    // Initialize everything in correct order
     initializeSearchAndFilter();
     initializeModal();
     initializeEventListeners();
     initializeFormElements();
     initializePhoneValidation();
-    initializeFormSubmission(); 
+    initializeFormSubmission();
     initializeModalDynamicPricing();
     initializeScrollHandler();
 
@@ -3556,12 +3300,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const serviceNavItems = document.querySelectorAll('.service-nav-item');
     serviceNavItems.forEach(item => {
         item.addEventListener('click', function() {
-            // Remove active class from all items
             serviceNavItems.forEach(navItem => navItem.classList.remove('active'));
-            // Add active class to clicked item
             this.classList.add('active');
             
-            // Update header
             const categoryName = this.getAttribute('data-category-name');
             const categoryIcon = this.getAttribute('data-category-icon');
             const serviceTitle = document.getElementById('service-title');
@@ -3574,23 +3315,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 serviceIcon.textContent = categoryIcon;
             }
             
-            // Filter services by category
             const categoryId = this.getAttribute('data-category-id');
             filterServicesByCategory(categoryId);
         });
     });
+    
+    console.log('✅ All initialization complete');
 });
-
-function filterServicesByCategory(categoryId) {
-    const serviceCards = document.querySelectorAll('.service-card');
-    serviceCards.forEach(card => {
-        const cardCategory = card.getAttribute('data-category');
-        if (cardCategory === categoryId) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
 </script>
 {% endblock content %}

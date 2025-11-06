@@ -1335,15 +1335,69 @@
           {% endif %}
           
           <p class="text-red-800 mb-4 text-sm sm:text-base">
-            Please update your profile information based on the feedback above and resubmit for verification.
+            Please update your documents based on the feedback above and resubmit for verification.
           </p>
-          
-          <div class="flex flex-col sm:flex-row flex-wrap gap-3">
-            {% if can_resubmit %}
-            <button type="button" class="btn btn-primary" onclick="resubmitVerification()" id="resubmitBtn">
-              <i class="fas fa-redo mr-2"></i>Resubmit for Verification
+
+          <!-- ✅ NEW: Document Upload Form -->
+          {% if can_resubmit %}
+          <form id="resubmitForm" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <!-- Citizenship Document -->
+              <div class="form-group">
+                <label class="block text-sm font-semibold text-red-800 mb-2">
+                  <i class="fas fa-id-card mr-1"></i>
+                  Update Citizenship Document:
+                </label>
+                <input type="file" name="citizenship_image" accept="image/*,.pdf" 
+                       class="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                <p class="text-xs text-red-600 mt-1">Upload a clear image or PDF of your citizenship document</p>
+              </div>
+              
+              <!-- Certificate Document -->
+              <div class="form-group">
+                <label class="block text-sm font-semibold text-red-800 mb-2">
+                  <i class="fas fa-file-certificate mr-1"></i>
+                  Update Certificate (Optional):
+                </label>
+                <input type="file" name="certificate_file" accept="image/*,.pdf,.doc,.docx"
+                       class="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                <p class="text-xs text-red-600 mt-1">Upload any relevant certificates (if applicable)</p>
+              </div>
+            </div>
+
+            <!-- File Upload Requirements -->
+            <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+              <h4 class="font-semibold text-red-800 text-sm mb-2 flex items-center">
+                <i class="fas fa-info-circle mr-2"></i>Upload Requirements:
+              </h4>
+              <ul class="text-xs text-red-700 space-y-1">
+                <li>• Maximum file size: 10MB per file</li>
+                <li>• Supported formats: JPG, PNG, PDF, DOC, DOCX</li>
+                <li>• Ensure documents are clear and readable</li>
+                <li>• At least one document must be uploaded for resubmission</li>
+              </ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full sm:w-auto">
+              <i class="fas fa-redo mr-2"></i>Resubmit for Verification with Updated Documents
             </button>
-            {% else %}
+          </form>
+          {% else %}
+          <div class="text-center py-4">
+            <div class="bg-red-100 border border-red-300 rounded-lg p-4 mb-4">
+              <i class="fas fa-clock text-red-600 text-2xl mb-2"></i>
+              <p class="text-red-800 font-semibold">You can resubmit in: {{ wait_time_display }}</p>
+            </div>
+            <p class="text-sm text-red-700">
+              Please prepare your updated documents for when the waiting period ends.
+            </p>
+          </div>
+          {% endif %}
+          
+          <div class="flex flex-col sm:flex-row flex-wrap gap-3 mt-4">
+            {% if not can_resubmit %}
             <button type="button" class="btn btn-secondary" disabled id="resubmitBtn">
               <i class="fas fa-clock mr-2"></i> 
               Resubmit (Wait {{ wait_time_display }})
@@ -1351,7 +1405,7 @@
             {% endif %}
             
             <a href="{% url 'worker_profile' %}" class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
-              <i class="fas fa-edit mr-2"></i>Edit Profile
+              <i class="fas fa-edit mr-2"></i>Edit Profile Information
             </a>
           </div>
           
@@ -1370,7 +1424,7 @@
         <div class="text-right w-full sm:w-auto">
           <div class="bg-red-100 border border-red-300 rounded-lg p-3 sm:p-4">
             <p class="text-sm text-red-800 font-semibold">Need Help?</p>
-            <p class="text-xs text-red-600 mt-1">Contact support if you need assistance</p>
+            <p class="text-xs text-red-600 mt-1">Contact support if you need assistance with document upload</p>
           </div>
         </div>
       </div>
@@ -2239,26 +2293,40 @@ window.addEventListener('resize', function() {
     }
 });
 
-// Resubmit verification functionality
+// Enhanced resubmit verification with file upload
 function resubmitVerification() {
-    if (!confirm('Are you sure you want to resubmit your profile for verification?\n\nPlease make sure you have updated your profile information based on the rejection reason.')) {
+    const form = document.getElementById('resubmitForm');
+    if (!form) {
+        console.error('Resubmit form not found');
         return;
     }
+
+    const formData = new FormData(form);
     
-    const button = document.getElementById('resubmitBtn');
+    // Validate that at least one file is selected
+    const citizenshipFile = formData.get('citizenship_image');
+    const certificateFile = formData.get('certificate_file');
+    
+    if (!citizenshipFile && !certificateFile) {
+        showToastNotification('Error', 'Please upload at least one document (citizenship or certificate) for resubmission.', 'error');
+        return;
+    }
+
+    const button = form.querySelector('button[type="submit"]');
     const originalText = button.innerHTML;
     
     // Show loading state
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading & Submitting...';
     button.disabled = true;
     
-    // Send AJAX request
+    // Send AJAX request with file data
     fetch('{% url "resubmit_verification" %}', {
         method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRFToken': getCookie('csrftoken')
-        }
+        },
+        body: formData
     })
     .then(response => {
         if (!response.ok) {
@@ -2293,6 +2361,17 @@ function resubmitVerification() {
         button.disabled = false;
     });
 }
+
+// Add form submission handler
+document.addEventListener('DOMContentLoaded', function() {
+    const resubmitForm = document.getElementById('resubmitForm');
+    if (resubmitForm) {
+        resubmitForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            resubmitVerification();
+        });
+    }
+});
 
 // Countdown timer for resubmission
 function startResubmissionCountdown(minutesLeft) {
